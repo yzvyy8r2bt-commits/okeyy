@@ -721,7 +721,8 @@ function doSwap(m, idx, t) {
 }
 // Yanlışa atma: atılan taş masadaki herhangi bir açık seriye işlenebiliyorsa
 function isWrongDiscard(tile, table) {
-  for (const m of table) if (m.kind === 'series' && extendOptions(m, tile)) return true;
+  // işlek: perlere eklenebilen ya da masadaki okeyin yerini tutan (okeyi çaldıran) taş
+  for (const m of table) if (m.kind === 'series' && (extendOptions(m, tile) || findSwapIdx(m, tile) >= 0)) return true;
   return false;
 }
 
