@@ -1375,7 +1375,7 @@ function hProcessAll() {
   return { ok: true, count, msg: count + ' taş işlendi.' };
 }
 function hSwap(tileId, meldId, idx) {
-  const e = humanTurnErr('discard'); if (e) return e;
+  const e = humanTurnErr(null); if (e) return e;
   const P = G.players[0];
   if (!P.opened) return fail('Okey çalmak için önce elini açmalısın.');
   const t = P.slots.find(x => x && x.id === tileId);
@@ -1887,7 +1887,7 @@ function renderCenter() {
 }
 function computeHighlights() {
   UI.acceptIds = new Set(); UI.swapKeys = new Set();
-  if (!humanCan('discard') || hardMode()) return;
+  if (!(humanCan('discard') || humanCan('draw')) || hardMode()) return;
   const P = G.players[0];
   if (!P.opened) return;
   const sel = Array.from(UI.selected).map(id => P.slots.find(t => t && t.id === id)).filter(Boolean);
@@ -2216,12 +2216,21 @@ function handleDrop(id, el, x, y) {
 }
 
 /* ---------- Sürükle-bırak (fare + dokunmatik) ---------- */
+function killGhosts() { document.querySelectorAll('.ghost').forEach(x => x.remove()); }
+function guardDown(e) {
+  if (e.isPrimary === false) return false;      // ikinci parmak: yok say
+  if (drag) { if (drag.raf) cancelAnimationFrame(drag.raf); clearTimeout(drag.timer); clearTimeout(drag.timer2); drag = null; }
+  killGhosts();
+  document.querySelectorAll('.dragging').forEach(x => x.classList.remove('dragging'));
+  return true;
+}
 function onDown(e) {
   if (e.button !== undefined && e.button !== 0) return;
   const el = e.target.closest('.tile[data-id]');
   if (!el || !G) return;
+  if (!guardDown(e)) return;
   initAudio();
-  drag = { id: +el.dataset.id, el, sx: e.clientX, sy: e.clientY, moved: false, ghost: null, target: null, peeked: false, timer: null };
+  drag = { pid: e.pointerId, id: +el.dataset.id, el, sx: e.clientX, sy: e.clientY, moved: false, ghost: null, target: null, peeked: false, timer: null };
   const pt = G.players[0].slots.find(x => x && x.id === drag.id);
   if (pt && pt.wild) {
     const d = drag;
@@ -2233,8 +2242,9 @@ function onDownSrc(e) {
   if (e.button !== undefined && e.button !== 0) return;
   const el = e.target.closest('[data-dragsrc]');
   if (!el || !G || !humanCan('draw')) return;
+  if (!guardDown(e)) return;
   initAudio();
-  drag = { src: el.dataset.dragsrc, el, sx: e.clientX, sy: e.clientY, moved: false, ghost: null, target: null };
+  drag = { pid: e.pointerId, src: el.dataset.dragsrc, el, sx: e.clientX, sy: e.clientY, moved: false, ghost: null, target: null };
 }
 function dropDraw(src, el, x, y) {
   const slot = el && el.closest('.slot'), box = el && el.closest('#rackbox');
@@ -2265,6 +2275,7 @@ function applyDrag() {
 }
 function onMove(e) {
   if (!drag) return;
+  if (drag.pid !== undefined && e.pointerId !== drag.pid) return;
   if (e.pointerType === 'mouse' && e.buttons === 0) { endDrag(e, true); return; }
   if (!drag.moved) {
     if (Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) < 7) return;
@@ -2288,11 +2299,12 @@ function onMove(e) {
 }
 function endDrag(e, cancel) {
   if (!drag) return;
+  if (e && drag.pid !== undefined && e.pointerId !== undefined && e.pointerId !== drag.pid) return;
   const d = drag; drag = null;
   if (d.raf) cancelAnimationFrame(d.raf);
   clearTimeout(d.timer); clearTimeout(d.timer2);
   if (UI.peekId) { UI.peekId = null; }
-  if (d.ghost) d.ghost.remove();
+  killGhosts();
   if (d.peeked) { render(); return; }
   if (d.src) {
     if (d.moved) { UI.noClick = Date.now(); if (!cancel) dropDraw(d.src, document.elementFromPoint(e.clientX, e.clientY), e.clientX, e.clientY); render(); }
@@ -2394,6 +2406,8 @@ function init() {
   window.addEventListener('pointermove', onMove, { passive: false });
   window.addEventListener('pointerup', e => endDrag(e, false));
   window.addEventListener('pointercancel', e => endDrag(e, true));
+  window.addEventListener('blur', () => { if (drag) endDrag({ pointerId: drag.pid, clientX: 0, clientY: 0 }, true); killGhosts(); });
+  document.addEventListener('visibilitychange', () => { if (document.hidden && drag) endDrag({ pointerId: drag.pid, clientX: 0, clientY: 0 }, true); killGhosts(); });
   window.addEventListener('blur', e => endDrag(e, true));
   rack.addEventListener('contextmenu', e => e.preventDefault());
   newGame({ mode: UI.settings.mode, hands: UI.settings.hands, team: UI.settings.team, speed: UI.settings.speed, hard: UI.settings.hard, pen: UI.settings.pen });
