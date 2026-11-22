@@ -48,7 +48,7 @@ button { font-family: inherit; }
   background-position: 0 0, 0 0, calc(var(--u) * 3.5) calc(var(--u) * 3.5), 0 0;
 }
 .app {
-  position: absolute; inset: 0; padding: calc(var(--u) * 1) calc(var(--u) * 1.6) calc(var(--u) * 3.6);
+  position: absolute; inset: 0; padding: calc(var(--u) * 1 + var(--st, 0px)) calc(var(--u) * 1.6 + var(--sr, 0px)) calc(var(--u) * 3.6 + var(--sb, 0px)) calc(var(--u) * 1.6 + var(--sl, 0px));
   display: grid; grid-template-rows: calc(var(--u) * 7.6) minmax(0, 1fr) auto; row-gap: calc(var(--u) * .8);
 }
 
@@ -2327,12 +2327,27 @@ H.toast = (m, k) => {
 };
 
 function toStage(X, Y) { return UI.port ? { x: Y, y: window.innerWidth - X } : { x: X, y: Y }; }
+function insets() {
+  let p = document.getElementById('inprobe');
+  if (!p) {
+    p = document.createElement('div'); p.id = 'inprobe';
+    p.style.cssText = 'position:fixed;left:0;top:0;width:0;height:0;visibility:hidden;pointer-events:none;padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)';
+    document.body.appendChild(p);
+  }
+  const s = getComputedStyle(p);
+  return { t: parseFloat(s.paddingTop) || 0, r: parseFloat(s.paddingRight) || 0, b: parseFloat(s.paddingBottom) || 0, l: parseFloat(s.paddingLeft) || 0 };
+}
 function layout() {
   const w = window.innerWidth, h = window.innerHeight, port = h > w;
   const sw = port ? h : w, sh = port ? w : h, st = $('stage');
   st.style.width = sw + 'px'; st.style.height = sh + 'px';
   st.style.transform = port ? 'translateX(' + w + 'px) rotate(90deg)' : 'none';
   st.style.setProperty('--u', Math.max(2.4, Math.min(sh / 100, sw / 200)) + 'px');
+  const n = insets();
+  // sahne koordinatlarında güvenli alan: dikeyde sahne 90° döndüğü için ekranın üstü = sahnenin solu
+  const m = port ? { l: n.t, r: n.b, t: n.r, b: n.l } : { l: n.l, r: n.r, t: n.t, b: n.b };
+  st.style.setProperty('--sl', m.l + 'px'); st.style.setProperty('--sr', m.r + 'px');
+  st.style.setProperty('--st', m.t + 'px'); st.style.setProperty('--sb', m.b + 'px');
   UI.port = port;
 }
 function init() {
