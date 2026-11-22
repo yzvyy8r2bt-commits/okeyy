@@ -164,7 +164,8 @@ button { font-family: inherit; }
 .ft.okeyface { box-shadow: 0 0 0 calc(var(--u) * .4) var(--amber), 0 calc(var(--u) * .5) calc(var(--u) * .7) rgba(0, 0, 0, .5); }
 .mt { width: calc(var(--u) * 4.7); height: calc(var(--u) * 6.5); font-size: calc(var(--u) * 3.7); cursor: pointer; box-shadow: 0 calc(var(--u) * .3) 0 var(--ivory-lip), inset 0 0 0 1px var(--ivory-edge); }
 .mt.swapok { box-shadow: 0 0 0 calc(var(--u) * .4) var(--good), 0 0 calc(var(--u) * 1.6) var(--good); }
-.pulse { animation: pulse 1.3s ease-in-out infinite; cursor: pointer; }
+.pulse { position: relative; cursor: pointer; }
+.pulse::after { content: ''; position: absolute; inset: calc(var(--u) * -.6); border-radius: inherit; box-shadow: 0 0 calc(var(--u) * 1.4) calc(var(--u) * .4) rgba(255, 187, 51, .9); opacity: 0; animation: pulse 1.3s ease-in-out infinite; pointer-events: none; will-change: opacity; }
 
 /* ---- alt bölüm ---- */
 .me { display: grid; grid-template-columns: minmax(0, 1fr); padding: 0 calc(var(--u) * 17.5); align-items: stretch; min-width: 0; }
@@ -197,7 +198,7 @@ button { font-family: inherit; }
 .rack .tile.fresh { animation: pop .6s ease-out; outline: 2px solid var(--info); outline-offset: 1px; }
 .rack .tile.dragging { opacity: .25; }
 .rack .tile .hw { position: absolute; left: 6%; top: 4%; width: 1.1em; height: 1.1em; border-radius: 50%; background: var(--bad); color: #fff; font-style: normal; font-size: .4em; display: grid; place-items: center; font-weight: 800; }
-.ghost { position: absolute; z-index: 200; pointer-events: none; transform: scale(1.1) rotate(-3deg); opacity: .95; font-size: calc(var(--u) * 6.8); box-shadow: 0 calc(var(--u) * 1.5) calc(var(--u) * 3) rgba(0, 0, 0, .6); }
+.ghost { position: absolute; z-index: 200; pointer-events: none; transform: scale(1.08) rotate(-2deg); will-change: transform; contain: layout paint; font-size: calc(var(--u) * 6.8); box-shadow: 0 calc(var(--u) * 1.5) calc(var(--u) * 3) rgba(0, 0, 0, .6); }
 .droptarget { outline: 2px solid var(--amber) !important; outline-offset: 1px; }
 .slot.droptarget { background: rgba(255, 187, 51, .3); }
 
@@ -264,7 +265,7 @@ button { font-family: inherit; }
 .banner.gold { box-shadow: 0 0 60px rgba(255, 187, 51, .55); }
 
 @keyframes pop { 0% { transform: translateY(-40%) scale(1.25); } 100% { transform: none; } }
-@keyframes pulse { 0%, 100% { filter: none; } 50% { filter: drop-shadow(0 0 calc(var(--u) * 1) rgba(255, 187, 51, .95)); } }
+@keyframes pulse { 0%, 100% { opacity: 0; } 50% { opacity: 1; } }
 @keyframes glow { 0%, 100% { box-shadow: 0 calc(var(--u) * .4) 0 #a85d00, 0 0 0 0 rgba(255, 187, 51, 0); } 50% { box-shadow: 0 calc(var(--u) * .4) 0 #a85d00, 0 0 0 calc(var(--u) * .6) rgba(255, 220, 120, .8); } }
 @keyframes shake { 0%, 100% { transform: none; } 20% { transform: translateX(-5px); } 40% { transform: translateX(5px); } 60% { transform: translateX(-3px); } 80% { transform: translateX(3px); } }
 @keyframes toastIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: none; } }
@@ -1952,6 +1953,7 @@ function rackPositions() {
 function renderRack() {
   const P = G.players[0];
   const before = rackPositions();
+  if (UI.dropFrom) before[UI.dropFrom.id] = { x: UI.dropFrom.x, y: UI.dropFrom.y };
   UI.sc = null;
   const an = rackAnalysis(P.slots);
   UI.an = an;
@@ -2191,11 +2193,14 @@ function rackSlotAt(x, y) {
   return { s: s.i, after: p.x > s.cx };
 }
 function showInsert(x, y) {
-  document.querySelectorAll('#rack .slot.ins-l, #rack .slot.ins-r, #rack .slot.droptarget').forEach(e => e.classList.remove('ins-l', 'ins-r', 'droptarget'));
   const h = rackSlotAt(x, y);
+  const key = h ? h.s + (h.after ? 'r' : 'l') : '';
+  if (UI.insKey === key) return h;           // değişiklik yoksa DOM'a dokunma
+  UI.insKey = key;
+  if (UI.insEl) { UI.insEl.classList.remove('ins-l', 'ins-r'); UI.insEl = null; }
   if (!h) return null;
   const el = document.querySelector('#rack .slot[data-slot="' + h.s + '"]');
-  if (el && el.querySelector('.tile')) el.classList.add(h.after ? 'ins-r' : 'ins-l');
+  if (el && el.querySelector('.tile')) { el.classList.add(h.after ? 'ins-r' : 'ins-l'); UI.insEl = el; }
   return h;
 }
 function handleDrop(id, el, x, y) {
@@ -2273,10 +2278,14 @@ function applyDrag() {
   d.raf = 0;
   if (!d.ghost) return;
   const sp = toStage(d.px, d.py);
-  d.ghost.style.transform = 'translate3d(' + (sp.x - d.w / 2) + 'px,' + (sp.y - d.h / 2) + 'px,0) scale(1.1) rotate(-3deg)';
-  const el = document.elementFromPoint(d.px, d.py);
-  const t = el ? (el.closest('.slot') || el.closest('[data-drop]') || el.closest('.mt') || el.closest('.meld') || (d.src ? el.closest('#rackbox') : null)) : null;
-  showInsert(d.px, d.py);
+  d.gx = sp.x - d.ox; d.gy = sp.y - d.oy;
+  d.ghost.style.transform = 'translate3d(' + d.gx + 'px,' + d.gy + 'px,0) scale(1.08) rotate(-2deg)';
+  const inRack = showInsert(d.px, d.py);
+  let t = null;
+  if (!inRack) {
+    const el = document.elementFromPoint(d.px, d.py);
+    t = el ? (el.closest('.slot') || el.closest('[data-drop]') || el.closest('.mt') || el.closest('.meld') || (d.src ? el.closest('#rackbox') : null)) : null;
+  }
   const tt = (t && t.classList && (t.classList.contains('slot') || t.id === 'rackbox')) ? null : t;
   if (tt !== d.target) {
     if (d.target) d.target.classList.remove('droptarget');
@@ -2289,8 +2298,8 @@ function onMove(e) {
   if (drag.pid !== undefined && e.pointerId !== drag.pid) return;
   if (e.pointerType === 'mouse' && e.buttons === 0) { endDrag(e, true); return; }
   if (!drag.moved) {
-    if (Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) < 7) return;
-    if (drag.peeked) return;
+    if (Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) < 5) return;
+    if (drag.peeked) { drag.peeked = false; UI.peekId = null; drag.el.classList.remove('peek'); }
     clearTimeout(drag.timer); clearTimeout(drag.timer2);
     drag.moved = true;
     const r = drag.el.getBoundingClientRect();
@@ -2302,10 +2311,15 @@ function onMove(e) {
     $('stage').appendChild(g);
     g.style.left = '0px'; g.style.top = '0px'; g.style.willChange = 'transform';
     drag.ghost = g; drag.w = drag.el.offsetWidth; drag.h = drag.el.offsetHeight; UI.sc = null; slotCache();
+    const tl = toStage(r.left, r.top), sp0 = toStage(drag.sx, drag.sy);
+    drag.ox = sp0.x - tl.x; drag.oy = sp0.y - tl.y;               // parmağın taş üzerindeki yeri korunur
+    if (drag.ox < 0 || drag.ox > drag.w || drag.oy < 0 || drag.oy > drag.h) { drag.ox = drag.w / 2; drag.oy = drag.h / 2; }
+    UI.insKey = null; UI.insEl = null;
     if (!drag.src) drag.el.classList.add('dragging');
   }
   drag.px = e.clientX; drag.py = e.clientY;
   if (!drag.raf) drag.raf = requestAnimationFrame(applyDrag);
+  if (drag.ghost && !drag.shown) { drag.shown = true; const s = toStage(drag.px, drag.py); drag.ghost.style.transform = 'translate3d(' + (s.x - drag.ox) + 'px,' + (s.y - drag.oy) + 'px,0) scale(1.08) rotate(-2deg)'; }
   if (e.cancelable) e.preventDefault();
 }
 function endDrag(e, cancel) {
@@ -2324,8 +2338,10 @@ function endDrag(e, cancel) {
   document.querySelectorAll('.droptarget').forEach(x => x.classList.remove('droptarget'));
   document.querySelectorAll('.ins-l, .ins-r').forEach(x => x.classList.remove('ins-l', 'ins-r'));
   if (!d.moved) { if (!cancel) handleTap(d.id); return; }
+  if (d.ghost && d.gx !== undefined) UI.dropFrom = { id: d.id, x: d.gx, y: d.gy };
+  if (UI.insEl) { UI.insEl.classList.remove('ins-l', 'ins-r'); UI.insEl = null; } UI.insKey = null;
   if (!cancel) handleDrop(d.id, document.elementFromPoint(e.clientX, e.clientY), e.clientX, e.clientY);
-  render();
+  render(); UI.dropFrom = null;
 }
 
 /* ---------- Kancalar ve açılış ---------- */
