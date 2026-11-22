@@ -284,6 +284,17 @@ button { font-family: inherit; }
 .slot.ins-l::after { left: calc(var(--u) * -.5); }
 .slot.ins-r::after { right: calc(var(--u) * -.5); }
 
+/* dikey uyarısı */
+#rotMsg { position: fixed; inset: 0; z-index: 9000; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+  background: radial-gradient(ellipse at 50% 40%, var(--bg2), var(--bg0) 70%); color: var(--ink); font-family: var(--f-ui); text-align: center; padding: 24px; }
+#rotMsg b { font-family: var(--f-num); font-size: 26px; letter-spacing: .02em; color: var(--amber); }
+#rotMsg span { font-size: 15px; opacity: .75; }
+#rotMsg .rot-ic { width: 90px; height: 90px; display: flex; align-items: center; justify-content: center; }
+#rotMsg .rot-ph { width: 42px; height: 72px; border: 4px solid var(--ink); border-radius: 9px; animation: rotph 2.2s ease-in-out infinite; }
+@keyframes rotph { 0%, 25% { transform: rotate(0); } 55%, 85% { transform: rotate(-90deg); } 100% { transform: rotate(0); } }
+@media (prefers-reduced-motion: reduce) { #rotMsg .rot-ph { animation: none; transform: rotate(-90deg); } }
+#rotMsg[hidden] { display: none; }
+
 button { touch-action: manipulation; }
 </style>
 </head>
@@ -2350,7 +2361,15 @@ function insets() {
   return { t: parseFloat(s.paddingTop) || 0, r: parseFloat(s.paddingRight) || 0, b: parseFloat(s.paddingBottom) || 0, l: parseFloat(s.paddingLeft) || 0 };
 }
 function layout() {
-  const w = window.innerWidth, h = window.innerHeight, port = h > w;
+  const w = window.innerWidth, h = window.innerHeight, port = false;
+  // oyun sadece yatay oynanır: dikeyde "telefonu yan çevir" uyarısı
+  let rm = document.getElementById('rotMsg');
+  if (!rm) {
+    rm = document.createElement('div'); rm.id = 'rotMsg';
+    rm.innerHTML = '<div class="rot-ic"><div class="rot-ph"></div></div><b>Telefonu yan çevir</b><span>101 Okey yatay oynanır</span>';
+    document.body.appendChild(rm);
+  }
+  rm.hidden = !(h > w);
   const sw = port ? h : w, sh = port ? w : h, st = $('stage');
   st.style.width = sw + 'px'; st.style.height = sh + 'px';
   st.style.transform = port ? 'translateX(' + w + 'px) rotate(90deg)' : 'none';
