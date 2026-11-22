@@ -154,7 +154,6 @@ button { font-family: inherit; }
 .tile .sm { font-family: var(--f-num); font-weight: 700; font-size: .46em; margin-top: .1em; }
 .c0 { color: var(--t-red); } .c1 { color: var(--t-blk); } .c2 { color: var(--t-blue); } .c3 { color: var(--t-yel); }
 .fkv { width: .9em; height: .9em; }
-.mt.fake::before { content: ''; position: absolute; top: 6%; right: 8%; width: .38em; height: .38em; border-radius: 50%; border: .1em solid #7a3fc4; box-shadow: inset 0 0 0 .08em #fffaf0, inset 0 0 0 .2em #12a597; }
 .tile.back { background: linear-gradient(170deg, #ffffff, #e6e6ea); box-shadow: 0 calc(var(--u) * .45) 0 #a9a9b4, 0 calc(var(--u) * .7) calc(var(--u) * .8) rgba(0, 0, 0, .55), inset 0 0 0 1px #c9c9d2; }
 .tile.back .cnt { width: 1.45em; height: 1.45em; border-radius: 50%; display: grid; place-items: center; font-family: var(--f-num); font-weight: 800; font-size: .62em; color: #14141a; background: radial-gradient(circle at 50% 38%, #f6f6f8, #cfcfd6); box-shadow: inset 0 calc(var(--u) * .15) calc(var(--u) * .4) rgba(0, 0, 0, .35); }
 .tile.blank { background: linear-gradient(170deg, #ffffff, #ececf0); }
@@ -1839,8 +1838,10 @@ function tileHTML(t, o) {
   if (t.wild) cls.push('wild');
   const onTable = o.cls && o.cls.indexOf('mt') >= 0;
   if (t.fake) cls.push('fake');
-  const title = o.title || (t.wild && onTable ? 'Okey (' + faceName(c, n) + ' yerine)' : t.wild ? faceName(c, n) : tileName(t));
-  return '<div class="' + cls.join(' ') + '" ' + (o.attrs || '') + ' title="' + title + '">' + inner(c, n, t.fake && !onTable) + (o.extra || '') + '</div>';
+  // okey hiçbir yerde başka taş gibi görünmez: hep kendi yüzüyle; sahte okey hep sahte okey simgesiyle
+  const fc = t.wild ? t.c : c, fn = t.wild ? t.n : n;
+  const title = o.title || (t.wild && onTable ? 'Okey (' + faceName(c, n) + ' yerine)' : t.wild ? 'Okey' : tileName(t));
+  return '<div class="' + cls.join(' ') + '" ' + (o.attrs || '') + ' title="' + title + '">' + inner(fc, fn, t.fake) + (o.extra || '') + '</div>';
 }
 function hardMode() { return !!(G && G.cfg.hard); }
 function humanCan(phase) { return !!G && G.phase === phase && G.turn === 0 && !G.players[0].bot; }
