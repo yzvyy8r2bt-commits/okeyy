@@ -344,6 +344,32 @@ function RulesModal({ u, visible, onClose, howto }) {
   );
 }
 
+// göstergenin üstündeki bildirim: tek bildirim, kutuya sığana kadar yazı küçülür (web'deki gibi)
+function ToastBox({ u, toast }) {
+  const [box, setBox] = useState(null);
+  let fs = 2.2 * u;
+  if (box && toast) {
+    const pad = 0.6 * u, w = box.w - 2 * pad, h = box.h - 2 * pad;
+    const fits = f => {
+      const cpl = Math.max(1, Math.floor(w / (f * 0.56)));            // satır başına yaklaşık harf
+      const words = toast.msg.split(' ');
+      let lines = 1, cur = 0;
+      for (const wd of words) { const n = wd.length; if (cur && cur + 1 + n > cpl) { lines++; cur = n; } else cur += (cur ? 1 : 0) + n; lines += Math.floor(Math.max(0, n - 1) / cpl); }
+      return lines * f * 1.22 <= h;
+    };
+    while (fs > 0.9 * u && !fits(fs)) fs -= 0.1 * u;
+  }
+  return (
+    <View pointerEvents="none" onLayout={e => setBox({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })} style={{ flex: 1, justifyContent: 'flex-end', overflow: 'hidden' }}>
+      {toast && box ? (
+        <View key={toast.id} style={[styles.toast, { borderRadius: u, padding: 0.6 * u, maxHeight: box.h }, toast.kind === 'bad' && { backgroundColor: '#7a1d22' }, toast.kind === 'good' && { backgroundColor: '#145c3c' }]}>
+          <Text allowFontScaling={false} style={{ color: '#fff', fontSize: fs, lineHeight: fs * 1.2, fontWeight: '700', textAlign: 'center' }}>{toast.msg}</Text>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
 // ---------- oyun ekranı ----------
 function Game({ set, saveSet, table, onLeave, onAgain }) {
   const ins = useSafeAreaInsets();
@@ -596,13 +622,7 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
           </ScrollView>
         </Mat>
         <View style={[styles.mid, { width: 12 * u, gap: 1.2 * u }]}>
-          <View pointerEvents="none" style={{ flex: 1, justifyContent: 'flex-end', overflow: 'hidden', gap: 0.5 * u }}>
-          {toasts.slice(-2).map(t => (
-            <View key={t.id} style={[styles.toast, { borderRadius: u, padding: 0.5 * u }, t.kind === 'bad' && { backgroundColor: '#7a1d22' }, t.kind === 'good' && { backgroundColor: '#145c3c' }]}>
-              <Text allowFontScaling={false} numberOfLines={4} style={{ color: '#fff', fontSize: 1.8 * u, fontWeight: '700', textAlign: 'center' }}>{t.msg}</Text>
-            </View>
-          ))}
-          </View>
+          <ToastBox u={u} toast={toasts[toasts.length - 1]} />
           <CenterBox u={u} label="DESTE" drag={deckDrag}>
             <TileBack w={9 * u} h={11 * u} fs={6.4 * u} count={g.deck.length} hot={canDraw} />
           </CenterBox>
