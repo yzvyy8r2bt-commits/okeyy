@@ -170,7 +170,7 @@ button { font-family: inherit; }
 .pulse::after { content: ''; position: absolute; inset: calc(var(--u) * -.6); border-radius: inherit; box-shadow: 0 0 calc(var(--u) * 1.4) calc(var(--u) * .4) rgba(255, 187, 51, .9); opacity: 0; animation: pulse 1.3s ease-in-out infinite; pointer-events: none; will-change: opacity; }
 
 /* ---- alt bölüm ---- */
-.me { display: grid; grid-template-columns: minmax(0, 1fr); padding: 0 calc(var(--u) * 17.5); align-items: stretch; min-width: 0; }
+.me { display: grid; grid-template-columns: calc(var(--u) * 17.5) minmax(0, 1fr) calc(var(--u) * 17.5); column-gap: 0; padding: 0; align-items: stretch; min-width: 0; }
 .srow { display: flex; align-items: flex-end; gap: calc(var(--u) * 1.2); min-width: 0; }
 .srow .status { flex: 1; min-width: 0; }
 .bk { display: grid; gap: calc(var(--u) * .7); align-content: end; min-width: 0; }
@@ -671,10 +671,20 @@ button { font-family: inherit; }
 #toasts.mini { max-width: none; justify-content: flex-end; gap: calc(var(--u) * .5); overflow: hidden; }
 #toasts.mini .toast { width: 100%; box-sizing: border-box; font-size: calc(var(--u) * 1.8); line-height: 1.15; padding: calc(var(--u) * .5) calc(var(--u) * .5); border-radius: calc(var(--u) * 1); box-shadow: 0 4px 10px rgba(0, 0, 0, .45); flex-shrink: 0; }
 
+.corner.side { align-self: start; justify-content: flex-start; padding-top: calc(var(--u) * .4); }
+
+/* yan oyuncuların hediye rafı: plakanın alt kısmında, isimlerin üstüne binmeden */
+.pg-shelf { margin-top: auto; width: 100%; flex: 1; min-height: 0; display: flex; flex-wrap: wrap; align-content: center; justify-content: center; gap: calc(var(--u) * .4); padding-top: calc(var(--u) * .6); border-top: 1px dashed rgba(255, 255, 255, .12); }
+.pg-shelf .pg-oz, .pg-shelf .pg-perm, .pg-shelf .pg-tmp { position: static; transform: none; }
+.pg-shelf .pg-btn { margin-top: 0; align-self: center; }
+.pg-shelf .pg-oz svg { width: calc(var(--u) * 7.2); height: calc(var(--u) * 7.2); }
+.pg-shelf .pg-perm svg { width: calc(var(--u) * 6.8); height: calc(var(--u) * 6.8); }
+.pg-shelf .pg-tmp svg { width: calc(var(--u) * 7.2); height: calc(var(--u) * 7.2); }
+
 button { touch-action: manipulation; }
 </style>
 </head>
-<body data-ver="mwtlrhni">
+<body data-ver="mwtlvy20">
 <div id="stage" lang="tr">
   <div class="app">
     <header class="top">
@@ -692,7 +702,6 @@ button { touch-action: manipulation; }
       <div class="col colL">
         <div class="corner" id="dTL"></div>
         <aside class="plate" id="botL"></aside>
-        <div class="corner" id="dBL" data-drop="side"></div>
       </div>
       <div class="mat seri">
         <div class="lim" id="limS" hidden></div>
@@ -707,11 +716,11 @@ button { touch-action: manipulation; }
       <div class="col colR">
         <div class="corner" id="dTR"></div>
         <aside class="plate" id="botR"></aside>
-        <div class="corner" id="dBR" data-drop="discard"></div>
       </div>
     </section>
 
     <section class="me" aria-label="Senin ıstakan">
+      <div class="corner side" id="dBL" data-drop="side"></div>
       <div class="rackwrap">
         <div class="srow">
           <div class="clock" id="clock" hidden title="Tur süresi">0:60</div>
@@ -720,6 +729,7 @@ button { touch-action: manipulation; }
         </div>
         <div class="rackbox" id="rackbox"><div class="rack" id="rack"></div></div>
       </div>
+      <div class="corner side" id="dBR" data-drop="discard"></div>
     </section>
   </div>
 
@@ -3581,7 +3591,7 @@ function renderBots() {
     const el = $(slot[i]);
     el.className = 'plate' + (i === 2 ? ' top' : '') + (active ? ' active' : '') + (UI.hitBot === i ? ' hit' : '');
     el.innerHTML = '<span class="av a' + i + '">' + P.name[0] + '</span><b class="nm">' + P.name + (G.cfg.team ? (i === 2 ? ' · Eşin' : ' · Rakip') : '') + '</b>' +
-      '<div class="chips">' + chip + pen + '</div>' + giftBadge(i);
+      '<div class="chips">' + chip + pen + '</div>' + (i === 2 ? giftBadge(i) : '<div class="pg-shelf">' + giftBadge(i) + '</div>');
     el.dataset.act = 'gf-pl-' + i;
   }
 }
