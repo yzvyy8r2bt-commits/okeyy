@@ -443,6 +443,25 @@ button { font-family: inherit; }
 .lb-modes .off { background: rgba(255, 255, 255, .05); color: rgba(255, 255, 255, .4); border: 1px solid rgba(255, 255, 255, .1); text-decoration: line-through; }
 .lb-count { font-size: calc(var(--u) * 8); }
 
+/* ayarlar */
+.st .st-grid { display: grid; grid-template-columns: 1fr 1fr; gap: calc(var(--u) * 2.4); }
+.st section { background: rgba(0, 0, 0, .28); border: 1px solid rgba(255, 255, 255, .1); border-radius: calc(var(--u) * 2); padding: calc(var(--u) * 1.6) calc(var(--u) * 2); }
+.st h3 { margin: 0 0 calc(var(--u) * 1.2); font: 800 calc(var(--u) * 3)/1 var(--f-num); letter-spacing: .06em; text-transform: uppercase; color: var(--amber); text-align: center; }
+.st-tog { display: flex; align-items: center; gap: calc(var(--u) * 1.2); min-height: calc(var(--u) * 6); border-bottom: 1px solid rgba(255, 255, 255, .06); }
+.st-tog b { flex: 1; font-size: calc(var(--u) * 2.6); }
+.st-ic { width: calc(var(--u) * 4); text-align: center; font-size: calc(var(--u) * 2.8); }
+.st-val { font-weight: 700; color: var(--muted); }
+.st-sw { position: relative; width: calc(var(--u) * 9); height: calc(var(--u) * 4.6); border-radius: calc(var(--u) * 3); border: 0; background: rgba(255, 255, 255, .15); cursor: pointer; transition: background .2s; }
+.st-sw i { position: absolute; top: calc(var(--u) * .5); left: calc(var(--u) * .5); width: calc(var(--u) * 3.6); height: calc(var(--u) * 3.6); border-radius: 50%; background: #fff; transition: transform .2s; }
+.st-sw.on { background: var(--good); }
+.st-sw.on i { transform: translateX(calc(var(--u) * 4.4)); }
+.st-note { font-size: calc(var(--u) * 1.8); color: var(--muted); margin: calc(var(--u) * 1) 0; text-align: center; }
+.st-pick { margin-bottom: calc(var(--u) * 1.1); text-align: center; }
+.st-pick small { display: block; font-size: calc(var(--u) * 1.9); color: #b9a6ff; margin-bottom: calc(var(--u) * .4); }
+.st-pick > div { display: flex; align-items: center; gap: calc(var(--u) * 1); }
+.st-pick b { flex: 1; font: 800 calc(var(--u) * 2.8)/1 var(--f-num); background: rgba(0, 0, 0, .45); border-radius: calc(var(--u) * 1.2); padding: calc(var(--u) * 1) 0; letter-spacing: .04em; }
+.st-pick .btn.sm { min-width: calc(var(--u) * 6); font-size: calc(var(--u) * 3); }
+
 button { touch-action: manipulation; }
 </style>
 </head>
@@ -2088,7 +2107,7 @@ function topBar() {
     '<div class="lb-brand"><em>Kahve Usulü</em><b>101</b><span>OKEY</span></div>' +
     '<div class="lb-right"><div class="lb-chips"><i class="coin"></i>' + chipFmt(w.chips) + '</div>' +
     '<button class="btn sm' + (giftReady() ? ' pri glow' : '') + '" data-act="lb-gift">' + (giftReady() ? 'Günlük Hediye' : 'Hediye Alındı') + '</button>' +
-    '<button class="btn sm" data-act="rules">Kurallar</button></div></div>';
+    '<button class="btn sm" data-act="lb-settings">Ayarlar</button></div></div>';
 }
 function showLobby() {
   UI.table = null; closeModal();
@@ -2197,11 +2216,11 @@ function quickPlay() {
   for (let i = SALONS.length - 1; i >= 0; i--) if (canEnter(SALONS[i]) && SALONS[i].min * 5 <= wallet().chips) { si = i; break; }
   if (si < 0) for (let i = SALONS.length - 1; i >= 0; i--) if (canEnter(SALONS[i])) { si = i; break; }
   if (si < 0) { warn('Çipin hiçbir salona yetmiyor. Günlük hediyeni al.'); return; }
-  const lim = Math.max(SALONS[si].min, wallet().chips / 5);
-  const ok = tablesOf(si).filter(t => canSit(t.bet) && t.bet <= lim && t.seats.some(x => !x));
+  const lim = Math.max(SALONS[si].min, wallet().chips / 5), q = qp(), s = SALONS[si];
+  const hands = s.hands.filter(h => h <= q.hands).pop() || s.hands[0];   // salonun izin verdiği en yakın el sayısı
+  const ok = tablesOf(si).filter(t => canSit(t.bet) && t.bet <= lim && t.seats.some(x => !x) && t.hands === hands && t.team === q.team && t.hard === q.hard && t.mode === q.mode);
   if (ok.length) return sitAt(rnd(ok));
-  const s = SALONS[si];
-  sitAt({ id: 'q' + Date.now(), salon: si, bet: s.min, hands: s.hands[Math.min(1, s.hands.length - 1)], team: false, mode: 'katlamali', hard: false, pen: Object.assign({}, UI.settings.pen), seats: [null, null, null, null] });
+  sitAt({ id: 'q' + Date.now(), salon: si, bet: s.min, hands, team: q.team, mode: q.mode, hard: q.hard, pen: Object.assign({}, UI.settings.pen), seats: [null, null, null, null] });
 }
 
 /* ---------- Çip hesabı ---------- */
@@ -2227,11 +2246,62 @@ function showTableMenu() {
   openModal('<h2>Masa</h2><p class="sub">Bahis ' + chipFmt(T.bet) + ' çip · ' + (T.cfg.team ? 'Eşli' : 'Tek') + ' · ' + T.cfg.hands + ' El · ' + (T.cfg.mode === 'katlamali' ? 'Katlamalı' : 'Klasik') + (T.cfg.hard ? ' · Yardımsız' : '') + '</p>' +
     '<div class="lb-modes">' + modeList(T.cfg.pen).map(m => '<span class="' + (m[1] ? 'on' : 'off') + '">' + (m[1] ? '✓ ' : '✕ ') + m[0] + '</span>').join('') + '</div>' +
     '<p class="sub">Oyun bitmeden masadan kalkarsan ortaya koyduğun ' + chipFmt(T.bet) + ' çip geri gelmez.</p>' +
-    '<div class="mrow"><button class="btn pri" data-act="close">Oyuna Dön</button><button class="btn" data-act="rules">Kurallar</button><button class="btn bad" data-act="lb-leave">Masadan Kalk</button></div>');
+    '<div class="mrow"><button class="btn pri" data-act="close">Oyuna Dön</button><button class="btn" data-act="lb-settings">Ayarlar</button><button class="btn" data-act="rules">Kurallar</button><button class="btn bad" data-act="lb-leave">Masadan Kalk</button></div>');
 }
+
+/* ---------- Ayarlar ---------- */
+const QP_HANDS = [1, 2, 4, 8, 12];
+function qp() { const s = UI.settings; if (!s.qp) s.qp = { hands: 1, team: false, hard: false, mode: 'katlamali' }; return s.qp; }
+function showSettings() {
+  const s = UI.settings, q = qp();
+  const tog = (key, label, ic) => '<div class="st-tog"><span class="st-ic">' + ic + '</span><b>' + label + '</b><button class="st-sw' + (s[key] !== false ? ' on' : '') + '" data-act="lb-st-' + key + '"><i></i></button></div>';
+  const pick = (key, title, val) => '<div class="st-pick"><small>' + title + '</small><div><button class="btn sm" data-act="lb-qp-' + key + '-prev">‹</button><b>' + val + '</b><button class="btn sm" data-act="lb-qp-' + key + '-next">›</button></div></div>';
+  openModal('<div class="st"><h2>Ayarlar</h2><div class="st-grid">' +
+    '<section><h3>Genel Ayarlar</h3>' +
+      tog('music', 'Müzik', '♫') + tog('sound', 'Ses efektleri', '🔊') + tog('vibrate', 'Titreşim', '📳') +
+      '<div class="st-tog"><span class="st-ic">🌐</span><b>Dil</b><span class="st-val">Türkçe</span></div>' +
+      '<p class="st-note">Titreşim iPhone\'da tarayıcı tarafından desteklenmiyor, mağaza sürümünde çalışacak.</p>' +
+    '</section>' +
+    '<section><h3>Hemen Oyna Ayarları</h3><p class="st-note">Hemen Oyna dediğinde masa bu özelliklerle seçilir ya da açılır.</p>' +
+      pick('hands', 'El sayısı', q.hands + ' El') + pick('team', 'Tek / Eşli', q.team ? 'Eşli' : 'Tek') +
+      pick('hard', 'Yardımlı / Yardımsız', q.hard ? 'Yardımsız' : 'Yardımlı') + pick('mode', 'Katlamalı / Klasik', q.mode === 'katlamali' ? 'Katlamalı' : 'Klasik') +
+    '</section></div>' +
+    '<div class="mrow"><button class="btn pri" data-act="lb-st-close">Tamam</button><button class="btn" data-act="lb-rules">Kurallar</button><button class="btn" data-act="lb-howto">Nasıl Oynanır?</button></div></div>');
+}
+function showHowto() {
+  openModal('<h2>Nasıl Oynanır?</h2><div class="rules"><ul>' +
+    '<li><b>Amaç:</b> Taşlarını per (aynı renk sıralı ya da farklı renk aynı sayı) ve çift yapıp elini açmak, sonra elindeki taşları bitirmek. Puanı en düşük olan kazanır.</li>' +
+    '<li><b>Sıran gelince:</b> Desteden ya da solundaki oyuncunun attığı taşı ıstakana sürükle, sonra bir taşı sağ alttaki Attığın alanına sürükle.</li>' +
+    '<li><b>El açmak:</b> Perlerini ıstakada yan yana diz, Seri Aç de (101 puan ve üstü) ya da 5 çift dizip Çift Aç de. Katlamalıda masadaki limiti geçmelisin.</li>' +
+    '<li><b>İşlemek:</b> Elini açtıktan sonra taşı masadaki perin ucuna sürükle.</li>' +
+    '<li><b>Okey:</b> Göstergenin bir üstü okeydir, her taşın yerine geçer. Okeye basılı tutunca ters döner.</li>' +
+    '<li><b>Dikkat:</b> Masadaki bir pere işlenebilecek taşı atarsan (işlek) 101 ceza yersin.</li>' +
+    '<li>Ayrıntılar için Kurallar sayfasına bak.</li></ul></div>' +
+    '<div class="mrow"><button class="btn pri" data-act="lb-settings">Geri</button></div>');
+}
+function cyc(arr, v, d) { const i = arr.indexOf(v); return arr[(i + d + arr.length) % arr.length]; }
 
 /* ---------- Eylemler ---------- */
 function lobbyAct(a) {
+  if (a === 'lb-settings') { showSettings(); return; }
+  if (a === 'lb-st-close') { closeModal(); return; }
+  if (a === 'lb-howto') { showHowto(); return; }
+  if (a === 'lb-rules') { showRules(false); return; }
+  if (a.indexOf('lb-st-') === 0) {
+    const k = a.slice(6); UI.settings[k] = UI.settings[k] === false; saveSettings();
+    if (k === 'music') syncMusic();
+    if (k === 'sound') initAudio();
+    if (k === 'vibrate' && UI.settings.vibrate) buzz(60);
+    showSettings(); if (G) render(); return;
+  }
+  if (a.indexOf('lb-qp-') === 0) {
+    const [k, dir] = a.slice(6).split('-'), q = qp(), d = dir === 'next' ? 1 : -1;
+    if (k === 'hands') q.hands = cyc(QP_HANDS, q.hands, d);
+    else if (k === 'team') q.team = !q.team;
+    else if (k === 'hard') q.hard = !q.hard;
+    else if (k === 'mode') q.mode = q.mode === 'katlamali' ? 'klasik' : 'katlamali';
+    saveSettings(); showSettings(); return;
+  }
   if (a === 'lb-gift') {
     if (!giftReady()) { warn('Bugünün hediyesini aldın. Yarın yine gel.'); return; }
     wallet().gift = today(); addChips(DAILY_GIFT); toast('Günlük hediye: +' + chipFmt(DAILY_GIFT) + ' çip', 'good'); showLobby(); return;
@@ -2267,13 +2337,84 @@ function lobbyAct(a) {
   if (a === 'lb-again') { const T = UI.table; if (!canEnter(SALONS[T.t.salon])) { warn(enterMsg(SALONS[T.t.salon])); showLobby(); return; } if (!canSit(T.bet)) { warn('Aynı masa için yeterli çipin kalmadı.'); showLobby(); return; } sitAt(T.t); return; }
 }
 
+/* ---------- Arka plan müziği: cihazda üretilen sakin, klasik bir döngü (dosya indirmeden) ---------- */
+const MUS = { on: false, timer: null, next: 0, step: 0, bus: null };
+// Re majör: I – V – vi – iii – IV – I – IV – V (klasik kanon yürüyüşü), her akor 2 ölçü arpej
+const CHORDS = [
+  [50, 62, 66, 69], [45, 57, 61, 64], [47, 59, 62, 66], [42, 54, 57, 61],
+  [43, 55, 59, 62], [38, 50, 54, 57], [43, 55, 59, 62], [45, 57, 61, 64]
+];
+// her akorda üstte söylenen tatlı ezgi (MIDI, 0 = sus)
+const MELODY = [
+  [78, 0, 76, 0, 74, 0, 73, 0], [71, 0, 69, 0, 71, 0, 73, 0], [74, 0, 73, 0, 71, 0, 69, 0], [67, 0, 66, 0, 67, 0, 69, 0],
+  [71, 0, 74, 0, 79, 0, 78, 76], [74, 0, 0, 0, 78, 0, 81, 0], [79, 0, 78, 0, 76, 0, 74, 0], [73, 0, 76, 0, 0, 0, 0, 0]
+];
+const BEAT = 60 / 66 / 2;   // sekizlik nota süresi (66 vuruş/dk)
+function midiHz(m) { return 440 * Math.pow(2, (m - 69) / 12); }
+function musicBus() {
+  if (MUS.bus || !AC) return MUS.bus;
+  const out = AC.createGain(); out.gain.value = .0001;
+  const dry = AC.createGain(); dry.gain.value = .8;
+  const dl = AC.createDelay(1); dl.delayTime.value = BEAT * 3;
+  const fb = AC.createGain(); fb.gain.value = .28;
+  const wet = AC.createGain(); wet.gain.value = .35;
+  const lp = AC.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2600;
+  out.connect(lp); lp.connect(dry); dry.connect(AC.destination);
+  lp.connect(dl); dl.connect(fb); fb.connect(dl); dl.connect(wet); wet.connect(AC.destination);
+  MUS.bus = out; return out;
+}
+function pluck(m, t, dur, vol, type) {
+  const o = AC.createOscillator(), o2 = AC.createOscillator(), g = AC.createGain();
+  o.type = type || 'triangle'; o2.type = 'sine';
+  o.frequency.value = midiHz(m); o2.frequency.value = midiHz(m) * 2.001;
+  const g2 = AC.createGain(); g2.gain.value = .18;
+  g.gain.setValueAtTime(.0001, t);
+  g.gain.exponentialRampToValueAtTime(vol, t + .015);
+  g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+  o.connect(g); o2.connect(g2); g2.connect(g); g.connect(musicBus());
+  o.start(t); o2.start(t); o.stop(t + dur + .05); o2.stop(t + dur + .05);
+}
+function schedule() {
+  if (!AC || !MUS.on) return;
+  while (MUS.next < AC.currentTime + .6) {
+    const s = MUS.step, ci = Math.floor(s / 16) % CHORDS.length, k = s % 16, ch = CHORDS[ci], t = MUS.next;
+    if (k === 0 || k === 8) pluck(ch[0] - 12, t, BEAT * 7, .16, 'sine');             // bas
+    pluck(ch[1 + (k % 3)] + (k >= 8 ? 12 : 0), t, BEAT * 3, .05);                    // arpej
+    if (k % 2 === 0) { const m = MELODY[ci][k / 2]; if (m) pluck(m, t, BEAT * 5, .07); } // ezgi
+    MUS.step++; MUS.next += BEAT;
+  }
+}
+function startMusic() {
+  initAudio();
+  if (!AC || MUS.on) return;
+  MUS.on = true; musicBus();
+  MUS.next = AC.currentTime + .1;
+  const g = MUS.bus.gain; g.cancelScheduledValues(AC.currentTime); g.setValueAtTime(Math.max(.0001, g.value), AC.currentTime); g.exponentialRampToValueAtTime(.55, AC.currentTime + 1.5);
+  MUS.timer = setInterval(schedule, 150); schedule();
+}
+function stopMusic() {
+  if (!MUS.on) return;
+  MUS.on = false; clearInterval(MUS.timer);
+  if (AC && MUS.bus) { const g = MUS.bus.gain; g.cancelScheduledValues(AC.currentTime); g.setValueAtTime(Math.max(.0001, g.value), AC.currentTime); g.exponentialRampToValueAtTime(.0001, AC.currentTime + .6); }
+}
+function syncMusic() { if (UI.settings.music !== false) startMusic(); else stopMusic(); }
+// uygulama arka plana geçince sustur, dönünce devam et
+document.addEventListener('visibilitychange', () => {
+  if (!AC) return;
+  if (document.hidden) { try { AC.suspend(); } catch (e) { /* yok say */ } }
+  else { try { AC.resume(); } catch (e) { /* yok say */ } }
+});
+// iPhone sesi ancak bir dokunuştan sonra açar: ilk dokunuşta müziği başlat
+window.addEventListener('pointerdown', function first() { syncMusic(); window.removeEventListener('pointerdown', first, true); }, true);
+function buzz(ms) { if (UI.settings.vibrate !== false && navigator.vibrate) { try { navigator.vibrate(ms); } catch (e) { /* yok say */ } } }
+
 /* =====================================================================
    ARAYÜZ
    ===================================================================== */
 const $ = id => document.getElementById(id);
 const UI = {
   selected: new Set(), prefer: 'seri', drawerOpen: false,
-  settings: { pen: { gosterge: true, rekor: true, okeyCal: true, yanAc: true, herTas: true }, mode: 'katlamali', hands: 4, team: false, speed: 'normal', sound: true, hint: false, hard: false },
+  settings: { music: true, vibrate: true, qp: { hands: 1, team: false, hard: false, mode: 'katlamali' }, pen: { gosterge: true, rekor: true, okeyCal: true, yanAc: true, herTas: true }, mode: 'katlamali', hands: 4, team: false, speed: 'normal', sound: true, hint: false, hard: false },
   statusMsg: null, statusUntil: 0, lastTap: null, acceptIds: new Set(), swapKeys: new Set(), tickerLines: [], hitBot: -1
 };
 let drag = null;
@@ -2913,7 +3054,7 @@ H.discarded = i => { if (i === 0 && !UI.autoBusy) UI.tOut = 0; };   // kendi oyn
 H.log = line => { UI.tickerLines.push(line); if (G) { try { renderTicker(); } catch (e) { /* yok say */ } } };
 H.toast = toast;
 H.banner = banner;
-H.sfx = n => { if (SFX[n]) SFX[n](); };
+H.sfx = n => { if (SFX[n]) SFX[n](); if (n === 'penalty') buzz(150); else if (n === 'win' || n === 'okey') buzz([60, 60, 60]); };
 H.wait = ms => new Promise(res => setTimeout(res, ms));
 H.handStart = () => { UI.selected.clear(); UI.prefer = 'seri'; UI.statusMsg = null; };
 H.handEnd = (rec, last) => {
