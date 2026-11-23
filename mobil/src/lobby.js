@@ -116,7 +116,7 @@ export function tableCfg(t, myName) {
   return { mode: t.mode, hands: t.hands, team: t.team, speed: 'normal', hard: t.hard, pen: { ...t.pen }, names: [myName || 'Sen', names[0], names[1], names[2]] };
 }
 export function modeList(pen) {
-  const p = pen || {}, on = k => p[k] !== false;
+  const p = pen || {}, on = k => p[k] !== false || (k === 'yanAc' && p.herTas !== false);
   return [['Rekorlu', on('rekor')], ['Okey çalma cezası', on('okeyCal')], ['Her taş cezalı', on('herTas')], ['Yandan açma cezalı', on('yanAc')], ['Gösterge', on('gosterge')]];
 }
 export function tableTags(t) {

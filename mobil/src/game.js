@@ -86,7 +86,10 @@ const PEN_DEFS = [
   ['herTas', 'Her taş ceza', 'Elini açtıktan sonra yandan alıp per veya çift indirdiğin taşın sahibine taş×10 (çiftte ×20) ceza']
 ];
 const PEN_KEYS = { gosterge: 1, rekor: 1, okeyCal: 1, yanAc: 1, herTas: 1 };
-function penOn(k) { return !PEN_KEYS[k] || !G.cfg.pen || G.cfg.pen[k] !== false; }
+function penOn(k) {
+  if (k === 'yanAc' && penOn('herTas')) return true;   // Her taş cezalı açıksa yandan açma cezası da yazılır
+  return !PEN_KEYS[k] || !G.cfg.pen || G.cfg.pen[k] !== false;
+}
 // Gösterge: ortadaki göstergenin eşi. Elin başında (ilk taş çekilmeden) söylenirse çiftte joker olur.
 function isGostTwin(t) { return !!(G.gosterge && t && !t.fake && !t.wild && t.c === G.gosterge.c && t.n === G.gosterge.n); }
 function canAnnounce(P) { return penOn('gosterge') && !P.acted && !P.gostSaid && handOf(P).some(isGostTwin); }
