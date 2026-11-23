@@ -1,13 +1,13 @@
 // Kahve Usulü 101 Okey — App Store / Play Store sürümü (Expo)
 // Masa düzeni web sürümüyle birebir: tüm ölçüler u = ekran yüksekliği / 100
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, Pressable, StyleSheet, ScrollView, useWindowDimensions, Modal } from 'react-native';
+import { View, Text, Pressable, StyleSheet, ScrollView, useWindowDimensions, Modal, Animated } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import * as ScreenOrientation from 'expo-screen-orientation';
 import * as Haptics from 'expo-haptics';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { GestureHandlerRootView, Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
-import Rack, { rackGeom } from './src/Rack';
+import Rack, { rackGeom, slotAt } from './src/Rack';
 import TileFace, { TileBack, EmptyTile, NUM_FONT } from './src/Tile';
 const E = require('./src/engine');
 const GM = require('./src/game');
@@ -77,13 +77,30 @@ function TopPlate({ u, g }) {
     </View>
   );
 }
+// Deste / yan taş: dokununca çeker, sürükleyince taş parmağı izler ve ıstakada bırakılan yere girer
+function DrawSource({ drag, children }) {
+  const d = useRef(drag); d.current = drag;
+  const gesture = useMemo(() => {
+    const pan = Gesture.Pan().runOnJS(true).minDistance(6).maxPointers(1).shouldCancelWhenOutside(false)
+      .onStart(e => d.current && d.current.start(e.absoluteX, e.absoluteY))
+      .onUpdate(e => d.current && d.current.move(e.absoluteX, e.absoluteY))
+      .onEnd(e => d.current && d.current.end(e.absoluteX, e.absoluteY))
+      .onFinalize(() => d.current && d.current.cancel());
+    const tap = Gesture.Tap().runOnJS(true).onEnd((e, ok) => ok && d.current && d.current.tap());
+    return Gesture.Race(pan, tap);
+  }, []);
+  if (!drag) return children;
+  return <GestureDetector gesture={gesture}>{children}</GestureDetector>;
+}
 // köşe kutusu: atılan taş (9u × 11u)
-function Corner({ u, tile, hot, onPress, cref, style }) {
+function Corner({ u, tile, hot, cref, style, drag }) {
   const w = 9 * u, h = 11 * u;
   return (
-    <Pressable ref={cref} collapsable={false} onPress={onPress} style={[{ alignItems: 'center', borderRadius: 1.4 * u, padding: 0.3 * u }, hot && { backgroundColor: 'rgba(255,187,51,0.22)' }, style]}>
-      {tile ? <TileFace tile={tile} w={w} h={h} fs={6.4 * u} glow={false} /> : <EmptyTile w={w} h={h} r={0.9 * u} />}
-    </Pressable>
+    <DrawSource drag={drag}>
+      <View ref={cref} collapsable={false} style={[{ alignItems: 'center', borderRadius: 1.4 * u, padding: 0.3 * u }, hot && { backgroundColor: 'rgba(255,187,51,0.22)' }, style]}>
+        {tile ? <TileFace tile={tile} w={w} h={h} fs={6.4 * u} glow={false} /> : <EmptyTile w={w} h={h} r={0.9 * u} />}
+      </View>
+    </DrawSource>
   );
 }
 // masadaki yeşil çuha (.mat) ve ızgarası
@@ -117,12 +134,14 @@ function MeldView({ u, m, ms, setRef }) {
     </View>
   );
 }
-function CenterBox({ u, label, children, onPress }) {
+function CenterBox({ u, label, children, drag }) {
   return (
-    <Pressable onPress={onPress} style={[styles.box, { borderRadius: 1.5 * u, paddingVertical: 0.8 * u }]}>
-      {children}
-      <Text allowFontScaling={false} style={[styles.boxLbl, { fontSize: 1.6 * u, marginTop: 0.7 * u }]}>{label}</Text>
-    </Pressable>
+    <DrawSource drag={drag}>
+      <View style={[styles.box, { borderRadius: 1.5 * u, paddingVertical: 0.8 * u }]}>
+        {children}
+        <Text allowFontScaling={false} style={[styles.boxLbl, { fontSize: 1.6 * u, marginTop: 0.7 * u }]}>{label}</Text>
+      </View>
+    </DrawSource>
   );
 }
 
@@ -138,6 +157,8 @@ function Game() {
   const [scoreOpen, setScoreOpen] = useState(false);
   const [sound, setSound] = useState(true);
   const rackRef = useRef(null), atRef = useRef(null), yanRef = useRef(null);
+  const [ghost, setGhost] = useState(null);                 // sürüklenen deste/yan taşı
+  const ghostPos = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
   const meldRefs = useRef({});
   const stT = useRef(null);
 
@@ -181,6 +202,71 @@ function Game() {
   const geom = useMemo(() => rackGeom(rackW, u), [rackW, u]);
   const setMeldRef = useCallback((id, ref) => { if (ref) meldRefs.current[id] = ref; else delete meldRefs.current[id]; }, []);
 
+  const onDrop = useCallback((from, to, after) => { GM.hInsert(from, to, after); bumpRack(); }, [bumpRack]);
+  const inRect = (r, x, y) => r && x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h;
+  const measure = (ref) => new Promise(res => {
+    if (!ref || !ref.current) return res(null);
+    ref.current.measureInWindow((x, y, w, h) => res({ x, y, w, h }));
+  });
+  // ıstakadan bırakılan taş: Attığın köşesi → at, Yan köşesi → geri bırak, per → işle
+  const onDropOut = useCallback(async (tile, lx, ly) => {
+    const g = G(), P = g.players[0];
+    const rr = await measure(rackRef);
+    if (!rr) return;
+    const x = rr.x + lx, y = rr.y + ly;
+    const grow = r => r && { x: r.x - 2 * u, y: r.y - 2 * u, w: r.w + 4 * u, h: r.h + 4 * u };
+    const [at, yan] = await Promise.all([measure(atRef), measure(yanRef)]);
+    if (inRect(grow(at), x, y)) { feedback(GM.hDiscard(tile.id)); return; }
+    if (inRect(grow(yan), x, y)) { if (P.sideTile && P.sideTile.id === tile.id) feedback(GM.hReturnSide()); return; }
+    const ids = Object.keys(meldRefs.current);
+    const rects = await Promise.all(ids.map(id => measure(meldRefs.current[id])));
+    for (let k = 0; k < ids.length; k++) {
+      if (inRect(grow(rects[k]), x, y)) {
+        const m = g.table.find(mm => String(mm.id) === ids[k]);
+        if (!m) return;
+        if (P.opened && P.openKind === 'cift' && m.kind === 'pair') feedback(GM.hProcessPairs([tile.id]));
+        else feedback(GM.hProcess([tile.id], m.id));
+        return;
+      }
+    }
+  }, [u, feedback]);
+
+  // deste / yan taşını ıstakaya sürükleyerek çekme
+  const ghostRef = useRef(null);
+  const drawDrag = useCallback((src) => ({
+    tap: () => { const g = G(); if (g && g.turn === 0 && g.phase === 'draw') feedback(GM.hDraw(src)); },
+    start: (x, y) => {
+      const g = G(); if (!g || g.turn !== 0 || g.phase !== 'draw') return;
+      if (src === 'side' && (g.players[0].sideReturned || !g.players[3].discards.length)) return;
+      const t = src === 'side' ? g.players[3].discards[g.players[3].discards.length - 1] : null;
+      ghostPos.setValue({ x: x - geom.cellW / 2, y: y - geom.tileH * 0.8 });
+      ghostRef.current = { src, tile: t };
+      setGhost(ghostRef.current);
+      Haptics.selectionAsync().catch(() => {});
+    },
+    move: (x, y) => { if (ghostRef.current) ghostPos.setValue({ x: x - geom.cellW / 2, y: y - geom.tileH * 0.8 }); },
+    end: async (x, y) => {
+      const gh = ghostRef.current;
+      ghostRef.current = null;
+      if (!gh) return;
+      const rr = await measure(rackRef);
+      setGhost(null);
+      if (!rr) return;
+      const bw = 0.35 * u;
+      const hit = slotAt(geom, x - rr.x - bw, y - geom.tileH * 0.3 - rr.y - bw);
+      if (!hit) return;            // ıstakaya bırakılmadı: taş yerinde kalır
+      const r = GM.hDraw(gh.src);
+      if (r && r.ok && r.tile) {
+        const S = G().players[0].slots, from = S.indexOf(r.tile);
+        if (from >= 0 && from !== hit.to) GM.hInsert(from, hit.to, hit.after);
+      }
+      feedback(r);
+    },
+    cancel: () => { if (ghostRef.current) { ghostRef.current = null; setGhost(null); } },
+  }), [geom, u, feedback]);
+  const deckDrag = useMemo(() => drawDrag('deck'), [drawDrag]);
+  const sideDrag = useMemo(() => drawDrag('side'), [drawDrag]);
+
   const g = G();
   if (!g) return <View style={styles.root} />;
   const P = g.players[0];
@@ -202,33 +288,6 @@ function Game() {
   const penMine = P.penLog.reduce((a, e) => a + (e.amt > 0 ? e.amt : 0), 0);
   const modeLbl = (kat ? 'Katlamalı' : 'Klasik') + (g.cfg.team ? ' · Eşli' : '') + ' · El ' + Math.min(g.hands.length + (g.phase === 'over' ? 0 : 1), g.cfg.hands) + '/' + g.cfg.hands;
 
-  const onDrop = (from, to, after) => { GM.hInsert(from, to, after); bumpRack(); };
-  const inRect = (r, x, y) => r && x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h;
-  const measure = (ref) => new Promise(res => {
-    if (!ref || !ref.current) return res(null);
-    ref.current.measureInWindow((x, y, w, h) => res({ x, y, w, h }));
-  });
-  // ıstakadan bırakılan taş: Attığın köşesi → at, Yan köşesi → geri bırak, per → işle
-  const onDropOut = async (tile, lx, ly) => {
-    const rr = await measure(rackRef);
-    if (!rr) return;
-    const x = rr.x + lx, y = rr.y + ly;
-    const grow = r => r && { x: r.x - 2 * u, y: r.y - 2 * u, w: r.w + 4 * u, h: r.h + 4 * u };
-    const [at, yan] = await Promise.all([measure(atRef), measure(yanRef)]);
-    if (inRect(grow(at), x, y)) { feedback(GM.hDiscard(tile.id)); return; }
-    if (inRect(grow(yan), x, y)) { if (P.sideTile && P.sideTile.id === tile.id) feedback(GM.hReturnSide()); return; }
-    const ids = Object.keys(meldRefs.current);
-    const rects = await Promise.all(ids.map(id => measure(meldRefs.current[id])));
-    for (let k = 0; k < ids.length; k++) {
-      if (inRect(grow(rects[k]), x, y)) {
-        const m = g.table.find(mm => String(mm.id) === ids[k]);
-        if (!m) return;
-        if (P.opened && P.openKind === 'cift' && m.kind === 'pair') feedback(GM.hProcessPairs([tile.id]));
-        else feedback(GM.hProcess([tile.id], m.id));
-        return;
-      }
-    }
-  };
 
   const nextHand = () => {
     const last = handEnd && handEnd.last;
@@ -281,7 +340,7 @@ function Game() {
             </View>
           ))}
           </View>
-          <CenterBox u={u} label="DESTE" onPress={() => canDraw && feedback(GM.hDraw('deck'))}>
+          <CenterBox u={u} label="DESTE" drag={deckDrag}>
             <TileBack w={9 * u} h={11 * u} fs={6.4 * u} count={g.deck.length} hot={canDraw} />
           </CenterBox>
           <CenterBox u={u} label="GÖSTERGE">
@@ -302,7 +361,7 @@ function Game() {
       {/* ---- benim bölümüm ---- */}
       <View style={[styles.me, { marginTop: 0.8 * u }]}>
         <View style={{ width: 17.5 * u, alignItems: 'center', marginTop: -7.5 * u }}>
-          <Corner u={u} cref={yanRef} tile={lastOf(3)} hot={canSide && !!lastOf(3)} onPress={() => canSide && feedback(GM.hDraw('side'))} />
+          <Corner u={u} cref={yanRef} tile={lastOf(3)} hot={canSide && !!lastOf(3)} drag={sideDrag} />
         </View>
         <View style={{ width: rackW, gap: 0.5 * u, zIndex: 10 }}>
           <View style={[styles.srow, { gap: 1.2 * u }]}>
@@ -332,6 +391,13 @@ function Game() {
           <Corner u={u} cref={atRef} tile={lastOf(0)} hot={disc} />
         </View>
       </View>
+
+      {ghost ? (
+        <Animated.View pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0, zIndex: 999, transform: [...ghostPos.getTranslateTransform(), { scale: 1.1 }], shadowColor: '#000', shadowOpacity: 0.55, shadowRadius: 10, shadowOffset: { width: 0, height: 4 } }}>
+          {ghost.tile ? <TileFace tile={ghost.tile} w={geom.cellW} h={geom.tileH} fs={geom.fs} />
+            : <TileBack w={geom.cellW} h={geom.tileH} fs={geom.fs} count="" />}
+        </Animated.View>
+      ) : null}
 
       {/* el sonu */}
       <Modal visible={!!handEnd} transparent animationType="fade" supportedOrientations={['landscape']}>

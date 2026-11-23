@@ -26,65 +26,75 @@ function slotXY(g, slot) {
   return { x: g.ox + g.rpx + c * (g.cellW + g.gap), y: g.oy + r * (g.rowH + g.rowGap) + g.rpy };
 }
 
-function DraggableTile({ tile, slot, geom, ver, mark, fresh, gb, onDrop, onDropOut }) {
+// Bırakılan noktaya göre hedef yuva (ıstaka içi koordinat); dışarıdaysa null
+export function slotAt(g, cx, cy) {
+  if (cy < 0 || cx < 0 || cx > g.width || cy > g.height) return null;
+  const raw = (cx - g.ox - g.rpx) / (g.cellW + g.gap);
+  let col = Math.floor(raw), after = raw - col > 0.5;
+  if (col < 0) { col = 0; after = false; }
+  if (col > COLS - 1) { col = COLS - 1; after = true; }
+  const row = cy < g.oy + g.rowH + g.rowGap / 2 ? 0 : 1;
+  return { to: row * COLS + col, after };
+}
+
+const ND = true;   // animasyonlar telefonun kendi çizim katmanında (JavaScript'i beklemez)
+
+function DraggableTileBase({ tile, slot, geom, ver, mark, fresh, gb, onDrop, onDropOut }) {
   const p0 = slotXY(geom, slot);
   const pos = useRef(new Animated.ValueXY(p0)).current;
   const lift = useRef(new Animated.Value(0)).current;
-  const cur = useRef({ ...p0 });
+  const cur = useRef({ ...p0 });      // taşın mantıksal konumu (parmağın götürdüğü yer)
   const st = useRef({ x: 0, y: 0 });
   const [up, setUp] = useState(false);
   const dragging = useRef(false);
+  const slotRef = useRef(slot); slotRef.current = slot;
+  const cb = useRef({ onDrop, onDropOut }); cb.current = { onDrop, onDropOut };
 
-  useEffect(() => {
-    const id = pos.addListener(v => { cur.current = v; });
-    return () => pos.removeListener(id);
-  }, []);
+  const goHome = (spring) => {
+    const p = slotXY(geom, slotRef.current);
+    cur.current = p;
+    (spring
+      ? Animated.spring(pos, { toValue: p, friction: 7, tension: 160, useNativeDriver: ND })
+      : Animated.timing(pos, { toValue: p, duration: 140, useNativeDriver: ND })).start();
+  };
 
   // yuva değişince (dizme, araya sokma, kayma) yumuşakça yerine git
-  useEffect(() => {
-    if (dragging.current) return;
-    Animated.timing(pos, { toValue: slotXY(geom, slot), duration: 150, useNativeDriver: false }).start();
-  }, [slot, geom, ver]);
+  useEffect(() => { if (!dragging.current) goHome(false); }, [slot, geom, ver]);
 
   const pan = useMemo(() => Gesture.Pan()
     .runOnJS(true)
     .minDistance(0)
     .maxPointers(1)
+    .shouldCancelWhenOutside(false)
     .onBegin(() => {
       dragging.current = true;
       pos.stopAnimation();
       st.current = { ...cur.current };
       setUp(true);
-      Animated.timing(lift, { toValue: 1, duration: 70, useNativeDriver: false }).start();
+      Animated.timing(lift, { toValue: 1, duration: 60, useNativeDriver: ND }).start();
       Haptics.selectionAsync().catch(() => {});
     })
     .onUpdate((e) => {
-      pos.setValue({ x: st.current.x + e.translationX, y: st.current.y + e.translationY });
+      const x = st.current.x + e.translationX, y = st.current.y + e.translationY;
+      cur.current = { x, y };
+      pos.setValue(cur.current);
     })
     .onEnd(() => {
       const { x, y } = cur.current;
       const cx = x + geom.cellW / 2, cy = y + geom.tileH / 2;
-      if (onDropOut && (cy < 0 || cx < 0 || cx > geom.width)) {   // ıstakanın dışına bırakıldı: at / yan / işle
-        Animated.spring(pos, { toValue: slotXY(geom, slot), friction: 7, tension: 140, useNativeDriver: false }).start();
-        onDropOut(tile, cx, cy);
+      const hit = slotAt(geom, cx, cy);
+      if (!hit) {   // ıstakanın dışına bırakıldı: at / yan / işle
+        goHome(true);
+        cb.current.onDropOut && cb.current.onDropOut(tile, cx, cy);
         return;
       }
-      const step = geom.cellW + geom.gap;
-      const raw = (x + geom.cellW / 2 - geom.ox - geom.rpx) / step;
-      let col = Math.floor(raw);
-      let after = raw - col > 0.5;
-      if (col < 0) { col = 0; after = false; }
-      if (col > COLS - 1) { col = COLS - 1; after = true; }
-      const row = y + geom.tileH / 2 < geom.oy + geom.rowH + geom.rowGap / 2 ? 0 : 1;
-      const to = row * COLS + col;
-      if (to === slot) {
-        Animated.spring(pos, { toValue: slotXY(geom, slot), friction: 7, tension: 140, useNativeDriver: false }).start();
-      } else onDrop(slot, to, after);
+      if (hit.to === slotRef.current) goHome(true);
+      else cb.current.onDrop(slotRef.current, hit.to, hit.after);
     })
     .onFinalize(() => {
       dragging.current = false;
-      Animated.timing(lift, { toValue: 0, duration: 120, useNativeDriver: false }).start(() => setUp(false));
-    }), [slot, geom, onDrop, onDropOut, tile]);
+      Animated.timing(lift, { toValue: 0, duration: 110, useNativeDriver: ND }).start(() => setUp(false));
+    }), [geom, tile]);
 
   const style = {
     transform: [
@@ -106,6 +116,10 @@ function DraggableTile({ tile, slot, geom, ver, mark, fresh, gb, onDrop, onDropO
     </GestureDetector>
   );
 }
+// sadece kendi bilgisi değişen taş yeniden çizilir (botlar oynarken ıstaka boşuna çizilmez)
+const DraggableTile = React.memo(DraggableTileBase, (a, b) =>
+  a.tile === b.tile && a.slot === b.slot && a.geom === b.geom && a.ver === b.ver &&
+  a.mark === b.mark && a.fresh === b.fresh && a.gb === b.gb);
 
 export default function Rack({ slots, geom, ver, marks, freshId, gbId, myTurn, onDrop, onDropOut }) {
   const g = geom;
