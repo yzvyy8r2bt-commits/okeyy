@@ -20,7 +20,7 @@ function FakeIcon({ s }) {
 }
 
 // w,h: taş boyutu; fs: rakam yazı boyutu
-export default function TileFace({ tile, w, h, fs, mark, glow, gb }) {
+export default function TileFace({ tile, w, h, fs, mark, glow, gb, blank }) {
   fs = fs || w * 0.7;
   const lip = Math.max(1.5, h * 0.045);
   const r = Math.max(3, w * 0.12);
@@ -28,8 +28,8 @@ export default function TileFace({ tile, w, h, fs, mark, glow, gb }) {
   return (
     <View style={{ width: w, height: h }}>
       <View style={[styles.lip, { borderRadius: r, top: lip }]} />
-      <View style={[styles.face, { borderRadius: r, bottom: lip }, glow && styles.glow]}>
-        {tile.fake ? <FakeIcon s={fs * 0.9} /> : (
+      <View style={[styles.face, { borderRadius: r, bottom: lip }, glow && styles.glow, blank && { backgroundColor: '#f6f6f9', borderColor: '#c9c9d2' }]}>
+        {blank ? null : tile.fake ? <FakeIcon s={fs * 0.9} /> : (
           <>
             {/* yazı tipinin doğal satır yüksekliği korunur; üst/alt boşluk eksi kenar boşluğuyla
                 kırpılır, böylece kutu sadece rakamın kendisi kadar olur ve tam ortalanır */}

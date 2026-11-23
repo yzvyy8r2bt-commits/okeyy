@@ -39,7 +39,7 @@ export function slotAt(g, cx, cy) {
 
 const ND = true;   // animasyonlar telefonun kendi çizim katmanında (JavaScript'i beklemez)
 
-function DraggableTileBase({ tile, slot, geom, ver, mark, fresh, gb, onDrop, onDropOut }) {
+function DraggableTileBase({ tile, slot, geom, ver, mark, fresh, gb, onDrop, onDropOut, onGost }) {
   const p0 = slotXY(geom, slot);
   const pos = useRef(new Animated.ValueXY(p0)).current;
   const lift = useRef(new Animated.Value(0)).current;
@@ -48,7 +48,19 @@ function DraggableTileBase({ tile, slot, geom, ver, mark, fresh, gb, onDrop, onD
   const [up, setUp] = useState(false);
   const dragging = useRef(false);
   const slotRef = useRef(slot); slotRef.current = slot;
-  const cb = useRef({ onDrop, onDropOut }); cb.current = { onDrop, onDropOut };
+  const cb = useRef({ onDrop, onDropOut, onGost }); cb.current = { onDrop, onDropOut, onGost };
+  const gbRef = useRef(gb); gbRef.current = gb;
+  // okey: basılı tutunca ters döner (beyaz yüz); 0,6 sn tutulursa ters kalır (web ile aynı)
+  const [back, setBack] = useState(!!tile.mark);
+  const flipV = useRef(new Animated.Value(1)).current;
+  const press = useRef({ moved: false, peeked: false, t1: null, t2: null });
+  const flipTo = (on) => {
+    Animated.timing(flipV, { toValue: 0, duration: 120, useNativeDriver: ND }).start(() => {
+      setBack(on);
+      Animated.timing(flipV, { toValue: 1, duration: 140, useNativeDriver: ND }).start();
+    });
+  };
+  const clearPress = () => { clearTimeout(press.current.t1); clearTimeout(press.current.t2); };
 
   const goHome = (spring) => {
     const p = slotXY(geom, slotRef.current);
@@ -68,6 +80,13 @@ function DraggableTileBase({ tile, slot, geom, ver, mark, fresh, gb, onDrop, onD
     .shouldCancelWhenOutside(false)
     .onBegin(() => {
       dragging.current = true;
+      const pr = press.current; pr.moved = false; pr.peeked = false; clearPress();
+      if (gbRef.current) {          // göstergeye basılı tutunca "Gösterge bende"
+        pr.t1 = setTimeout(() => { if (!pr.moved) { pr.peeked = true; cb.current.onGost && cb.current.onGost(tile); } }, 350);
+      } else if (tile.wild) {
+        pr.t1 = setTimeout(() => { if (!pr.moved) { pr.peeked = true; if (!tile.mark) flipTo(true); } }, 320);
+        pr.t2 = setTimeout(() => { if (!pr.moved) { tile.mark = !tile.mark; pr.marked = true; } }, 600);
+      }
       pos.stopAnimation();
       st.current = { ...cur.current };
       setUp(true);
@@ -75,6 +94,12 @@ function DraggableTileBase({ tile, slot, geom, ver, mark, fresh, gb, onDrop, onD
       tick();
     })
     .onUpdate((e) => {
+      const pr = press.current;
+      if (!pr.moved && Math.hypot(e.translationX, e.translationY) > 4) {
+        pr.moved = true; clearPress();
+        if (pr.peeked && tile.wild && !tile.mark) flipTo(false);
+        pr.peeked = false;
+      }
       const x = st.current.x + e.translationX, y = st.current.y + e.translationY;
       cur.current = { x, y };
       pos.setValue(cur.current);
@@ -93,6 +118,9 @@ function DraggableTileBase({ tile, slot, geom, ver, mark, fresh, gb, onDrop, onD
     })
     .onFinalize(() => {
       dragging.current = false;
+      const pr = press.current; clearPress();
+      if (pr.peeked && tile.wild) { if (!tile.mark) flipTo(false); }
+      pr.peeked = false; pr.marked = false;
       Animated.timing(lift, { toValue: 0, duration: 110, useNativeDriver: ND }).start(() => setUp(false));
     }), [geom, tile]);
 
@@ -111,7 +139,9 @@ function DraggableTileBase({ tile, slot, geom, ver, mark, fresh, gb, onDrop, onD
   return (
     <GestureDetector gesture={pan}>
       <Animated.View style={[styles.tileWrap, style]}>
-        <TileFace tile={tile} w={geom.cellW} h={geom.tileH} fs={geom.fs} mark={mark} glow={fresh} gb={gb} />
+        <Animated.View style={{ transform: [{ scaleX: flipV }] }}>
+          <TileFace tile={tile} w={geom.cellW} h={geom.tileH} fs={geom.fs} mark={back ? null : mark} glow={fresh} gb={gb && !back} blank={back} />
+        </Animated.View>
       </Animated.View>
     </GestureDetector>
   );
@@ -121,7 +151,7 @@ const DraggableTile = React.memo(DraggableTileBase, (a, b) =>
   a.tile === b.tile && a.slot === b.slot && a.geom === b.geom && a.ver === b.ver &&
   a.mark === b.mark && a.fresh === b.fresh && a.gb === b.gb);
 
-export default function Rack({ slots, geom, ver, marks, freshId, gbId, myTurn, onDrop, onDropOut }) {
+export default function Rack({ slots, geom, ver, marks, freshId, gbId, myTurn, onDrop, onDropOut, onGost }) {
   const g = geom;
   const rows = [0, 1].map(r => (
     <View key={'r' + r} style={[styles.row, { left: g.ox, right: g.ox, top: g.oy + r * (g.rowH + g.rowGap), height: g.rowH, borderRadius: g.u }]} />
@@ -137,7 +167,7 @@ export default function Rack({ slots, geom, ver, marks, freshId, gbId, myTurn, o
     tiles.push(
       <DraggableTile key={t.id} tile={t} slot={i} geom={g} ver={ver}
         mark={marks.meld.has(t.id) ? 'meld' : marks.pair.has(t.id) ? 'pair' : null}
-        fresh={t.id === freshId} gb={t.id === gbId} onDrop={onDrop} onDropOut={onDropOut} />,
+        fresh={t.id === freshId} gb={t.id === gbId} onDrop={onDrop} onDropOut={onDropOut} onGost={onGost} />,
     );
   });
   return (

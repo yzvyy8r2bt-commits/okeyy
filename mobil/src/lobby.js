@@ -132,16 +132,25 @@ export function payInfo(t) {
   return '🏆 Birinci ortadaki çiplerin kalanını kazanır. Kazancından %' + fee + ' masa ücreti kesilir, eline ' + chipFmt(win - cut) + ' çip geçer.\n🥈 İkinci yatırdığı ' + chipFmt(t.bet) + ' çipi geri alır.';
 }
 
-// Hemen Oyna: tüm çipi tek masaya yatırmamak için bahsi çipin 1/5'ini geçmeyen en yüksek salon
+// Hemen Oyna: tüm çipi tek masaya yatırmamak için bahsi çipin 1/5'ini geçmeyen en yüksek salon;
+// Ayarlar'daki "Hemen Oyna ayarlarına" uyan masa seçilir, yoksa o özelliklerle yeni masa açılır (web ile aynı)
+const QP_PEN_KEYS = ['rekor', 'okeyCal', 'herTas', 'yanAc', 'gosterge'];
 export function quickPick(st) {
+  const q = { hands: 'any', team: 'any', hard: 'any', mode: 'any', pen: {}, ...(st.qp || {}) };
+  const any = v => v === 'any' || v === undefined;
+  const penOk = pen => QP_PEN_KEYS.every(k => any(q.pen[k]) || ((pen || {})[k] !== false) === q.pen[k]);
   let si = -1;
   for (let i = SALONS.length - 1; i >= 0; i--) if (canEnter(SALONS[i]) && SALONS[i].min * 5 <= wallet().chips) { si = i; break; }
   if (si < 0) for (let i = SALONS.length - 1; i >= 0; i--) if (canEnter(SALONS[i])) { si = i; break; }
   if (si < 0) return null;
   const s = SALONS[si], lim = Math.max(s.min, wallet().chips / 5);
-  const ok = tablesOf(si).filter(t => canSit(t.bet) && t.bet <= lim && t.seats.some(x => !x));
+  const hands = any(q.hands) ? null : (s.hands.filter(h => h <= q.hands).pop() || s.hands[0]);
+  const ok = tablesOf(si).filter(t => canSit(t.bet) && t.bet <= lim && t.seats.some(x => !x) &&
+    (hands === null || t.hands === hands) && (any(q.team) || t.team === q.team) && (any(q.hard) || t.hard === q.hard) && (any(q.mode) || t.mode === q.mode) && penOk(t.pen));
   if (ok.length) return rnd(ok);
-  return { id: 'q' + Date.now(), salon: si, bet: s.min, hands: s.hands.includes(st.hands) ? st.hands : rnd(s.hands), team: !!st.team, mode: st.mode || 'katlamali', hard: !!st.hard, pen: { ...(st.pen || {}) }, seats: [null, null, null, null] };
+  const pen = { ...(st.pen || {}) };
+  QP_PEN_KEYS.forEach(k => { if (q.pen[k] === true || q.pen[k] === false) pen[k] = q.pen[k]; });
+  return { id: 'q' + Date.now(), salon: si, bet: s.min, hands: hands === null ? rnd(s.hands) : hands, team: any(q.team) ? false : q.team, mode: any(q.mode) ? 'katlamali' : q.mode, hard: any(q.hard) ? false : q.hard, pen, seats: [null, null, null, null] };
 }
 
 // Ödül: 1. ortadakinden (2.'nin iadesi düşüldükten sonra) kalanı alır, 2. bahsini geri alır, kazanandan %7 masa ücreti

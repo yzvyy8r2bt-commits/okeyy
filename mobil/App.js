@@ -33,7 +33,7 @@ const PEN_DEFS = [
   ['yanAc', 'Yandan taş alıp açma', 'Yandan alınan taşla açılırsa taşı atana taş×10 (çiftte ×20) ceza'],
   ['herTas', 'Her taş ceza', 'Elini açtıktan sonra yandan alıp per veya çift indirdiğin taşın sahibine taş×10 (çiftte ×20) ceza'],
 ];
-const DEF_SET = { sound: true, vibrate: true, hands: 4, team: false, mode: 'katlamali', hard: false, pen: {} };
+const DEF_SET = { sound: true, vibrate: true, music: false, hands: 4, team: false, mode: 'katlamali', hard: false, pen: {}, qp: { hands: 'any', team: 'any', hard: 'any', mode: 'any', pen: {} } };
 const SET_KEY = 'okey101.settings';
 const gameCfg = st => ({ hands: st.hands, team: st.team, mode: st.mode, hard: st.hard, pen: { ...st.pen }, speed: 'normal' });
 
@@ -234,52 +234,101 @@ function CenterBox({ u, label, children, drag }) {
 
 
 // ---------- ayarlar ve kurallar pencereleri (lobi ve masa ortak) ----------
-function SettingsModal({ u, visible, set, saveSet, onClose, onRules }) {
+const QP_HANDS = ['any', 1, 2, 4, 8, 12];
+const ANY = 'Fark etmez';
+const QP_PEN = [['rekor', 'Rekorlu'], ['okeyCal', 'Okey çalma cezası'], ['herTas', 'Her taş cezalı'], ['yanAc', 'Yandan açma cezalı'], ['gosterge', 'Gösterge']];
+const qpOf = st => ({ hands: 'any', team: 'any', hard: 'any', mode: 'any', pen: {}, ...(st.qp || {}) });
+// açma/kapama düğmesi (web'deki st-sw)
+function Switch({ u, on, onPress }) {
   return (
-      <Modal visible={visible} transparent animationType="fade" supportedOrientations={['landscape']}>
-        <View style={styles.modalBg}>
-          <View style={[styles.modal, { width: '86%', maxHeight: '92%', borderRadius: 2.4 * u, padding: 2.4 * u }]}>
-            <Text allowFontScaling={false} style={[styles.modalT, { fontSize: 4.2 * u }]}>Ayarlar</Text>
-            <ScrollView>
-              <View style={{ flexDirection: 'row', gap: 2.4 * u }}>
-                <View style={{ flex: 1 }}>
-                  <Text allowFontScaling={false} style={[styles.stH, { fontSize: 2.6 * u, marginBottom: u }]}>Genel Ayarlar</Text>
-                  <Toggle u={u} label="Ses efektleri" on={set.sound} onPress={() => saveSet({ ...set, sound: !set.sound })} />
-                  <Toggle u={u} label="Titreşim" on={set.vibrate} onPress={() => saveSet({ ...set, vibrate: !set.vibrate })} />
-                  <Text allowFontScaling={false} style={[styles.stH, { fontSize: 2.6 * u, marginVertical: u }]}>Oyun</Text>
-                  <Pick u={u} title="El sayısı" val={set.hands + ' El'} onPrev={() => saveSet({ ...set, hands: cyc([1, 2, 4, 8], set.hands, -1) })} onNext={() => saveSet({ ...set, hands: cyc([1, 2, 4, 8], set.hands, 1) })} />
-                  <Pick u={u} title="Tek / Eşli" val={set.team ? 'Eşli' : 'Tek'} onPrev={() => saveSet({ ...set, team: !set.team })} onNext={() => saveSet({ ...set, team: !set.team })} />
-                  <Pick u={u} title="Katlamalı / Klasik" val={set.mode === 'katlamali' ? 'Katlamalı' : 'Klasik'} onPrev={() => saveSet({ ...set, mode: set.mode === 'katlamali' ? 'klasik' : 'katlamali' })} onNext={() => saveSet({ ...set, mode: set.mode === 'katlamali' ? 'klasik' : 'katlamali' })} />
-                  <Pick u={u} title="Yardımlı / Yardımsız" val={set.hard ? 'Yardımsız' : 'Yardımlı'} onPrev={() => saveSet({ ...set, hard: !set.hard })} onNext={() => saveSet({ ...set, hard: !set.hard })} />
-                </View>
-                <View style={{ flex: 1.3 }}>
-                  <Text allowFontScaling={false} style={[styles.stH, { fontSize: 2.6 * u, marginBottom: u }]}>Cezalar</Text>
-                  {PEN_DEFS.map(([k, label, desc]) => (
-                    <Toggle key={k} u={u} label={label} desc={desc} on={set.pen[k] !== false} onPress={() => saveSet({ ...set, pen: { ...set.pen, [k]: set.pen[k] === false } })} />
-                  ))}
-                  <Text allowFontScaling={false} style={{ color: C.muted, fontSize: 1.9 * u, marginTop: u }}>Oyun ve ceza ayarları Hemen Oyna ve Masa Aç için kullanılır.</Text>
-                </View>
-              </View>
-            </ScrollView>
-            <View style={{ flexDirection: 'row', justifyContent: 'center', gap: u, marginTop: 1.6 * u }}>
-              <Btn u={u} pri label="Tamam" onPress={onClose} />
-              <Btn u={u} label="Kurallar" onPress={onRules} />
-            </View>
-          </View>
-        </View>
-      </Modal>
+    <Pressable onPress={onPress} hitSlop={8} style={{ width: 9 * u, height: 4.6 * u, borderRadius: 3 * u, backgroundColor: on ? '#4fe0a3' : 'rgba(255,255,255,0.18)', padding: 0.5 * u, alignItems: on ? 'flex-end' : 'flex-start' }}>
+      <View style={{ width: 3.6 * u, height: 3.6 * u, borderRadius: 2 * u, backgroundColor: '#fff' }} />
+    </Pressable>
   );
 }
-function RulesModal({ u, visible, onClose }) {
+function StRow({ u, ic, label, children }) {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 1.1 * u, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.08)', gap: 1.2 * u }}>
+      <Text allowFontScaling={false} style={{ fontSize: 3 * u, width: 4 * u, textAlign: 'center' }}>{ic}</Text>
+      <Text allowFontScaling={false} style={{ flex: 1, color: C.ink, fontWeight: '800', fontSize: 2.7 * u }}>{label}</Text>
+      {children}
+    </View>
+  );
+}
+function StPick({ u, title, val, onPrev, onNext }) {
+  return (
+    <View style={{ marginBottom: 0.8 * u }}>
+      <Text allowFontScaling={false} style={{ color: C.muted, fontSize: 2 * u, textAlign: 'center', marginBottom: 0.4 * u }}>{title}</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 0.8 * u }}>
+        <Btn u={u} sm label="‹" onPress={onPrev} />
+        <View style={{ flex: 1, height: 5.2 * u, borderRadius: u, backgroundColor: 'rgba(0,0,0,0.45)', alignItems: 'center', justifyContent: 'center' }}>
+          <Text allowFontScaling={false} style={{ color: C.ink, fontFamily: NUM_FONT, fontWeight: '800', fontSize: 3 * u }}>{val}</Text>
+        </View>
+        <Btn u={u} sm label="›" onPress={onNext} />
+      </View>
+    </View>
+  );
+}
+// ---------- ayarlar ve kurallar pencereleri (lobi ve masa ortak) — web'deki düzen ----------
+function SettingsModal({ u, visible, set, saveSet, onClose, onRules, onHowto }) {
+  const q = qpOf(set);
+  const putQ = (k, v) => saveSet({ ...set, qp: { ...q, [k]: v } });
+  const tri = [undefined, true, false];   // fark etmez → olsun → olmasın
+  return (
+    <Modal visible={visible} transparent animationType="fade" supportedOrientations={['landscape']}>
+      <View style={styles.modalBg}>
+        <View style={[styles.modal, { width: '84%', maxHeight: '94%', borderRadius: 2.4 * u, padding: 2.4 * u }]}>
+          <Text allowFontScaling={false} style={{ color: C.amber, fontFamily: NUM_FONT, fontWeight: '800', fontSize: 6 * u, letterSpacing: 0.3 * u, marginBottom: u }}>AYARLAR</Text>
+          <ScrollView>
+            <View style={{ flexDirection: 'row', gap: 2 * u }}>
+              <View style={[styles.stBox, { borderRadius: 1.6 * u, padding: 1.6 * u }]}>
+                <Text allowFontScaling={false} style={[styles.stBoxH, { fontSize: 3 * u }]}>GENEL AYARLAR</Text>
+                <StRow u={u} ic="♫" label="Müzik"><Switch u={u} on={!!set.music} onPress={() => saveSet({ ...set, music: !set.music })} /></StRow>
+                <StRow u={u} ic="🔊" label="Ses efektleri"><Switch u={u} on={set.sound !== false} onPress={() => saveSet({ ...set, sound: !(set.sound !== false) })} /></StRow>
+                <StRow u={u} ic="📳" label="Titreşim"><Switch u={u} on={set.vibrate !== false} onPress={() => saveSet({ ...set, vibrate: !(set.vibrate !== false) })} /></StRow>
+                <StRow u={u} ic="🌐" label="Dil"><Text allowFontScaling={false} style={{ color: C.muted, fontWeight: '800', fontSize: 2.7 * u }}>Türkçe</Text></StRow>
+              </View>
+              <View style={[styles.stBox, { borderRadius: 1.6 * u, padding: 1.6 * u }]}>
+                <Text allowFontScaling={false} style={[styles.stBoxH, { fontSize: 3 * u }]}>HEMEN OYNA AYARLARI</Text>
+                <Text allowFontScaling={false} style={{ color: C.muted, fontSize: 1.9 * u, textAlign: 'center', marginBottom: u }}>Hemen Oyna dediğinde masa bu özelliklerle seçilir ya da açılır.</Text>
+                <StPick u={u} title="El sayısı" val={q.hands === 'any' ? ANY : q.hands + ' El'} onPrev={() => putQ('hands', cyc(QP_HANDS, q.hands, -1))} onNext={() => putQ('hands', cyc(QP_HANDS, q.hands, 1))} />
+                <StPick u={u} title="Tek / Eşli" val={q.team === 'any' ? ANY : q.team ? 'Eşli' : 'Tek'} onPrev={() => putQ('team', cyc(['any', false, true], q.team, -1))} onNext={() => putQ('team', cyc(['any', false, true], q.team, 1))} />
+                <StPick u={u} title="Yardımlı / Yardımsız" val={q.hard === 'any' ? ANY : q.hard ? 'Yardımsız' : 'Yardımlı'} onPrev={() => putQ('hard', cyc(['any', false, true], q.hard, -1))} onNext={() => putQ('hard', cyc(['any', false, true], q.hard, 1))} />
+                <StPick u={u} title="Katlamalı / Klasik" val={q.mode === 'any' ? ANY : q.mode === 'katlamali' ? 'Katlamalı' : 'Klasik'} onPrev={() => putQ('mode', cyc(['any', 'katlamali', 'klasik'], q.mode, -1))} onNext={() => putQ('mode', cyc(['any', 'katlamali', 'klasik'], q.mode, 1))} />
+                <Text allowFontScaling={false} style={{ color: C.muted, fontSize: 2 * u, textAlign: 'center', marginTop: 0.4 * u }}>Oyun modları <Text style={{ fontSize: 1.6 * u }}>(dokun: fark etmez → olsun → olmasın)</Text></Text>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 0.6 * u, marginTop: 0.6 * u }}>
+                  {QP_PEN.map(([k, n]) => {
+                    const v = q.pen[k] === 'any' ? undefined : q.pen[k];
+                    const st = v === undefined ? styles.qpAny : v ? styles.qpOn : styles.qpOff;
+                    return (
+                      <Pressable key={k} onPress={() => putQ('pen', { ...q.pen, [k]: cyc(tri, v, 1) })} style={[styles.qp, st, { width: '48%', borderRadius: u, paddingVertical: 0.8 * u }]}>
+                        <Text allowFontScaling={false} style={{ fontWeight: '800', fontSize: 1.8 * u, textAlign: 'center', color: v === undefined ? '#cfc4ee' : v ? '#7ef0b5' : '#ff9a9a', textDecorationLine: v === false ? 'line-through' : 'none' }}>{v === undefined ? '' : v ? '✓ ' : '✕ '}{n}</Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </View>
+            </View>
+          </ScrollView>
+          <View style={{ flexDirection: 'row', gap: 1.2 * u, marginTop: 1.6 * u }}>
+            <Btn u={u} pri label="Tamam" onPress={onClose} style={{ flex: 1 }} />
+            <Btn u={u} label="Kurallar" onPress={onRules} style={{ flex: 1 }} />
+            <Btn u={u} label="Nasıl Oynanır?" onPress={onHowto} style={{ flex: 1.3 }} />
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+function RulesModal({ u, visible, onClose, howto }) {
   return (
       <Modal visible={visible} transparent animationType="fade" supportedOrientations={['landscape']}>
         <View style={styles.modalBg}>
           <View style={[styles.modal, { width: '86%', maxHeight: '92%', borderRadius: 2.4 * u, padding: 2.4 * u }]}>
-            <Text allowFontScaling={false} style={[styles.modalT, { fontSize: 4.2 * u }]}>Kurallar</Text>
+            <Text allowFontScaling={false} style={[styles.modalT, { fontSize: 4.2 * u }]}>{howto ? 'Nasıl Oynanır?' : 'Kurallar'}</Text>
             <ScrollView>
-              <Text allowFontScaling={false} style={[styles.stH, { fontSize: 2.6 * u, marginTop: u }]}>Nasıl Oynanır?</Text>
-              {HOWTO.map((t, k) => <Text key={'h' + k} allowFontScaling={false} style={[styles.ruleLi, { fontSize: 2.2 * u, marginTop: 0.6 * u }]}>• {t}</Text>)}
-              {RULES.map((sec, k) => (
+              {howto ? HOWTO.map((t, k) => <Text key={'h' + k} allowFontScaling={false} style={[styles.ruleLi, { fontSize: 2.4 * u, marginTop: 0.9 * u }]}>• {t}</Text>)
+                : RULES.map((sec, k) => (
                 <View key={k}>
                   <Text allowFontScaling={false} style={[styles.stH, { fontSize: 2.6 * u, marginTop: 1.6 * u }]}>{sec.t}</Text>
                   {sec.i.map((t, j) => <Text key={j} allowFontScaling={false} style={[styles.ruleLi, { fontSize: 2.2 * u, marginTop: 0.6 * u }]}>• {t}</Text>)}
@@ -287,7 +336,7 @@ function RulesModal({ u, visible, onClose }) {
               ))}
             </ScrollView>
             <View style={{ alignItems: 'center', marginTop: 1.6 * u }}>
-              <Btn u={u} pri label="Kapat" onPress={onClose} />
+              <Btn u={u} pri label={howto ? 'Geri' : 'Kapat'} onPress={onClose} />
             </View>
           </View>
         </View>
@@ -371,6 +420,7 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
   const geom = useMemo(() => rackGeom(rackW, u), [rackW, u]);
   const setMeldRef = useCallback((id, ref) => { if (ref) meldRefs.current[id] = ref; else delete meldRefs.current[id]; }, []);
 
+  const onGost = useCallback(() => { feedback(GM.announceGost(0)); }, [feedback]);
   const onDrop = useCallback((from, to, after) => { GM.hInsert(from, to, after); sfx('place'); bumpRack(); }, [bumpRack]);
   const inRect = (r, x, y) => r && x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h;
   const measure = (ref) => new Promise(res => {
@@ -527,7 +577,7 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
         <TopPlate u={u} g={g} cur={giftOf(2)} onGift={() => setGiftFor(2)} />
         <View style={[styles.topActions, { gap: 0.8 * u }]}>
           <Btn u={u} sm label="Yazboz" onPress={() => setScoreOpen(true)} />
-          <Btn u={u} sm label="Kurallar" onPress={() => setRulesOpen(true)} />
+          <Btn u={u} sm label="Kurallar" onPress={() => setRulesOpen('rules')} />
           <Btn u={u} sm label="Ayarlar" onPress={() => (table ? setMenuOpen(true) : setSetOpen(true))} />
           <Btn u={u} sm label={set.sound ? 'Ses: Açık' : 'Ses: Kapalı'} onPress={() => saveSet({ ...set, sound: !set.sound })} />
         </View>
@@ -589,7 +639,6 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
               </Pressable>
             ) : null}
             <ClockPill u={u} who="me" style={{ alignSelf: 'center' }} />
-            {gbId ? <Btn u={u} label="Gösterge Bende" pri onPress={() => feedback(GM.announceGost(0))} /> : null}
             <View style={{ flex: 1, alignItems: statusMsg ? 'flex-start' : 'flex-end' }}>
               {statusMsg ? <Text allowFontScaling={false} numberOfLines={2} style={{ color: '#ffc0b9', fontWeight: '700', fontSize: 2.3 * u }}>{statusMsg}</Text>
                 : <Text allowFontScaling={false} style={{ color: C.amber, fontFamily: NUM_FONT, fontWeight: '700', fontSize: 2.6 * u, letterSpacing: 0.1 * u }}>Toplam {fmt(g.totals[0])}{penMine ? ' · Bu el ceza +' + penMine : ''}</Text>}
@@ -603,7 +652,7 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
           </View>
           <View ref={rackRef} collapsable={false}>
             <Rack slots={P.slots} geom={geom} ver={rackVer} marks={marks} freshId={g.freshId} gbId={gbId}
-              myTurn={g.turn === 0 && g.phase !== 'over'} onDrop={onDrop} onDropOut={onDropOut} />
+              myTurn={g.turn === 0 && g.phase !== 'over'} onDrop={onDrop} onDropOut={onDropOut} onGost={onGost} />
           </View>
         </View>
         <View style={{ width: 17.5 * u, alignItems: 'center', marginTop: -7.5 * u }}>
@@ -737,8 +786,8 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
         </View>
       </Modal>
 
-      <SettingsModal u={u} visible={setOpen} set={set} saveSet={saveSet} onClose={() => setSetOpen(false)} onRules={() => { setSetOpen(false); setRulesOpen(true); }} />
-      <RulesModal u={u} visible={rulesOpen} onClose={() => setRulesOpen(false)} />
+      <SettingsModal u={u} visible={setOpen} set={set} saveSet={saveSet} onClose={() => setSetOpen(false)} onRules={() => { setSetOpen(false); setRulesOpen('rules'); }} onHowto={() => { setSetOpen(false); setRulesOpen('howto'); }} />
+      <RulesModal u={u} visible={!!rulesOpen} howto={rulesOpen === 'howto'} onClose={() => { const h = rulesOpen === 'howto'; setRulesOpen(false); if (h) setSetOpen(true); }} />
       <Modal visible={menuOpen} transparent animationType="fade" supportedOrientations={['landscape']}>
         <View style={styles.modalBg}>
           {table ? (
@@ -754,7 +803,7 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
               <View style={{ flexDirection: 'row', justifyContent: 'center', gap: u, marginTop: 2 * u }}>
                 <Btn u={u} pri label="Oyuna Dön" onPress={() => setMenuOpen(false)} />
                 <Btn u={u} label="Ayarlar" onPress={() => { setMenuOpen(false); setSetOpen(true); }} />
-                <Btn u={u} label="Kurallar" onPress={() => { setMenuOpen(false); setRulesOpen(true); }} />
+                <Btn u={u} label="Kurallar" onPress={() => { setMenuOpen(false); setRulesOpen('rules'); }} />
                 <Btn u={u} label="Masadan Kalk" style={{ backgroundColor: 'rgba(255,107,94,0.25)', borderColor: 'rgba(255,107,94,0.6)' }} onPress={() => { setMenuOpen(false); L.recordGame(false, 0); leave({ m: 'Masadan kalktın: ' + L.chipFmt(table.bet) + ' çip gitti', bad: true }); }} />
               </View>
             </View>
@@ -831,8 +880,8 @@ function Root() {
     <>
       <StatusBar hidden />
       <LobbyScreen u={u} ins={ins} set={set} saveSet={saveSet} onStart={start} flash={flash} openSettings={() => setSetOpen(true)} />
-      <SettingsModal u={u} visible={setOpen} set={set} saveSet={saveSet} onClose={() => setSetOpen(false)} onRules={() => { setSetOpen(false); setRulesOpen(true); }} />
-      <RulesModal u={u} visible={rulesOpen} onClose={() => setRulesOpen(false)} />
+      <SettingsModal u={u} visible={setOpen} set={set} saveSet={saveSet} onClose={() => setSetOpen(false)} onRules={() => { setSetOpen(false); setRulesOpen('rules'); }} onHowto={() => { setSetOpen(false); setRulesOpen('howto'); }} />
+      <RulesModal u={u} visible={!!rulesOpen} howto={rulesOpen === 'howto'} onClose={() => { const h = rulesOpen === 'howto'; setRulesOpen(false); if (h) setSetOpen(true); }} />
     </>
   );
 }
@@ -891,6 +940,12 @@ const styles = StyleSheet.create({
   resRow: { flexDirection: 'row', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.08)' },
   resName: { color: '#fff', fontWeight: '800' },
   stH: { color: C.amber, fontWeight: '800' },
+  stBox: { flex: 1, borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', backgroundColor: 'rgba(0,0,0,0.25)' },
+  stBoxH: { color: C.amber, fontFamily: NUM_FONT, fontWeight: '800', textAlign: 'center', letterSpacing: 1, marginBottom: 6 },
+  qp: { borderWidth: 1 },
+  qpAny: { borderColor: 'rgba(255,255,255,0.18)', backgroundColor: 'rgba(0,0,0,0.35)' },
+  qpOn: { borderColor: 'rgba(126,240,181,0.55)', backgroundColor: 'rgba(40,140,90,0.25)' },
+  qpOff: { borderColor: 'rgba(255,120,120,0.45)', backgroundColor: 'rgba(140,40,40,0.22)' },
   ruleLi: { color: C.ink, lineHeight: undefined },
   mchip: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', backgroundColor: 'rgba(0,0,0,0.35)' },
   mchipOn: { borderColor: 'rgba(255,187,51,0.7)', backgroundColor: 'rgba(255,187,51,0.12)' },
