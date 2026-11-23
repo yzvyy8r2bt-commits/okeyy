@@ -28,9 +28,12 @@ export default function TileFace({ tile, w, h, fs, mark, glow, gb }) {
       <View style={[styles.face, { borderRadius: r, bottom: lip }, glow && styles.glow]}>
         {tile.fake ? <FakeIcon s={fs * 0.9} /> : (
           <>
-            <Text allowFontScaling={false} style={[styles.num, { fontSize: fs, lineHeight: fs * 1.02, color }]}>{tile.n}</Text>
+            {/* rakamın görünen yüksekliği kadar kutu: yazı tipinin üst/alt boşluğu ortalamayı bozmasın */}
+            <View style={{ height: fs * 0.74, alignItems: 'center', overflow: 'visible' }}>
+              <Text allowFontScaling={false} style={[styles.num, { fontSize: fs, lineHeight: fs * 1.02, marginTop: fs * 0.02, color }]}>{tile.n}</Text>
+            </View>
             <View style={{
-              width: fs * 0.3, height: fs * 0.3, borderRadius: fs, marginTop: fs * 0.1,
+              width: fs * 0.3, height: fs * 0.3, borderRadius: fs, marginTop: fs * 0.14,
               backgroundColor: color, borderWidth: Math.max(1, fs * 0.06), borderColor: 'rgba(255,255,255,0.55)',
             }} />
           </>
