@@ -696,10 +696,18 @@ button { font-family: inherit; }
 .mygift svg { width: calc(var(--u) * 6.4); height: calc(var(--u) * 6.4); display: block; filter: drop-shadow(0 2px 4px rgba(0,0,0,.5)); }
 .mygift.new { animation: pgin .6s ease-out; }
 
+/* benim kutum */
+.meplate { flex: none; display: flex; align-items: center; gap: calc(var(--u) * .9); height: calc(var(--u) * 6); padding: 0 calc(var(--u) * 1.4) 0 calc(var(--u) * .6); margin-bottom: calc(var(--u) * -.4); background: var(--panel); border: 1px solid var(--line); border-radius: calc(var(--u) * 3); color: inherit; font: inherit; cursor: pointer; max-width: calc(var(--u) * 34); }
+.meplate.active { border-color: var(--amber); box-shadow: 0 0 calc(var(--u) * 1.6) rgba(255, 187, 51, .4); }
+.meplate .av { width: calc(var(--u) * 4.8); height: calc(var(--u) * 4.8); font-size: calc(var(--u) * 2.8); border-width: calc(var(--u) * .35); }
+.meplate .nm { font-size: calc(var(--u) * 2.4); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.meplate .chip { flex: none; }
+.av.a0 { background: conic-gradient(from 30deg, #ffb43a, #e0742a, #ffb43a); }
+
 button { touch-action: manipulation; }
 </style>
 </head>
-<body data-ver="mwtmokfv">
+<body data-ver="mwtms5xg">
 <div id="stage" lang="tr">
   <div class="app">
     <header class="top">
@@ -738,6 +746,7 @@ button { touch-action: manipulation; }
       <div class="corner side" id="dBL" data-drop="side"></div>
       <div class="rackwrap">
         <div class="srow">
+          <button class="meplate" id="mePlate" type="button" data-act="lb-profile" title="Profilim"></button>
           <div class="mygift" id="myGift" hidden title="Sana gelen hediye"></div>
           <div class="clock" id="clock" hidden title="Tur süresi">0:60</div>
           <div class="status" id="status" aria-live="polite"></div>
@@ -3623,7 +3632,7 @@ function render() {
   const P = G.players[0];
   for (const id of Array.from(UI.selected)) if (!P.slots || !P.slots.some(t => t && t.id === id)) UI.selected.delete(id);
   computeHighlights();
-  renderHeader(); renderBots(); renderMyGift(); renderCenter(); renderMelds(); renderTicker(); renderRack(); renderActions(); renderStatus();
+  renderHeader(); renderBots(); renderMe(); renderMyGift(); renderCenter(); renderMelds(); renderTicker(); renderRack(); renderActions(); renderStatus();
   if (UI.drawerOpen) renderScore();
 }
 function renderHeader() {
@@ -3632,6 +3641,15 @@ function renderHeader() {
   $('btnSound').textContent = UI.settings.sound ? 'Ses: Açık' : 'Ses: Kapalı';
 }
 function penPos(P) { return P.penLog.reduce((a, e) => a + (e.amt > 0 ? e.amt : 0), 0); }
+// kendi kutum: ıstakanın üstünde, dokununca profilim açılır
+function renderMe() {
+  const el = $('mePlate'); if (!el) return;
+  const P = G.players[0], nm = (typeof wallet === 'function' && wallet().name) || P.name;
+  let chip = '<span class="chip">Kapalı</span>';
+  if (P.opened) chip = P.openKind === 'seri' ? '<span class="chip ok">Açtı · ' + P.openVal + '</span>' : '<span class="chip gold">Çift · ' + P.openVal + '</span>';
+  el.className = 'meplate' + (G.turn === 0 && G.phase !== 'over' ? ' active' : '');
+  el.innerHTML = '<span class="av a0">' + nm[0].toUpperCase() + '</span><b class="nm">' + nm + '</b>' + chip;
+}
 function renderBots() {
   const slot = { 1: 'botR', 2: 'botTop', 3: 'botL' };
   for (let i = 1; i <= 3; i++) {
@@ -3650,7 +3668,7 @@ function renderBots() {
   }
 }
 function box(label, html) { return '<div class="box">' + html + '<div class="lbl">' + label + '</div></div>'; }
-function cornerBox(el, label, html) { $(el).innerHTML = html + '<div class="lbl">' + label + '</div>'; }
+function cornerBox(el, label, html) { $(el).innerHTML = html; $(el).title = label; }
 function renderCenter() {
   const prev = G.players[3], mine = G.players[0];
   const side = prev.discards[prev.discards.length - 1];
@@ -3809,7 +3827,7 @@ function renderStatus() {
   const over = UI.statusMsg && Date.now() < UI.statusUntil;
   el.className = 'status' + (over ? ' bad' : '');
   const pen = penPos(P) ? ' · Bu el ceza +' + penPos(P) : '';
-  el.innerHTML = '<span>' + (over ? UI.statusMsg : defaultStatus()) + '</span>' + (over ? '' : '<span class="who">Toplam ' + fmt(G.totals[0]) + pen + '</span>');
+  el.innerHTML = '<span>' + (over ? UI.statusMsg : '') + '</span>' + (over ? '' : '<span class="who">Toplam ' + fmt(G.totals[0]) + pen + '</span>');
 }
 
 /* ---------- Yazboz ---------- */
