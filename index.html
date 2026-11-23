@@ -1247,7 +1247,7 @@ function doDiscard(i, tile) {
 }
 function advanceTurn() {
   G.turn = (G.turn + 1) % 4; G.phase = 'draw'; G.turnNo++;
-  G.players.forEach(p => { p.openedThisTurn = false; p.sideTile = null; p.sideUsed = false; p.sideRef = null; p.sideReturned = false; p.openSnap = null; p.regathered = false; p.pairsThisTurn = 0; p.swapThisTurn = false; });
+  G.players.forEach(p => { p.openedThisTurn = false; p.sideTile = null; p.sideUsed = false; p.sideRef = null; p.sideReturned = false; p.openSnap = null; p.regathered = false; p.pairsThisTurn = 0; p.swapThisTurn = false; p.pend = null; });
   if (!G.deck.length) { endHandDraw(); return; }
   H.render();
 }
@@ -1351,7 +1351,55 @@ function hOpen(prefer, strict) {
   const P = G.players[0];
   const snap0 = takeSnap(P);
   if (P.opened) return fail('Elini zaten açtın.');
+  const want = prefer === 'cift' ? 'cift' : 'seri';
+  if (P.pend && P.pend.kind !== want) return fail('Önce başladığın ' + (P.pend.kind === 'cift' ? 'çift' : 'seri') + ' açılışını tamamla ya da Geri Topla.');
   const pl = openPlanInfo(prefer, strict);
+  // Parça parça açılış: limit tutmuyorsa indirilenler bekler; aynı turda indirilenler toplanır
+  const cur = want === 'cift' ? pl.an.pairs.length : pl.an.points;
+  if (P.pend || (!pl.kind && cur > 0 && !(want === 'seri' && pl.pOK && !strict))) {
+    if (!cur) return fail(want === 'cift' ? 'Istakada indirilecek çift yok.' : 'Istakada indirilecek per yok.');
+    const pend0 = P.pend ? Object.assign({}, P.pend, { tiles: P.pend.tiles.slice(), pairs: P.pend.pairs.slice() }) : null;
+    if (!P.pend) P.pend = { kind: want, val: 0, snap: snap0, tiles: [], pairs: [] };
+    const pd = P.pend;
+    if (want === 'seri') {
+      for (const a of pl.an.melds) {
+        for (const it of a.items) { removeFromHand(P, it.t); pd.tiles.push(it.t); }
+        G.table.push({ id: G.meldSeq++, owner: 0, kind: 'series', type: a.type, items: a.items.map(x => Object.assign({ by: 0 }, x)) });
+      }
+    } else {
+      for (const pr of pl.an.pairs) {
+        for (const t of pr) { removeFromHand(P, t); pd.tiles.push(t); }
+        pd.pairs.push(pr);
+        G.table.push({ id: G.meldSeq++, owner: 0, kind: 'pair', type: 'pair', items: pr.map(t => ({ t, c: t.c, n: t.n })) });
+      }
+    }
+    pd.val += cur; bumpClock();
+    if (handOf(P).length === 0) { restoreSnap(P, snap0); P.pend = pend0; H.render(); return fail(LAST_MSG); }
+    const need = want === 'cift' ? pairsNeed() : seriesNeed();
+    const finishOpen = want === 'seri' && G.cfg.mode === 'katlamali' && pd.val >= 101 && handOf(P).length === 1;
+    if (pd.val >= need || finishOpen) {
+      // açılış tamam
+      P.opened = true; P.openKind = want; P.openVal = pd.val; P.openedThisTurn = true;
+      if (want === 'seri') {
+        openCharge(P, pd.tiles, 'seri');
+        if (pd.val > G.maxSeries) { G.maxSeries = pd.val; G.maxSeriesBy = P.name; }
+        awardRecord(P, 'seri', pd.val);
+        H.banner('EL AÇTIN', pd.val + ' puan', 'good');
+      } else {
+        openCharge(P, pd.tiles, 'cift', undefined, pd.pairs);
+        if (pd.val > G.maxPairs) { G.maxPairs = pd.val; G.maxPairsBy = P.name; }
+        awardRecord(P, 'cift', pd.val);
+        H.banner('ÇİFT AÇTIN', pd.val + ' çift', 'good');
+      }
+      pd.tiles.forEach(t => noteUse(P, t));
+      logEv(0, (want === 'seri' ? 'El açtı: ' + pd.val + ' puan' : 'Çift açtı: ' + pd.val + ' çift'));
+      P.openSnap = pd.snap; P.pend = null;
+      H.sfx('open'); H.render();
+      return { ok: true, msg: want === 'seri' ? 'Elini açtın: ' + P.openVal + ' puan.' : 'Çift açtın: ' + P.openVal + ' çift.', kind: want };
+    }
+    H.sfx('open'); H.render();
+    return { ok: true, msg: 'Açılış ' + pd.val + '/' + need + (want === 'cift' ? ' çift' : '') + ': taş atmadan bir ' + (want === 'cift' ? 'çift' : 'per') + ' daha indir. Tamamlamadan taş atarsan yanlış açma cezası (+101) yazılır; düzeltmek için Geri Topla.', pending: true };
+  }
   if (!pl.kind) {
     const sideFail = () => {
       if (!P.sideTile || P.sideUsed) {
@@ -1545,8 +1593,22 @@ function hProcessPairs(tileIds) {
 function hDiscard(tileId) {
   const e = humanTurnErr('discard'); if (e) return e;
   const P = G.players[0];
-  const t = P.slots.find(x => x && x.id === tileId);
+  let t = P.slots.find(x => x && x.id === tileId);
   if (!t) return fail('Taş bulunamadı.');
+  if (P.pend) {                                  // açılış tamamlanmadan taş atıldı: geri alınır, +101
+    const pd = P.pend; P.pend = null;
+    restoreSnap(P, pd.snap);
+    const pen = penOn('yanlisAcma');
+    if (pen) { addPenalty(P, 'badopen', 'Yanlış el açma', 101); H.banner('YANLIŞ EL AÇMA', '+101 ceza', 'bad'); H.sfx('penalty'); }
+    logEv(0, 'açılışı tamamlayamadı' + (pen ? ' (+101 ceza)' : ''));
+    if (P.sideTile && !P.sideUsed) {
+      returnSide(P); H.render();
+      return fail('Açılışını tamamlamadan taş atamazsın' + (pen ? ': +101 ceza yedin' : '') + '. Yandan aldığın taş geri bırakıldı, desteden çekmelisin.');
+    }
+    H.toast('Açılış tamamlanmadı' + (pen ? ': +101 ceza' : ''), 'bad');
+    t = P.slots.find(x => x && x.id === tileId);
+    if (!t) { H.render(); return fail('Taş bulunamadı.'); }
+  }
   if (P.sideTile && !P.sideUsed) {
     const nm = tileName(P.sideTile);
     return fail(!P.opened ? 'Yandan aldığın ' + nm + ' taşıyla önce elini açmalısın. Açamayacaksan taşı Yan kutusuna geri sürükle.'
@@ -1580,6 +1642,11 @@ function hReturnSide() {
 function hRegather() {
   const e = humanTurnErr('discard'); if (e) return e;
   const P = G.players[0];
+  if (P.pend) {
+    restoreSnap(P, P.pend.snap); P.pend = null; P.regathered = true;
+    logEv(0, 'elini geri topladı'); H.sfx('discard'); H.render();
+    return { ok: true, msg: 'Elini geri topladın. Düzeltip yeniden açabilirsin.' + (penOn('yanlisAcma') ? ' Açamadan taş atarsan +101 ceza yersin.' : '') };
+  }
   if (!P.opened || !P.openedThisTurn || !P.openSnap) return fail('Geri toplanacak bu turda açılmış bir el yok.');
   restoreSnap(P, P.openSnap);
   P.openSnap = null; P.regathered = true;
@@ -2113,13 +2180,14 @@ function renderActions() {
   const pl = openPlanInfo('seri', true);
   const an = pl.an;
   const pairMode = P.opened && P.openKind === 'cift';
+  const pd = P.pend;
   const b = (act, label, enabled, cls) => '<button class="btn ' + (cls || '') + '" data-act="' + act + '"' + (enabled ? '' : ' disabled') + '>' + label + '</button>';
   const seriOn = disc && (!P.opened || P.openKind === 'seri'), ciftOn = disc && (!P.opened || P.openKind === 'cift' || canPairLay(P));
   $('actR').innerHTML =
-    b('open-seri', P.opened ? 'Seri Aç' : 'Seri Aç (Puan: ' + an.points + ')', seriOn, 'pri' + (seriOn && !P.opened && pl.sOK ? ' ready' : '')) +
-    b('open-cift', P.opened ? 'Çift Aç' : 'Çift Aç (' + an.pairs.length + ' Çift)', ciftOn, 'pri' + (ciftOn && !P.opened && pl.pOK ? ' ready' : '')) +
+    b('open-seri', P.opened ? 'Seri Aç' : pd && pd.kind === 'seri' ? 'Seri Aç (' + (pd.val + an.points) + '/' + seriesNeed() + ')' : 'Seri Aç (Puan: ' + an.points + ')', seriOn && !(pd && pd.kind !== 'seri'), 'pri' + (seriOn && !P.opened && (pl.sOK || (pd && pd.kind === 'seri' && pd.val + an.points >= seriesNeed())) ? ' ready' : '')) +
+    b('open-cift', P.opened ? 'Çift Aç' : pd && pd.kind === 'cift' ? 'Çift Aç (' + (pd.val + an.pairs.length) + '/' + pairsNeed() + ')' : 'Çift Aç (' + an.pairs.length + ' Çift)', ciftOn && !(pd && pd.kind !== 'cift'), 'pri' + (ciftOn && !P.opened && (pl.pOK || (pd && pd.kind === 'cift' && pd.val + an.pairs.length >= pairsNeed())) ? ' ready' : '')) +
     (hardMode() ? '' : b('process-all', 'Tümünü İşle', disc && P.opened)) +
-    (P.opened && P.openedThisTurn && P.openSnap ? b('regather', 'Geri Topla', disc) : '');
+    ((P.opened && P.openedThisTurn && P.openSnap) || P.pend ? b('regather', 'Geri Topla', disc) : '');
 }
 function defaultStatus() {
   if (G.phase === 'over') return 'El bitti.';
@@ -2131,6 +2199,7 @@ function defaultStatus() {
     const nm = tileName(P.sideTile);
     return !P.opened ? 'Yandan aldığın ' + nm + ' ile elini açmalısın.' : P.openKind === 'cift' ? 'Yandan aldığın ' + nm + ' ile çift indirmelisin.' : 'Yandan aldığın ' + nm + ' taşını işle ya da yeni per indir.';
   }
+  if (P.pend) return 'Açılış ' + P.pend.val + '/' + (P.pend.kind === 'cift' ? pairsNeed() + ' çift' : seriesNeed()) + ': taş atmadan bir ' + (P.pend.kind === 'cift' ? 'çift' : 'per') + ' daha indir ya da Geri Topla. Tamamlamadan atarsan +101.';
   if (!P.opened) return 'Perlerini dizip Seri Aç ya da Çift Aç diyebilir, ya da bir taş atabilirsin. Gerekli: ' + seriesNeed() + '+ puan veya ' + pairsNeed() + '+ çift.';
   return P.openKind === 'cift' ? 'Çift işleyebilir, sonra bir taş atabilirsin.' : 'Taşları perlere işle, sonra bir taş at.';
 }
@@ -2203,7 +2272,7 @@ function showRules(back) {
     '<h3>El açma</h3><ul><li>Seri: en az 3 taşlı perlerle (aynı renk ardışık ya da farklı renkte aynı sayı) en az 101 puan. 1 taşı yalnızca başta (1-2-3) kullanılır ve 1 puandır; 12-13-1 per olmaz.</li><li>Çift: en az 5 çift. Çift açan hem çift hem seri perlere işleyebilir; ama bir turda bir perin her ucuna (sağ ve sol) en fazla 2 taş işleyebilir, okey çalabilir.</li><li>Katlamalı modda masadaki en yüksek açılışı geçmek gerekir (seri puanı ya da çift sayısı). Elini açtığın turda, taş atmadan sonradan indirdiğin per ve çiftler de açılışına eklenir ve limit buna göre yükselir. O turda okey ya da gösterge çaldıktan sonra indirdiklerin eklenmez.</li><li>Istakada yan yana (boşluksuz) duran taşlar bir per sayılır. Yeşil çizgi per, altın çizgi çift demektir.</li></ul>' +
     '<h3>İşleme ve okey çalma</h3><ul><li>Elini açtıysan yerdeki perlere taş işleyebilirsin: taşı seçip pere dokun ya da sürükle. Yardımsız mod kapalıyken Tümünü İşle düğmesi işlenebilen tüm taşları işler.</li><li>Yandan aldığın taşı mutlaka kullanmalısın: elin kapalıysa onunla el açarsın, açıksa pere işler ya da yeni per (çift açtıysan çift) indirirsin. Kullanamayacağını anlarsan taşı Yan kutusuna geri sürükle: ceza yok, ama o turda desteden çekersin.</li><li>Yandan aldığın taşla yanlış el açmaya çalışırsan (puan yetmiyor, Katlamalıda rakibi geçemiyorsun) +101 ceza yersin ve taş geri gider. Yandan taş almadan başarısız el açmaya çalışmak da +101 cezadır.</li><li>Masada hem seri hem çift açan varsa, seri açan oyuncu da elindeki çiftleri Çift Aç düğmesiyle indirebilir (bir turda en fazla 2 çift; sıra tekrar gelince 2 çift daha). Yandan aldığı taşla çift indirirse taşı atana ×10 ceza yazılır (çift açan çift indirirse ×20).</li><li>Her taş ceza: elini açtıktan sonra yandan aldığın taşla yeni per ya da çift indirirsen o taşı atan oyuncu taş sayısı ×10 (çiftte ×20) ceza yer. Yandan aldığın taşı elindeki taşla bağlayıp (örneğin yerde kırmızı 3-4-5, elinde 6, yandan 7) pere işlersen de ceza yazılır; çift açan bunu yaparsa ×10, çift indirirse ×20 yazılır.</li><li>Yandan aldığın taşla el açarsan o taşı atan oyuncu, taş sayısı ×10 (çift açtıysan ×20) ceza yer.</li><li>Yan oyuncu işlek taş atıp 101 ceza yediyse, o taşı yandan alınca cezası 101 yerine taş sayısı ×10 olur (alana ceza yok).</li><li>Bir oyuncunun perde bıraktığı okeyi çalarsan okeyi bırakan oyuncuya 101 ceza yazılır (kendi okeyini alırsan ceza yok).</li><li>Perdeki okeyi almak için yerine tam olarak temsil ettiği taşı koymalısın; okey ıstakana gelir. Çiftteki okey de, çiftin eşi olan taşla alınabilir (eşin değilse okeyi bırakana 101 ceza).</li><li>Masadaki bir okeyin (seri ya da çift) yerini tutan taşı atmak işlek sayılır: atan 101 ceza yer.</li></ul>' +
     '<h3>Ceza ve puan</h3><ul><li>Yanlışa taş atma: attığın taş masadaki bir pere işleniyorsa +101 ceza.</li><li>El sonunda eli açmamış oyuncuya 202. Eli açan, kalan taşlarının toplamını yazar; elinde okey kalırsa +101 ekstra.</li><li>Bitiren −101 alır. Kafa (kimse el açmamışken eli açıp aynı turda son taşı atarak bitirmek) ×2, okey atarak bitme ×2, ikisi birlikte (okey kafa) ×4 çarpan uygular. Başkası açtıktan sonra aynı turda açıp bitirmek normal bitiştir. Çift açıp bitiren −202 alır, rakiplerin kalan puanı ×2 olur. Eli ortada okey atmak 101 cezadır.</li><li>Deste biterse el berabere biter, herkes kalan taşına göre yazılır.</li></ul>' +
-    '<h3>Oyun modları</h3><ul><li>Ayarlardaki Oyun modları bölümünden Rekorlu, Okey çalma cezası, Her taş cezalı, Yandan açma cezalı ve Yardımsız seçenekleri tek tek açılıp kapatılabilir. Kapalı olan kural uygulanmaz. Değişiklik yeni oyunda geçerli olur.</li></ul><h3>El açma ve bitirme</h3><ul><li>Rekor ödülü: 150 ve üzeri puanla ya da 7 ve üzeri çiftle el açan −101 kazanır. Seri ve çift için ödül ayrıdır. Daha yüksek açan olursa ödül ona geçer, öncekinin ödülü silinir.</li><li>Katlamalıda rakibin açtığı sayıyı geçemiyorsan bile, işlek yapmadan elindeki taşlardan tek taş kalacak şekilde 101+ puanla açabilirsen eli açabilir ve o son taşı atıp bitirebilirsin. Rakibin sayısı aranmaz. Bu normal bitiş sayılır (kimse açmamışsa kafa).</li><li>Eli açarken tüm taşlarını indiremezsin: elinde en az bir taş kalmalı. Eli son taşını sağına atarak bitirirsin. Kimse açmadan aynı turda açıp bitirmek kafadır.</li><li>El açtığın turda Geri Topla düğmesiyle indirdiklerini geri alabilirsin. Düzeltip yeniden açabilirsen ceza yok; açamazsan ya da açmadan taş atarsan +101 yanlış el açma cezası yazılır.</li><li>Çift açan oyuncu eli bitirememişse kalan taşının 2 katı yazılır. Rakip okeyle ya da çiftle bitirirse bu 4 kata, seri açanın cezası 2 kata çıkar.</li></ul><h3>Eşli oyun</h3><ul><li>Ayarlardan Eşli seçilirse Sen ile Mehmet (karşılıklı oturanlar) bir takım, Ahmet ile Ayşe rakip takım olur.</li><li>Eli bitiren oyuncunun eşine o el için puan yazılmaz (0), ama eş bitirmeden önce ceza yediyse o ceza yazılır. Eşe katlama yoktur. Rakiplere olağan puanlar yazılır.</li><li>Eşinin perde bıraktığı okeyi çalarsan eşine ceza yazılmaz.</li><li>Oyun sonunda iki oyuncunun toplamı takım puanıdır; düşük olan takım kazanır. El sayısı 1, 2, 4 ya da 8 seçilebilir (Tek oyunda da).</li></ul><h3>Gösterge</h3><ul><li>Oyun modlarında Gösterge açıksa, ortadaki göstergenin eşi elinde olan oyuncu elin başında, ilk taşını çekmeden önce o taşa basılı tutarak (başlayan oyuncu ilk taşını attıktan sonra da, çekmeden önce söyleyebilir) "Gösterge bende" der. Herkese bildirim gider, puan kazanılmaz.</li><li>Söylenen gösterge yalnızca çiftte joker gibidir: her taşla çift olur. Seri perde sıradan taş olarak kullanılır.</li><li>Seri açtıysan ve masada çift açan varsa, çift indirirken göstergeyi kullanabilirsin.</li><li>Yandan alınan taşı göstergeyle çift yapıp açarsan ya da indirirsen taşı atana ceza yazılmaz (okeyle yapılırsa yazılır).</li><li>Masada gösterge + X çifti varsa, eli açık olan ve X’i olan oyuncu X’i koyup göstergeyi alır ve başka taşla yeniden çift indirebilir. Göstergeyi almanın cezası yoktur. O X taşını atmak işlek sayılır (101).</li><li>El sonunda elde kalan gösterge kendi sayısı kadar yazılır; atılan gösterge sıradan taşa döner.</li></ul><h3>Yardımsız mod</h3><ul><li>Ayarlardan açılır, Klasik ve Katlamalı ile birlikte oynanır. Istakadaki per ve çift çizgileri görünmez, taş seçince işleyeceği perler parlamaz, işlek taş ipucu çalışmaz. Perleri kendin dizmelisin.</li></ul><h3>Tur süresi</h3><ul><li>Her turda 60 saniyen var; süre ıstakanın üstünde görünür, son 10 saniyede kırmızıya döner.</li><li>El açtığında, taş işlediğinde, per ya da çift indirdiğinde veya okey/gösterge aldığında süre baştan başlar.</li><li>Süre dolarsa senin yerine desteden taş çekilir ve bir taş atılır (önce okey ve işlek olmayan taşlar seçilir). Ceza yazılmaz. Menü ya da yazboz açıkken süre durur.</li><li>Üst üste 2 tur süresi dolan oyuncunun süresi 5 saniyeye düşer. Bir turu kendisi oynayınca süresi yeniden 60 saniye olur.</li></ul><h3>Kontroller</h3><ul><li>Taşa dokun: seç. Sürükle: yerleştir; taşı atmak için Attığın alanına, işlemek için pere bırak.</li><li>Seri Diz ve Çift Diz, ıstakayı en iyi dizilimle düzenler.</li></ul></div>' +
+    '<h3>Oyun modları</h3><ul><li>Ayarlardaki Oyun modları bölümünden Rekorlu, Okey çalma cezası, Her taş cezalı, Yandan açma cezalı ve Yardımsız seçenekleri tek tek açılıp kapatılabilir. Kapalı olan kural uygulanmaz. Değişiklik yeni oyunda geçerli olur.</li></ul><h3>El açma ve bitirme</h3><ul><li>Rekor ödülü: 150 ve üzeri puanla ya da 7 ve üzeri çiftle el açan −101 kazanır. Seri ve çift için ödül ayrıdır. Daha yüksek açan olursa ödül ona geçer, öncekinin ödülü silinir.</li><li>Katlamalıda rakibin açtığı sayıyı geçemiyorsan bile, işlek yapmadan elindeki taşlardan tek taş kalacak şekilde 101+ puanla açabilirsen eli açabilir ve o son taşı atıp bitirebilirsin. Rakibin sayısı aranmaz. Bu normal bitiş sayılır (kimse açmamışsa kafa).</li><li>Eli açarken tüm taşlarını indiremezsin: elinde en az bir taş kalmalı. Eli son taşını sağına atarak bitirirsin. Kimse açmadan aynı turda açıp bitirmek kafadır.</li><li>Limit tutmasa da perlerini indirebilirsin: aynı turda, taş atmadan indirdiğin perler (ya da çiftler) toplanır, toplam limite ulaşınca elin açılmış olur. Tamamlamadan taş atarsan indirdiklerin geri gelir ve +101 yanlış açma cezası yazılır. Geri Topla ile indirdiklerini geri alıp düzeltebilirsin; yine açamadan taş atarsan ceza aynıdır.</li><li>El açtığın turda Geri Topla düğmesiyle indirdiklerini geri alabilirsin. Düzeltip yeniden açabilirsen ceza yok; açamazsan ya da açmadan taş atarsan +101 yanlış el açma cezası yazılır.</li><li>Çift açan oyuncu eli bitirememişse kalan taşının 2 katı yazılır. Rakip okeyle ya da çiftle bitirirse bu 4 kata, seri açanın cezası 2 kata çıkar.</li></ul><h3>Eşli oyun</h3><ul><li>Ayarlardan Eşli seçilirse Sen ile Mehmet (karşılıklı oturanlar) bir takım, Ahmet ile Ayşe rakip takım olur.</li><li>Eli bitiren oyuncunun eşine o el için puan yazılmaz (0), ama eş bitirmeden önce ceza yediyse o ceza yazılır. Eşe katlama yoktur. Rakiplere olağan puanlar yazılır.</li><li>Eşinin perde bıraktığı okeyi çalarsan eşine ceza yazılmaz.</li><li>Oyun sonunda iki oyuncunun toplamı takım puanıdır; düşük olan takım kazanır. El sayısı 1, 2, 4 ya da 8 seçilebilir (Tek oyunda da).</li></ul><h3>Gösterge</h3><ul><li>Oyun modlarında Gösterge açıksa, ortadaki göstergenin eşi elinde olan oyuncu elin başında, ilk taşını çekmeden önce o taşa basılı tutarak (başlayan oyuncu ilk taşını attıktan sonra da, çekmeden önce söyleyebilir) "Gösterge bende" der. Herkese bildirim gider, puan kazanılmaz.</li><li>Söylenen gösterge yalnızca çiftte joker gibidir: her taşla çift olur. Seri perde sıradan taş olarak kullanılır.</li><li>Seri açtıysan ve masada çift açan varsa, çift indirirken göstergeyi kullanabilirsin.</li><li>Yandan alınan taşı göstergeyle çift yapıp açarsan ya da indirirsen taşı atana ceza yazılmaz (okeyle yapılırsa yazılır).</li><li>Masada gösterge + X çifti varsa, eli açık olan ve X’i olan oyuncu X’i koyup göstergeyi alır ve başka taşla yeniden çift indirebilir. Göstergeyi almanın cezası yoktur. O X taşını atmak işlek sayılır (101).</li><li>El sonunda elde kalan gösterge kendi sayısı kadar yazılır; atılan gösterge sıradan taşa döner.</li></ul><h3>Yardımsız mod</h3><ul><li>Ayarlardan açılır, Klasik ve Katlamalı ile birlikte oynanır. Istakadaki per ve çift çizgileri görünmez, taş seçince işleyeceği perler parlamaz, işlek taş ipucu çalışmaz. Perleri kendin dizmelisin.</li></ul><h3>Tur süresi</h3><ul><li>Her turda 60 saniyen var; süre ıstakanın üstünde görünür, son 10 saniyede kırmızıya döner.</li><li>El açtığında, taş işlediğinde, per ya da çift indirdiğinde veya okey/gösterge aldığında süre baştan başlar.</li><li>Süre dolarsa senin yerine desteden taş çekilir ve bir taş atılır (önce okey ve işlek olmayan taşlar seçilir). Ceza yazılmaz. Menü ya da yazboz açıkken süre durur.</li><li>Üst üste 2 tur süresi dolan oyuncunun süresi 5 saniyeye düşer. Bir turu kendisi oynayınca süresi yeniden 60 saniye olur.</li></ul><h3>Kontroller</h3><ul><li>Taşa dokun: seç. Sürükle: yerleştir; taşı atmak için Attığın alanına, işlemek için pere bırak.</li><li>Seri Diz ve Çift Diz, ıstakayı en iyi dizilimle düzenler.</li></ul></div>' +
     '<div class="mrow"><button class="btn pri" data-act="' + (back ? 'menu' : 'close') + '">' + (back ? 'Geri' : 'Kapat') + '</button></div>');
 }
 function showHandEnd(rec, last) {
