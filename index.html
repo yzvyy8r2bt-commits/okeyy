@@ -491,12 +491,14 @@ button { font-family: inherit; }
 
 .pf-body { margin-top: calc(var(--u) * 1.4); }
 .tk-tabs { display: flex; gap: calc(var(--u) * .8); margin-bottom: calc(var(--u) * 1); }
-.tk-tab { flex: 1; border: 0; border-radius: calc(var(--u) * 1.2) calc(var(--u) * 1.2) 0 0; padding: calc(var(--u) * 1) 0; font: 800 calc(var(--u) * 2.6)/1 var(--f-num); letter-spacing: .06em; text-transform: uppercase; cursor: pointer; opacity: .55; color: #fff; }
+.tk-tab { flex: 1; border: 0; border-radius: calc(var(--u) * 1.2); padding: calc(var(--u) * .9) 0; font: 800 calc(var(--u) * 2)/1 var(--f-num); background: rgba(255, 255, 255, .08); letter-spacing: .06em; text-transform: uppercase; cursor: pointer; opacity: .55; color: #fff; }
 .tk-tab small { font-size: .75em; opacity: .85; }
 .tk-tab.on { opacity: 1; }
-.tk-tab.br, .tk.br { background: linear-gradient(160deg, #a0612b, #4a2a10); }
-.tk-tab.ag, .tk.ag { background: linear-gradient(160deg, #8c9aae, #3a4250); }
-.tk-tab.au, .tk.au { background: linear-gradient(160deg, #d9a521, #6a4a00); }
+.tk-tab.on { background: var(--amber); color: var(--amber-ink); }
+.tk.done { background: linear-gradient(160deg, #1f7a5c, #0d3b2c); }
+.tk.br { background: linear-gradient(160deg, #a0612b, #4a2a10); }
+.tk.ag { background: linear-gradient(160deg, #8c9aae, #3a4250); }
+.tk.au { background: linear-gradient(160deg, #d9a521, #6a4a00); }
 .tk-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: calc(var(--u) * 1); }
 .tk { position: relative; display: flex; flex-direction: column; align-items: center; gap: calc(var(--u) * .4); border-radius: calc(var(--u) * 1.4); padding: calc(var(--u) * 1) calc(var(--u) * .8); text-align: center; color: #fff; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .15); }
 .tk.done { box-shadow: inset 0 0 0 2px var(--good); }
@@ -520,6 +522,13 @@ button { font-family: inherit; }
 .lv-rew small { color: var(--amber); font-weight: 800; text-transform: uppercase; letter-spacing: .06em; font-size: calc(var(--u) * 1.8); }
 .coin.big { width: calc(var(--u) * 6); height: calc(var(--u) * 6); margin: 0; }
 .lv-rew b { font: 800 calc(var(--u) * 3.2)/1 var(--f-num); color: #ffe39a; }
+
+.tk-sum { text-align: center; font-size: calc(var(--u) * 2.2); margin-bottom: calc(var(--u) * .8); }
+.tk-sum b { color: var(--amber); font-family: var(--f-num); font-size: 1.2em; }
+.tk-t em { font-style: normal; color: #ffe39a; }
+.tk-stars { display: flex; gap: calc(var(--u) * .3); }
+.tk-stars i { width: calc(var(--u) * 1.3); height: calc(var(--u) * 1.3); clip-path: polygon(50% 0, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); background: rgba(0, 0, 0, .4); }
+.tk-stars i.on { background: #ffd24a; }
 
 button { touch-action: manipulation; }
 </style>
@@ -2151,7 +2160,7 @@ function recordGame(win, gain) {
   if (gain > 0) { s.won += gain; s.best = Math.max(s.best, gain); }
   saveWallet();
   addXP(5 + (win ? 10 : 0));
-  if (UI.table) taskGame(SALONS[UI.table.t.salon].id, win, !!UI.table.cfg.team);
+  if (UI.table) taskGame(SALONS[UI.table.t.salon].id, win, UI.table.cfg);
 }
 function salonEntry(s) { return s.min * ENTRY_MULT; }
 function tooRich(s) { return !!s.maxIn && wallet().chips > s.maxIn; }   // salonun üst sınırını aşan giremez
@@ -2350,7 +2359,7 @@ function showProfile() {
       '<p>Seviye atlamak için <b>' + (lv.need - lv.rest) + ' deneyim puanına (DP)</b> daha ihtiyacın var.</p>' +
       '<div class="lv-bar"><i style="width:' + Math.round(lv.rest * 100 / lv.need) + '%"></i></div>' +
       '<div class="lv-row"><span>Seviye ' + lv.lv + '</span><span>' + lv.rest + ' / ' + lv.need + ' DP</span><span>Seviye ' + (lv.lv + 1) + '</span></div>' +
-      '<p class="st-note">DP görevlerden gelir (kolay ' + TIERS[0].xp + ', orta ' + TIERS[1].xp + ', zor ' + TIERS[2].xp + '). Her oyun +5, kazanılan oyun +10 DP. Her seviye bir öncekinden 100 DP daha zordur.</p></div>' +
+      '<p class="st-note">DP görevlerden gelir: kolay görevler az, zor görevler çok DP verir ve her aşamada ödül büyür. Her oyun +5, kazanılan oyun +10 DP. Her seviye bir öncekinden 100 DP daha zordur.</p></div>' +
       '<div class="lv-rew"><small>Seviye ödülü</small><i class="coin big"></i><b>' + chipFmt(lvReward(lv.lv + 1)) + '</b></div></div>';
   else body = '<div class="pf-stats">' + stat('Oynadığı oyun', s.games) + stat('Kazandığı oyun', s.wins) + stat('Galibiyet yüzdesi', '%' + pct) + stat('En büyük kazanç', chipShort(s.best)) + '</div>';
   const soon = t => '<button class="btn pf-soon" disabled>' + t + '<small>Online sürümde</small></button>';
@@ -2411,7 +2420,7 @@ function lobbyAct(a) {
   if (a === 'lb-settings') { showSettings(); return; }
   if (a === 'lb-profile') { showProfile(); return; }
   if (a.indexOf('lb-ptab-') === 0) { LB.ptab = a.slice(8); showProfile(); return; }
-  if (a.indexOf('lb-tier-') === 0) { LB.tier = a.slice(8); showProfile(); return; }
+  if (a.indexOf('lb-tcat-') === 0) { LB.tcat = a.slice(8); showProfile(); return; }
   if (a === 'lb-rename') { showRename(); return; }
   if (a === 'lb-rename-ok') {
     const v = (document.getElementById('pfName').value || '').replace(/[<>"&]/g, '').trim().slice(0, 14);
@@ -2438,7 +2447,7 @@ function lobbyAct(a) {
   }
   if (a === 'lb-gift') {
     if (!giftReady()) { warn('Bugünün hediyesini aldın. Yarın yine gel.'); return; }
-    wallet().gift = today(); addChips(DAILY_GIFT); toast('Günlük hediye: +' + chipFmt(DAILY_GIFT) + ' çip', 'good'); showLobby(); return;
+    wallet().gift = today(); addChips(DAILY_GIFT); bump('gift'); checkTasks(); toast('Günlük hediye: +' + chipFmt(DAILY_GIFT) + ' çip', 'good'); showLobby(); return;
   }
   if (a.indexOf('lb-salon-') === 0) {
     const i = +a.slice(9);
@@ -2471,61 +2480,79 @@ function lobbyAct(a) {
   if (a === 'lb-again') { const T = UI.table; if (!canEnter(SALONS[T.t.salon])) { warn(enterMsg(SALONS[T.t.salon])); showLobby(); return; } if (!canSit(T.bet)) { warn('Aynı masa için yeterli çipin kalmadı.'); showLobby(); return; } sitAt(T.t); return; }
 }
 
-/* ---------- Görevler: Bronz (kolay) · Gümüş (orta) · Altın (zor). Zor görev daha çok deneyim puanı (DP) ve çip verir. ---------- */
-const TIERS = [
-  { id: 'bronz', name: 'Bronz', xp: 30, cls: 'br' },
-  { id: 'gumus', name: 'Gümüş', xp: 90, cls: 'ag' },
-  { id: 'altin', name: 'Altın', xp: 250, cls: 'au' }
+/* ---------- Görevler: kategori kategori, aşamalı görev zincirleri.
+   Her zincirde hedef büyüdükçe görev zorlaşır; zor aşama daha çok deneyim puanı (DP) ve çip verir. ---------- */
+const TASK_CATS = [
+  { id: 'oyun', name: 'Oyun' }, { id: 'acma', name: 'El Açma' }, { id: 'bitirme', name: 'Bitirme' },
+  { id: 'okey', name: 'Okey & Gösterge' }, { id: 'salon', name: 'Salonlar' }, { id: 'usta', name: 'Ustalık' }
 ];
-// [anahtar, sayaç, hedef, başlık, açıklama, çip ödülü, simge]
-const TASKS = {
-  bronz: [
-    ['ilk', 'games', 1, 'İlk Adım', 'Bir masaya oturup 1 oyun bitir.', 1000, '☕'],
-    ['cayci10', 'g_cayci', 10, 'Çaycı Müdavimi', 'Çaycı salonunda 10 oyun oyna.', 1500, '🫖'],
-    ['acan10', 'open_seri', 10, 'El Açıcı', '10 kez seri el aç.', 1500, '🃏'],
-    ['cift5', 'open_cift', 5, 'Çift Sever', '5 kez çift aç.', 1500, '👯'],
-    ['okey3', 'swap', 3, 'Okey Avcısı', 'Masadan 3 kez okey çal.', 2000, '🎯'],
-    ['kaz3', 'wins', 3, 'Kazanmaya Başla', '3 oyun kazan.', 2500, '🏅'],
-    ['bit5', 'finish', 5, 'Bitirici', '5 el bitir (son taşı atan sen ol).', 2000, '✋'],
-    ['gost3', 'gost', 3, 'Gösterge Bende', '3 kez "Gösterge bende" de.', 1500, '👁']
-  ],
-  gumus: [
-    ['kahve25', 'g_kahveci', 25, 'Kahveci Müdavimi', 'Kahveci salonunda 25 oyun oyna.', 7500, '☕'],
-    ['ac150', 'open150', 5, '150\'lik', '150 ve üzeri puanla 5 kez el aç.', 7500, '💯'],
-    ['ciftbit10', 'finish_cift', 10, 'Çifte Düğün', '10 kez çiftle bitir.', 10000, '💍'],
-    ['okey15', 'swap', 15, 'Okey Ustası', 'Masadan 15 kez okey çal.', 7500, '🎯'],
-    ['kaz15', 'wins', 15, 'Galip', '15 oyun kazan.', 10000, '🏆'],
-    ['okeybit5', 'finish_okey', 5, 'Okey Atıp Bitir', '5 kez okey atarak bitir.', 10000, '🌟'],
-    ['rekor5', 'record', 5, 'Rekortmen', '5 kez rekor ödülü al.', 7500, '📈'],
-    ['esli10', 'wins_esli', 10, 'Takım Oyuncusu', 'Eşli oyunda 10 kez kazan.', 10000, '🤝']
-  ],
-  altin: [
-    ['usta50', 'g_usta', 50, 'Usta Müdavimi', 'Usta salonunda 50 oyun oyna.', 25000, '🎩'],
-    ['kafa3', 'finish_kafa', 3, 'Kafa Atan', '3 kez kafa at (kimse açmadan bitir).', 30000, '💥'],
-    ['efsane25', 'w_efsane', 25, 'Efsane', 'Efsane salonunda 25 oyun kazan.', 50000, '🔥'],
-    ['kaz100', 'wins', 100, 'Yüzlük', '100 oyun kazan.', 50000, '👑'],
-    ['okeykafa', 'finish_okeykafa', 1, 'Okey Kafa', 'Kafa atarken okeyle bitir.', 50000, '⚡'],
-    ['isle1000', 'process', 1000, 'Bin Taş', 'Perlere toplam 1000 taş işle.', 30000, '🧱'],
-    ['kral1', 'w_kral', 1, 'Kral Masası', 'Kral salonunda 1 oyun kazan.', 100000, '🦁'],
-    ['acan250', 'open_seri', 250, 'Seri Ustası', '250 kez seri el aç.', 40000, '🃏']
-  ]
-};
-function tstate() { const st = wallet().st; if (!st.c) st.c = {}; if (!st.done) st.done = {}; return st; }
+// [kimlik, kategori, sayaç, hedefler, zorluk (1 kolay · 2 orta · 3 zor), simge, başlık, açıklama ({n} = hedef)]
+const CHAINS = [
+  ['masa', 'oyun', 'games', [1, 5, 10, 25, 50, 100, 250, 500, 1000], 1, '☕', 'Masa Müdavimi', '{n} oyun bitir.'],
+  ['kazan', 'oyun', 'wins', [1, 3, 10, 25, 50, 100, 250, 500], 2, '🏅', 'Kazanan', '{n} oyun kazan.'],
+  ['seri', 'oyun', 'streak', [2, 3, 5, 7, 10], 3, '🔥', 'Seri Galibiyet', 'Üst üste {n} oyun kazan.'],
+  ['takim', 'oyun', 'wins_esli', [1, 5, 10, 25, 50, 100], 2, '🤝', 'Takım Ruhu', 'Eşli oyunda {n} kez kazan.'],
+  ['katla', 'oyun', 'wins_kat', [1, 5, 15, 40, 100, 250], 2, '📈', 'Katlamalı Ustası', 'Katlamalı oyunda {n} kez kazan.'],
+  ['klasik', 'oyun', 'wins_klasik', [1, 5, 15, 40, 100, 250], 2, '🎴', 'Klasikçi', 'Klasik 101\'de {n} kez kazan.'],
+  ['yardimsiz', 'oyun', 'wins_hard', [1, 5, 15, 40, 100], 3, '🐺', 'Yardımsız Kurt', 'Yardımsız modda {n} kez kazan.'],
+  ['acan', 'acma', 'open_seri', [10, 20, 30, 50, 100, 250, 500, 1000], 1, '🃏', 'Seri El Açıcı', '{n} kez seri el aç.'],
+  ['ciftac', 'acma', 'open_cift', [5, 10, 20, 40, 80, 150, 300], 1, '👯', 'Çift Sever', '{n} kez çift aç.'],
+  ['yuzelli', 'acma', 'open150', [1, 5, 15, 40, 100, 250], 2, '💯', '150\'lik', '150 ve üzeri puanla {n} kez el aç.'],
+  ['ikiyuz', 'acma', 'open200', [1, 3, 10, 25, 50], 3, '🚀', '200\'lük', '200 ve üzeri puanla {n} kez el aç.'],
+  ['yedicift', 'acma', 'open_cift7', [1, 5, 15, 40, 100], 2, '7️⃣', 'Yedi Çift', '7 ve üzeri çiftle {n} kez aç.'],
+  ['rekor', 'acma', 'record', [1, 5, 15, 40, 100], 2, '🏆', 'Rekortmen', '{n} kez rekor ödülü al.'],
+  ['isle', 'acma', 'process', [50, 100, 250, 500, 1000, 2500, 5000], 1, '🧱', 'Taş İşleyici', 'Perlere toplam {n} taş işle.'],
+  ['bitir', 'bitirme', 'finish', [1, 5, 10, 25, 50, 100, 250], 1, '✋', 'Bitirici', '{n} el bitir.'],
+  ['dugun', 'bitirme', 'finish_cift', [1, 5, 10, 25, 50, 100], 2, '💍', 'Çifte Düğün', 'Çift açıp {n} el bitir.'],
+  ['okeyat', 'bitirme', 'finish_okey', [1, 3, 10, 25, 50], 3, '🌟', 'Okey Atan', 'Okey atarak {n} el bitir.'],
+  ['kafa', 'bitirme', 'finish_kafa', [1, 3, 10, 25], 3, '💥', 'Kafa Atan', 'Kimse açmadan {n} kez kafa at.'],
+  ['okeykafa', 'bitirme', 'finish_okeykafa', [1, 3, 10], 3, '⚡', 'Okey Kafa', 'Kafa atarken okeyle {n} kez bitir.'],
+  ['avci', 'okey', 'swap', [1, 3, 10, 25, 50, 100, 250], 2, '🎯', 'Okey Avcısı', 'Masadan {n} kez okey çal.'],
+  ['gosterge', 'okey', 'gost', [1, 3, 10, 25, 50, 100], 1, '👁', 'Gösterge Bende', '{n} kez "Gösterge bende" de.'],
+  ['cayci', 'salon', 'g_cayci', [5, 10, 25, 50, 100], 1, '🫖', 'Çaycı Müdavimi', 'Çaycı salonunda {n} oyun oyna.'],
+  ['kahveci', 'salon', 'g_kahveci', [5, 10, 25, 50, 100, 250], 1, '☕', 'Kahveci Müdavimi', 'Kahveci salonunda {n} oyun oyna.'],
+  ['ustasalon', 'salon', 'g_usta', [5, 10, 25, 50, 100], 2, '🎩', 'Usta Müdavimi', 'Usta salonunda {n} oyun oyna.'],
+  ['efsane', 'salon', 'w_efsane', [1, 5, 10, 25, 50], 3, '🔥', 'Efsane', 'Efsane salonunda {n} oyun kazan.'],
+  ['kral', 'salon', 'w_kral', [1, 3, 10, 25], 3, '🦁', 'Kral Masası', 'Kral salonunda {n} oyun kazan.'],
+  ['kazanc', 'usta', 'won', [10000, 50000, 100000, 500000, 1000000, 10000000, 100000000], 2, '💰', 'Çip Kazancı', 'Masalardan toplam {n} çip kazan.'],
+  ['seviye', 'usta', 'level', [5, 10, 20, 30, 50], 3, '⭐', 'Yükselen Yıldız', '{n}. seviyeye ulaş.'],
+  ['gunluk', 'usta', 'gift', [1, 7, 30, 100, 365], 1, '🎁', 'Sadık Müdavim', '{n} kez günlük hediye al.']
+];
+const DIFF = { 1: { dp: 20, chip: 1000, name: 'Kolay' }, 2: { dp: 40, chip: 2500, name: 'Orta' }, 3: { dp: 80, chip: 5000, name: 'Zor' } };
+const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
+// aşama k (0'dan): DP ve çip her aşamada büyür
+function stageReward(diff, k) {
+  const d = DIFF[diff];
+  return { dp: Math.round(d.dp * Math.pow(1.6, k) / 5) * 5, chip: Math.round(d.chip * Math.pow(1.8, k) / 500) * 500 };
+}
+function tstate() { const st = wallet().st; if (!st.c) st.c = {}; if (!st.stage) st.stage = {}; return st; }
 function bump(key, n) { const st = tstate(); st.c[key] = (st.c[key] || 0) + (n || 1); }
+function setMax(key, v) { const st = tstate(); st.c[key] = Math.max(st.c[key] || 0, v); }
+function chainVal(ch) { const st = tstate(); return ch[2] === 'level' ? levelInfo(st.xp).lv : ch[2] === 'won' ? (st.won || 0) : (st.c[ch[2]] || 0); }
 function checkTasks() {
   const st = tstate();
-  TIERS.forEach(tr => TASKS[tr.id].forEach(t => {
-    if (st.done[t[0]] || (st.c[t[1]] || 0) < t[2]) return;
-    st.done[t[0]] = 1;
-    addXP(tr.xp); addChips(t[5]);
-    toast('Görev tamamlandı: ' + t[3] + ' · +' + tr.xp + ' DP · +' + chipFmt(t[5]) + ' çip', 'good');
-  }));
+  let guard = 0, again = true;
+  while (again && guard++ < 20) {               // seviye görevi DP ile tetiklenebilir: birkaç tur dön
+    again = false;
+    for (const ch of CHAINS) {
+      let k = st.stage[ch[0]] || 0;
+      while (k < ch[3].length && chainVal(ch) >= ch[3][k]) {
+        const r = stageReward(ch[4], k);
+        st.stage[ch[0]] = ++k;
+        addChips(r.chip); addXP(r.dp); again = true;
+        toast('Görev: ' + ch[6] + ' ' + ROMAN[k - 1] + ' tamamlandı · +' + r.dp + ' DP · +' + chipFmt(r.chip) + ' çip', 'good');
+      }
+    }
+  }
   saveWallet();
 }
 // oyun içi olaylar (sadece masadaki sen)
 H.ev = (name, d) => {
   if (!UI.table || !d || d.i !== 0) return;
-  if (name === 'open') { bump(d.kind === 'cift' ? 'open_cift' : 'open_seri'); if (d.kind === 'seri' && d.val >= 150) bump('open150'); }
+  if (name === 'open') {
+    if (d.kind === 'cift') { bump('open_cift'); if (d.val >= 7) bump('open_cift7'); }
+    else { bump('open_seri'); if (d.val >= 150) bump('open150'); if (d.val >= 200) bump('open200'); }
+  }
   else if (name === 'swap' && !d.gost) bump('swap');
   else if (name === 'gost') bump('gost');
   else if (name === 'record') bump('record');
@@ -2539,26 +2566,40 @@ H.ev = (name, d) => {
   }
   checkTasks();
 };
-// oyun sonu (lobbySettle'dan)
-function taskGame(salonId, win, team) {
+// oyun sonu (recordGame'den)
+function taskGame(salonId, win, cfg) {
+  const st = tstate();
   bump('games'); bump('g_' + salonId);
-  if (win) { bump('wins'); bump('w_' + salonId); if (team) bump('wins_esli'); }
+  if (win) {
+    bump('wins'); bump('w_' + salonId);
+    if (cfg.team) bump('wins_esli');
+    bump(cfg.mode === 'katlamali' ? 'wins_kat' : 'wins_klasik');
+    if (cfg.hard) bump('wins_hard');
+    st.streak = (st.streak || 0) + 1; setMax('streak', st.streak);
+  } else st.streak = 0;
   checkTasks();
 }
 function tasksHTML() {
-  const st = tstate(), tier = LB.tier || 'bronz';
-  const tabs = TIERS.map(tr => {
-    const n = TASKS[tr.id].filter(t => st.done[t[0]]).length;
-    return '<button class="tk-tab ' + tr.cls + (tier === tr.id ? ' on' : '') + '" data-act="lb-tier-' + tr.id + '">' + tr.name + ' <small>' + n + '/' + TASKS[tr.id].length + '</small></button>';
+  const st = tstate(), cat = LB.tcat || 'oyun';
+  const total = CHAINS.reduce((a, c) => a + c[3].length, 0), done = CHAINS.reduce((a, c) => a + (st.stage[c[0]] || 0), 0);
+  const tabs = TASK_CATS.map(c => {
+    const ch = CHAINS.filter(x => x[1] === c.id), d = ch.reduce((a, x) => a + (st.stage[x[0]] || 0), 0), t = ch.reduce((a, x) => a + x[3].length, 0);
+    return '<button class="tk-tab' + (cat === c.id ? ' on' : '') + '" data-act="lb-tcat-' + c.id + '">' + c.name + ' <small>' + d + '/' + t + '</small></button>';
   }).join('');
-  const tr = TIERS.find(x => x.id === tier);
-  const cards = TASKS[tier].map(t => {
-    const v = Math.min(st.c[t[1]] || 0, t[2]), done = !!st.done[t[0]];
-    return '<div class="tk ' + tr.cls + (done ? ' done' : '') + '"><b class="tk-t">' + t[3] + '</b><span class="tk-ic">' + t[6] + '</span><p>' + t[4] + '</p>' +
-      '<span class="tk-bar"><i style="width:' + Math.round(v * 100 / t[2]) + '%"></i></span><span class="tk-n">' + (done ? 'Tamamlandı ✓' : v + '/' + t[2]) + '</span>' +
-      '<span class="tk-r"><i class="coin"></i>' + chipShort(t[5]) + ' · +' + tr.xp + ' DP</span></div>';
+  const cards = CHAINS.filter(c => c[1] === cat).map(ch => {
+    const k = st.stage[ch[0]] || 0, n = ch[3].length, all = k >= n, tgt = ch[3][Math.min(k, n - 1)];
+    const v = Math.min(chainVal(ch), tgt), r = stageReward(ch[4], Math.min(k, n - 1));
+    const stars = ch[3].map((_, j) => '<i class="' + (j < k ? 'on' : '') + '"></i>').join('');
+    const cls = all ? ' done' : (k >= Math.ceil(n * .66) ? ' au' : k >= Math.ceil(n * .33) ? ' ag' : ' br');
+    return '<div class="tk' + cls + '"><b class="tk-t">' + ch[6] + ' <em>' + (all ? '★' : ROMAN[k]) + '</em></b><span class="tk-ic">' + ch[5] + '</span>' +
+      '<p>' + (all ? 'Bu görevin tüm aşamalarını bitirdin!' : ch[7].replace('{n}', chipShort(tgt))) + '</p>' +
+      '<span class="tk-stars">' + stars + '</span>' +
+      (all ? '<span class="tk-n">Ustalaştın ✓</span>' :
+        '<span class="tk-bar"><i style="width:' + Math.round(v * 100 / tgt) + '%"></i></span><span class="tk-n">' + chipShort(v) + ' / ' + chipShort(tgt) + ' · ' + DIFF[ch[4]].name + '</span>' +
+        '<span class="tk-r"><i class="coin"></i>' + chipShort(r.chip) + ' · +' + r.dp + ' DP</span>') + '</div>';
   }).join('');
-  return '<div class="tk-tabs">' + tabs + '</div><div class="tk-grid">' + cards + '</div><p class="st-note">Kolay görevler ' + TIERS[0].xp + ', orta görevler ' + TIERS[1].xp + ', zor görevler ' + TIERS[2].xp + ' deneyim puanı (DP) verir.</p>';
+  return '<div class="tk-sum">Tamamlanan aşama: <b>' + done + ' / ' + total + '</b></div><div class="tk-tabs">' + tabs + '</div><div class="tk-grid">' + cards + '</div>' +
+    '<p class="st-note">Her görevin birkaç aşaması var; hedef büyüdükçe ödül de büyür. Zor görevler daha çok deneyim puanı (DP) verir.</p>';
 }
 
 /* ---------- Arka plan müziği: cihazda üretilen sakin, klasik bir döngü (dosya indirmeden) ---------- */
