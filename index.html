@@ -661,10 +661,17 @@ button { font-family: inherit; }
 .lb-pay { margin: calc(var(--u) * .6) auto; max-width: 92%; font-size: calc(var(--u) * 2); line-height: 1.45; color: var(--muted); text-align: center; }
 .lb-pay b { color: #ffe39a; }
 
+.st-pick small em { font-style: normal; font-size: .8em; opacity: .7; }
+.qp-modes { display: grid !important; grid-template-columns: 1fr 1fr; gap: calc(var(--u) * .6) !important; }
+.qp-modes .qp-m:last-child { grid-column: 1 / -1; justify-self: center; min-width: 50%; }
+.qp-m { font-family: inherit; font-weight: 700; font-size: calc(var(--u) * 1.6); line-height: 1.1; white-space: nowrap; padding: calc(var(--u) * .8) calc(var(--u) * 1.2); border-radius: calc(var(--u) * 1); border: 1px solid rgba(255,255,255,.18); background: rgba(0,0,0,.35); color: #cfc4ee; cursor: pointer; }
+.qp-m.on { color: #7ef0b5; border-color: rgba(126,240,181,.55); background: rgba(40,140,90,.25); }
+.qp-m.off { color: #ff9a9a; border-color: rgba(255,120,120,.45); background: rgba(140,40,40,.22); text-decoration: line-through; }
+
 button { touch-action: manipulation; }
 </style>
 </head>
-<body data-ver="mwtlbh8y">
+<body data-ver="mwtlg7h6">
 <div id="stage" lang="tr">
   <div class="app">
     <header class="top">
@@ -2463,6 +2470,11 @@ function startSeat() {
   newGame(cfg);
   toast('Masaya oturdun: ' + chipFmt(t.bet) + ' çip ortaya kondu', 'info');
 }
+function qpNewPen() {   // yeni açılan masada: seçilen modlar seçildiği gibi, fark etmezler genel ayardan
+  const p = qpPen(), pen = Object.assign({}, UI.settings.pen);
+  QP_PEN.forEach(([k]) => { if (p[k] === true || p[k] === false) pen[k] = p[k]; });
+  return pen;
+}
 function quickPlay() {
   let si = -1;
   // Hemen Oyna tüm çipi tek masaya yatırmasın: en az bahsi çipinin 1/5'ini geçmeyen en yüksek salon
@@ -2473,9 +2485,9 @@ function quickPlay() {
   const any = v => v === 'any';
   const hands = any(q.hands) ? null : (s.hands.filter(h => h <= q.hands).pop() || s.hands[0]);   // salonun izin verdiği en yakın el sayısı
   const ok = tablesOf(si).filter(t => canSit(t.bet) && t.bet <= lim && t.seats.some(x => !x) &&
-    (hands === null || t.hands === hands) && (any(q.team) || t.team === q.team) && (any(q.hard) || t.hard === q.hard) && (any(q.mode) || t.mode === q.mode));
+    (hands === null || t.hands === hands) && (any(q.team) || t.team === q.team) && (any(q.hard) || t.hard === q.hard) && (any(q.mode) || t.mode === q.mode) && qpPenOk(t.pen));
   if (ok.length) return sitAt(rnd(ok));
-  sitAt({ id: 'q' + Date.now(), salon: si, bet: s.min, hands: hands === null ? rnd(s.hands) : hands, team: any(q.team) ? false : q.team, mode: any(q.mode) ? 'katlamali' : q.mode, hard: any(q.hard) ? false : q.hard, pen: Object.assign({}, UI.settings.pen), seats: [null, null, null, null] });
+  sitAt({ id: 'q' + Date.now(), salon: si, bet: s.min, hands: hands === null ? rnd(s.hands) : hands, team: any(q.team) ? false : q.team, mode: any(q.mode) ? 'katlamali' : q.mode, hard: any(q.hard) ? false : q.hard, pen: qpNewPen(), seats: [null, null, null, null] });
 }
 
 /* ---------- Çip hesabı ---------- */
@@ -2558,6 +2570,16 @@ function showRename() {
 const QP_HANDS = ['any', 1, 2, 4, 8, 12];
 const ANY = 'Fark etmez';
 function qp() { const s = UI.settings; if (!s.qp) s.qp = { hands: 'any', team: 'any', hard: 'any', mode: 'any' }; return s.qp; }
+const QP_PEN = [['rekor', 'Rekorlu'], ['okeyCal', 'Okey çalma cezası'], ['herTas', 'Her taş cezalı'], ['yanAc', 'Yandan açma cezalı'], ['gosterge', 'Gösterge']];
+function qpPen() { const q = qp(); if (!q.pen) q.pen = {}; return q.pen; }   // her mod: yok/'any' = fark etmez, true = açık, false = kapalı
+function qpPenOk(pen) { const p = qpPen(), on = k => (pen || {})[k] !== false; return QP_PEN.every(([k]) => p[k] === undefined || p[k] === 'any' || on(k) === p[k]); }
+function qpModes() {
+  const p = qpPen();
+  return '<div class="st-pick"><small>Oyun modları <em>(dokun: fark etmez → olsun → olmasın)</em></small><div class="qp-modes">' +
+    QP_PEN.map(([k, n]) => { const v = p[k] === undefined ? 'any' : p[k];
+      return '<button class="qp-m ' + (v === 'any' ? 'any' : v ? 'on' : 'off') + '" data-act="lb-qpm-' + k + '">' + (v === 'any' ? '' : v ? '✓ ' : '✕ ') + n + '</button>'; }).join('') +
+    '</div></div>';
+}
 function showSettings() {
   const s = UI.settings, q = qp();
   const tog = (key, label, ic) => '<div class="st-tog"><span class="st-ic">' + ic + '</span><b>' + label + '</b><button class="st-sw' + (s[key] !== false ? ' on' : '') + '" data-act="lb-st-' + key + '"><i></i></button></div>';
@@ -2573,6 +2595,7 @@ function showSettings() {
       pick('team', 'Tek / Eşli', q.team === 'any' ? ANY : q.team ? 'Eşli' : 'Tek') +
       pick('hard', 'Yardımlı / Yardımsız', q.hard === 'any' ? ANY : q.hard ? 'Yardımsız' : 'Yardımlı') +
       pick('mode', 'Katlamalı / Klasik', q.mode === 'any' ? ANY : q.mode === 'katlamali' ? 'Katlamalı' : 'Klasik') +
+      qpModes() +
     '</section></div>' +
     '<div class="mrow"><button class="btn pri" data-act="lb-st-close">Tamam</button><button class="btn" data-act="lb-rules">Kurallar</button><button class="btn" data-act="lb-howto">Nasıl Oynanır?</button></div></div>');
 }
@@ -2612,6 +2635,11 @@ function lobbyAct(a) {
     if (k === 'sound') initAudio();
     if (k === 'vibrate' && UI.settings.vibrate) buzz(60);
     showSettings(); if (G) render(); return;
+  }
+  if (a.indexOf('lb-qpm-') === 0) {
+    const k = a.slice(7), p = qpPen(), v = p[k] === undefined ? 'any' : p[k];
+    p[k] = v === 'any' ? true : v === true ? false : 'any';
+    saveSettings(); showSettings(); return;
   }
   if (a.indexOf('lb-qp-') === 0) {
     const [k, dir] = a.slice(6).split('-'), q = qp(), d = dir === 'next' ? 1 : -1;
