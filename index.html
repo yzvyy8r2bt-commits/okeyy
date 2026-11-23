@@ -2217,10 +2217,12 @@ function quickPlay() {
   if (si < 0) for (let i = SALONS.length - 1; i >= 0; i--) if (canEnter(SALONS[i])) { si = i; break; }
   if (si < 0) { warn('Çipin hiçbir salona yetmiyor. Günlük hediyeni al.'); return; }
   const lim = Math.max(SALONS[si].min, wallet().chips / 5), q = qp(), s = SALONS[si];
-  const hands = s.hands.filter(h => h <= q.hands).pop() || s.hands[0];   // salonun izin verdiği en yakın el sayısı
-  const ok = tablesOf(si).filter(t => canSit(t.bet) && t.bet <= lim && t.seats.some(x => !x) && t.hands === hands && t.team === q.team && t.hard === q.hard && t.mode === q.mode);
+  const any = v => v === 'any';
+  const hands = any(q.hands) ? null : (s.hands.filter(h => h <= q.hands).pop() || s.hands[0]);   // salonun izin verdiği en yakın el sayısı
+  const ok = tablesOf(si).filter(t => canSit(t.bet) && t.bet <= lim && t.seats.some(x => !x) &&
+    (hands === null || t.hands === hands) && (any(q.team) || t.team === q.team) && (any(q.hard) || t.hard === q.hard) && (any(q.mode) || t.mode === q.mode));
   if (ok.length) return sitAt(rnd(ok));
-  sitAt({ id: 'q' + Date.now(), salon: si, bet: s.min, hands, team: q.team, mode: q.mode, hard: q.hard, pen: Object.assign({}, UI.settings.pen), seats: [null, null, null, null] });
+  sitAt({ id: 'q' + Date.now(), salon: si, bet: s.min, hands: hands === null ? rnd(s.hands) : hands, team: any(q.team) ? false : q.team, mode: any(q.mode) ? 'katlamali' : q.mode, hard: any(q.hard) ? false : q.hard, pen: Object.assign({}, UI.settings.pen), seats: [null, null, null, null] });
 }
 
 /* ---------- Çip hesabı ---------- */
@@ -2250,8 +2252,9 @@ function showTableMenu() {
 }
 
 /* ---------- Ayarlar ---------- */
-const QP_HANDS = [1, 2, 4, 8, 12];
-function qp() { const s = UI.settings; if (!s.qp) s.qp = { hands: 1, team: false, hard: false, mode: 'katlamali' }; return s.qp; }
+const QP_HANDS = ['any', 1, 2, 4, 8, 12];
+const ANY = 'Fark etmez';
+function qp() { const s = UI.settings; if (!s.qp) s.qp = { hands: 'any', team: 'any', hard: 'any', mode: 'any' }; return s.qp; }
 function showSettings() {
   const s = UI.settings, q = qp();
   const tog = (key, label, ic) => '<div class="st-tog"><span class="st-ic">' + ic + '</span><b>' + label + '</b><button class="st-sw' + (s[key] !== false ? ' on' : '') + '" data-act="lb-st-' + key + '"><i></i></button></div>';
@@ -2263,8 +2266,10 @@ function showSettings() {
       '<p class="st-note">Titreşim iPhone\'da tarayıcı tarafından desteklenmiyor, mağaza sürümünde çalışacak.</p>' +
     '</section>' +
     '<section><h3>Hemen Oyna Ayarları</h3><p class="st-note">Hemen Oyna dediğinde masa bu özelliklerle seçilir ya da açılır.</p>' +
-      pick('hands', 'El sayısı', q.hands + ' El') + pick('team', 'Tek / Eşli', q.team ? 'Eşli' : 'Tek') +
-      pick('hard', 'Yardımlı / Yardımsız', q.hard ? 'Yardımsız' : 'Yardımlı') + pick('mode', 'Katlamalı / Klasik', q.mode === 'katlamali' ? 'Katlamalı' : 'Klasik') +
+      pick('hands', 'El sayısı', q.hands === 'any' ? ANY : q.hands + ' El') +
+      pick('team', 'Tek / Eşli', q.team === 'any' ? ANY : q.team ? 'Eşli' : 'Tek') +
+      pick('hard', 'Yardımlı / Yardımsız', q.hard === 'any' ? ANY : q.hard ? 'Yardımsız' : 'Yardımlı') +
+      pick('mode', 'Katlamalı / Klasik', q.mode === 'any' ? ANY : q.mode === 'katlamali' ? 'Katlamalı' : 'Klasik') +
     '</section></div>' +
     '<div class="mrow"><button class="btn pri" data-act="lb-st-close">Tamam</button><button class="btn" data-act="lb-rules">Kurallar</button><button class="btn" data-act="lb-howto">Nasıl Oynanır?</button></div></div>');
 }
@@ -2297,9 +2302,9 @@ function lobbyAct(a) {
   if (a.indexOf('lb-qp-') === 0) {
     const [k, dir] = a.slice(6).split('-'), q = qp(), d = dir === 'next' ? 1 : -1;
     if (k === 'hands') q.hands = cyc(QP_HANDS, q.hands, d);
-    else if (k === 'team') q.team = !q.team;
-    else if (k === 'hard') q.hard = !q.hard;
-    else if (k === 'mode') q.mode = q.mode === 'katlamali' ? 'klasik' : 'katlamali';
+    else if (k === 'team') q.team = cyc([false, true, 'any'], q.team, d);
+    else if (k === 'hard') q.hard = cyc([false, true, 'any'], q.hard, d);
+    else if (k === 'mode') q.mode = cyc(['katlamali', 'klasik', 'any'], q.mode, d);
     saveSettings(); showSettings(); return;
   }
   if (a === 'lb-gift') {
@@ -2424,7 +2429,7 @@ function buzz(ms) { if (UI.settings.vibrate !== false && navigator.vibrate) { tr
 const $ = id => document.getElementById(id);
 const UI = {
   selected: new Set(), prefer: 'seri', drawerOpen: false,
-  settings: { music: true, vibrate: true, qp: { hands: 1, team: false, hard: false, mode: 'katlamali' }, pen: { gosterge: true, rekor: true, okeyCal: true, yanAc: true, herTas: true }, mode: 'katlamali', hands: 4, team: false, speed: 'normal', sound: true, hint: false, hard: false },
+  settings: { music: true, vibrate: true, qp: { hands: 'any', team: 'any', hard: 'any', mode: 'any' }, pen: { gosterge: true, rekor: true, okeyCal: true, yanAc: true, herTas: true }, mode: 'katlamali', hands: 4, team: false, speed: 'normal', sound: true, hint: false, hard: false },
   statusMsg: null, statusUntil: 0, lastTap: null, acceptIds: new Set(), swapKeys: new Set(), tickerLines: [], hitBot: -1
 };
 let drag = null;
@@ -2442,17 +2447,25 @@ function initAudio() {
   if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { AC = null; } }
   if (AC && AC.state !== 'running') { try { AC.resume(); } catch (e) { /* yok say */ } }
 }
+let SFXBUS = null;
+function sfxBus() {
+  if (SFXBUS) return SFXBUS;
+  const c = AC.createDynamicsCompressor(), g = AC.createGain(); g.gain.value = 2.6;   // efektler müziğin üstünde duyulsun
+  g.connect(c); c.connect(AC.destination); SFXBUS = g; return g;
+}
 function tone(f, d, type, v, t0, slide) {
-  if (!AC || !UI.settings.sound) return;
+  if (!AC || !UI.settings.sound || AC.state !== 'running') return;
   try {
-    const t = AC.currentTime + (t0 || 0), o = AC.createOscillator(), g = AC.createGain();
+    const t = AC.currentTime + .01 + (t0 || 0), o = AC.createOscillator(), g = AC.createGain();
     o.type = type || 'sine'; o.frequency.setValueAtTime(f, t);
     if (slide) o.frequency.exponentialRampToValueAtTime(slide, t + d);
     g.gain.setValueAtTime(v || .07, t); g.gain.exponentialRampToValueAtTime(.0001, t + d);
-    o.connect(g); g.connect(AC.destination); o.start(t); o.stop(t + d + .03);
+    o.connect(g); g.connect(sfxBus()); o.start(t); o.stop(t + d + .03);
   } catch (e) { /* yok say */ }
 }
 const SFX = {
+  tap() { tone(880, .04, 'sine', .05); },
+  place() { tone(330, .05, 'triangle', .07); tone(220, .06, 'sine', .05, .01); },
   draw() { tone(520, .07, 'triangle', .06); },
   discard() { tone(190, .09, 'square', .045); tone(120, .1, 'sine', .08, .02); },
   open() { [523, 659, 784].forEach((f, i) => tone(f, .18, 'triangle', .07, i * .08)); },
@@ -3014,7 +3027,7 @@ function onMove(e) {
     g.style.setProperty('--u', getComputedStyle($('stage')).getPropertyValue('--u'));
     document.body.appendChild(g);                       // sahnenin dışında, kendi katmanında: iz bırakmaz
     g.style.left = '0px'; g.style.top = '0px';
-    drag.ghost = g; drag.w = drag.el.offsetWidth; drag.h = drag.el.offsetHeight; UI.sc = null; slotCache();
+    drag.ghost = g; drag.w = drag.el.offsetWidth; drag.h = drag.el.offsetHeight; UI.sc = null; slotCache(); SFX.tap();
     const tl = toStage(r.left, r.top), sp0 = toStage(drag.sx, drag.sy);
     drag.ox = sp0.x - tl.x; drag.oy = sp0.y - tl.y;               // parmağın taş üzerindeki yeri korunur
     if (drag.ox < 0 || drag.ox > drag.w || drag.oy < 0 || drag.oy > drag.h) { drag.ox = drag.w / 2; drag.oy = drag.h / 2; }
@@ -3054,7 +3067,7 @@ function endDrag(e, cancel) {
   if (!d.moved) { if (!cancel) handleTap(d.id); return; }
   if (d.ghost && d.gx !== undefined) UI.dropFrom = { id: d.id, x: d.gx, y: d.gy };
   if (UI.insEl) { UI.insEl.classList.remove('ins-l', 'ins-r'); UI.insEl = null; } UI.insKey = null;
-  if (!cancel) handleDrop(d.id, document.elementFromPoint(e.clientX, e.clientY), e.clientX, e.clientY);
+  if (!cancel) { SFX.place(); handleDrop(d.id, document.elementFromPoint(e.clientX, e.clientY), e.clientX, e.clientY); }
   render(); UI.dropFrom = null;
 }
 
@@ -3161,7 +3174,8 @@ function init() {
   document.addEventListener('click', e => {
     if (UI.noClick && Date.now() - UI.noClick < 400) return;
     const b = e.target.closest('[data-act]');
-    if (b && !b.disabled) { act(b.dataset.act); return; }
+    if (b && !b.disabled) { initAudio(); SFX.tap(); act(b.dataset.act); return; }
+    if (e.target.closest('button')) { initAudio(); SFX.tap(); }
     const tg = e.target.closest('[data-tog]');
     if (tg) {
       const k = tg.dataset.tog, v = !chipOn(k);
