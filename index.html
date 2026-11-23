@@ -632,10 +632,26 @@ button { font-family: inherit; }
 .dg.done { opacity: .55; } .dg.done em { color: var(--good); }
 .dg.cur { box-shadow: inset 0 0 0 3px var(--amber), 0 0 calc(var(--u) * 2) rgba(255,187,51,.5); } .dg.cur em { color: var(--amber); }
 
+.ad-btn b { color: #7bf0b8; margin-right: calc(var(--u) * .3); }
+.ad-cnt { display: grid; grid-template-columns: 1fr 1fr; gap: calc(var(--u) * 1.2); margin: calc(var(--u) * 1.2) 0; }
+.ad-cnt > div { background: rgba(0,0,0,.35); border-radius: calc(var(--u) * 1.4); padding: calc(var(--u) * 1.2); text-align: center; }
+.ad-cnt small { display: block; color: #b9a6ff; font-weight: 700; font-size: calc(var(--u) * 1.9); }
+.ad-cnt b { display: inline-flex; align-items: center; font: 800 calc(var(--u) * 4)/1.1 var(--f-num); }
+.ad-full { position: absolute; inset: 0; z-index: 9500; background: rgba(5, 2, 12, .94); display: flex; align-items: center; justify-content: center; }
+.ad-box { width: min(90%, calc(var(--u) * 110)); background: linear-gradient(160deg, #3a1a66, #12062a); border-radius: calc(var(--u) * 2.4); padding: calc(var(--u) * 2.4); box-shadow: 0 0 0 1px rgba(255,255,255,.12); }
+.ad-box small { color: var(--muted); font-size: calc(var(--u) * 1.8); }
+.ad-art { display: flex; flex-direction: column; align-items: center; gap: calc(var(--u) * 1); padding: calc(var(--u) * 4) 0; font-size: calc(var(--u) * 14); line-height: 1; }
+.ad-art b { font: 800 calc(var(--u) * 4.4)/1 var(--f-num); color: var(--amber); }
+.ad-art span { font-size: calc(var(--u) * 2.4); color: var(--ink); }
+.ad-bar { height: calc(var(--u) * 1); border-radius: 9px; background: rgba(255,255,255,.12); overflow: hidden; }
+.ad-bar i { display: block; height: 100%; width: 0; background: var(--good); }
+.ad-row { display: flex; justify-content: space-between; align-items: center; margin-top: calc(var(--u) * 1.2); font-weight: 700; }
+.ad-offer { display: flex; align-items: center; justify-content: center; gap: calc(var(--u) * 1.4); margin: 0 0 calc(var(--u) * 1.2); padding: calc(var(--u) * 1) calc(var(--u) * 1.4); border-radius: calc(var(--u) * 1.4); background: rgba(79, 224, 163, .12); border: 1px solid rgba(79, 224, 163, .4); }
+
 button { touch-action: manipulation; }
 </style>
 </head>
-<body data-ver="mwtjpagd">
+<body data-ver="mwtjvcih">
 <div id="stage" lang="tr">
   <div class="app">
     <header class="top">
@@ -2318,7 +2334,7 @@ function topBar() {
   const lv = levelInfo(w.st.xp);
   return '<div class="lb-top"><button class="lb-me" data-act="lb-profile"><span class="lb-av">' + w.name[0].toLocaleUpperCase('tr-TR') + '</span><span class="lb-mn"><b>' + w.name + '</b><small>Seviye ' + lv.lv + '</small></span></button>' +
     '<div class="lb-brand"><em>Kahve Usulü</em><b>101</b><span>OKEY</span></div>' +
-    '<div class="lb-right">' + ptBadge() + '<div class="lb-chips"><i class="coin"></i>' + chipFmt(w.chips) + '</div>' +
+    '<div class="lb-right">' + adBadge() + ptBadge() + '<div class="lb-chips"><i class="coin"></i>' + chipFmt(w.chips) + '</div>' +
     '<button class="btn sm' + (giftReady() ? ' pri glow' : '') + '" data-act="lb-gift">' + (giftReady() ? 'Günlük Hediye · ' + nextGiftDay() + '. gün' : 'Hediye Alındı') + '</button>' +
     '<button class="btn sm" data-act="lb-settings">Ayarlar</button></div></div>';
 }
@@ -2537,6 +2553,7 @@ function cyc(arr, v, d) { const i = arr.indexOf(v); return arr[(i + d + arr.leng
 function lobbyAct(a) {
   if (a === 'lb-settings') { showSettings(); return; }
   if (a === 'lb-pt') { showPlaytime(); return; }
+  if (a.indexOf('lb-ad') === 0) { adAct(a); return; }
   if (a === 'lb-profile') { showProfile(); return; }
   if (a.indexOf('lb-ptab-') === 0) { LB.ptab = a.slice(8); showProfile(); return; }
   if (a.indexOf('lb-tcat-') === 0) { LB.tcat = a.slice(8); showProfile(); return; }
@@ -3198,6 +3215,63 @@ function showPlaytime() {
 // test için bir kerelik çip yüklemesi
 (function testChips() { const w = wallet(); if (w.test1 !== 1) { w.test1 = 1; w.chips += 5000000; saveWallet(); setTimeout(() => toast('Test için hesabına 5.000.000 çip yüklendi', 'good'), 1500); } })();
 
+/* ---------- Ödüllü reklam (taslak): şimdilik deneme reklamı; mağaza sürümünde AdMob bağlanacak ---------- */
+const AD_REWARD = 5000, AD_DAILY = 10, AD_COOL = 3 * 60 * 1000, AD_LEN = 15, AD_BROKE = 25000, BROKE_AT = 10000;
+function adState() { const w = wallet(); if (!w.ad || w.ad.day !== today()) w.ad = { day: today(), n: 0, last: 0, broke: 0 }; return w.ad; }
+function adLeft() { return Math.max(0, AD_DAILY - adState().n); }
+function adWait() { return Math.max(0, adState().last + AD_COOL - Date.now()); }
+function brokeOffer() { return wallet().chips < BROKE_AT && !adState().broke; }
+function adBadge() {
+  if (brokeOffer()) return '<button class="btn sm pri glow ad-btn" data-act="lb-ad-broke"><b>▶</b> Reklam izle · +' + chipShort(AD_BROKE) + '</button>';
+  const w = adWait(), left = adLeft();
+  if (!left) return '<button class="btn sm ad-btn" disabled><b>▶</b> Reklam: yarın</button>';
+  if (w) return '<button class="btn sm ad-btn" data-act="lb-ad" data-adw="1"><b>▶</b> ' + Math.ceil(w / 60000) + ' dk sonra</button>';
+  return '<button class="btn sm ad-btn" data-act="lb-ad"><b>▶</b> Reklam · +' + chipShort(AD_REWARD) + '</button>';
+}
+function showAdInfo() {
+  const s = adState(), w = adWait();
+  openModal('<h2>Reklam İzle, Çip Kazan</h2><p class="sub">Reklamı sonuna kadar izlersen <b>' + chipFmt(AD_REWARD) + ' çip</b> kazanırsın. Günde en fazla ' + AD_DAILY + ' reklam, iki reklam arası ' + (AD_COOL / 60000) + ' dakika.</p>' +
+    '<div class="ad-cnt"><div><small>Bugün izlenen</small><b>' + s.n + ' / ' + AD_DAILY + '</b></div><div><small>Kazanılan</small><b><i class="coin"></i>' + chipFmt(s.n * AD_REWARD + (s.broke ? AD_BROKE : 0)) + '</b></div></div>' +
+    '<div class="mrow">' + (!adLeft() ? '<button class="btn" disabled>Bugünkü hakkın bitti</button>' : w ? '<button class="btn" disabled>' + Math.ceil(w / 1000) + ' sn sonra</button>' : '<button class="btn pri" data-act="lb-ad-go">▶ Reklamı İzle</button>') +
+    '<button class="btn" data-act="close">Kapat</button></div>');
+}
+// deneme reklamı (gerçek reklam yerine)
+function playAd(reward, broke) {
+  let left = AD_LEN;
+  const el = document.createElement('div'); el.className = 'ad-full';
+  el.innerHTML = '<div class="ad-box"><small>Deneme reklamı · mağaza sürümünde gerçek reklam gelecek</small><div class="ad-art">☕<b>Kahve Usulü 101 Okey</b><span>Arkadaşlarını davet et, masayı birlikte kurun!</span></div>' +
+    '<div class="ad-bar"><i></i></div><div class="ad-row"><span class="ad-t">' + left + ' sn</span><button class="btn sm" data-ad="x">Kapat</button></div></div>';
+  $('stage').appendChild(el);
+  const bar = el.querySelector('.ad-bar i'), t = el.querySelector('.ad-t');
+  requestAnimationFrame(() => { bar.style.transition = 'width ' + AD_LEN + 's linear'; bar.style.width = '100%'; });
+  stopMusic();
+  const tm = setInterval(() => {
+    left--; t.textContent = left > 0 ? left + ' sn' : 'Tamamlandı';
+    if (left <= 0) { clearInterval(tm); el.querySelector('[data-ad]').textContent = 'Ödülü Al'; el.querySelector('[data-ad]').classList.add('pri'); }
+  }, 1000);
+  el.querySelector('[data-ad]').addEventListener('click', () => {
+    clearInterval(tm); el.remove(); syncMusic();
+    if (left > 0) { warn('Reklamı sonuna kadar izlemedin, ödül verilmedi.'); return; }
+    const s = adState();
+    if (broke) s.broke = 1; else { s.n++; s.last = Date.now(); }
+    addChips(reward); saveWallet();
+    banner('+' + chipFmt(reward) + ' ÇİP', 'Reklam ödülü', 'good'); toast('Reklam ödülü: +' + chipFmt(reward) + ' çip', 'good');
+    if (!UI.table) showLobby();
+  });
+}
+function adAct(a) {
+  if (a === 'lb-ad') { showAdInfo(); return; }
+  if (a === 'lb-ad-go') { if (!adLeft() || adWait()) { showAdInfo(); return; } closeModal(); playAd(AD_REWARD, false); return; }
+  if (a === 'lb-ad-broke') {
+    if (!brokeOffer()) { showAdInfo(); return; }
+    openModal('<h2>Çipin Azaldı!</h2><p class="sub">Bir reklam izle, hemen <b>' + chipFmt(AD_BROKE) + ' çip</b> kazan. Bu fırsat günde bir kez.</p><div class="mrow"><button class="btn pri" data-act="lb-ad-broke-go">▶ Reklamı İzle</button><button class="btn" data-act="close">Sonra</button></div>');
+    return;
+  }
+  if (a === 'lb-ad-broke-go') { closeModal(); playAd(AD_BROKE, true); return; }
+}
+// lobide bekleme süresi geri saysın
+setInterval(() => { const b = document.querySelector('#lobby:not([hidden]) [data-adw]'); if (b && !$('modal').classList.contains('show')) showLobby(); }, 30000);
+
 /* ---------- Arka plan müziği: cihazda üretilen sakin, klasik bir döngü (dosya indirmeden) ---------- */
 const MUS = { on: false, timer: null, next: 0, step: 0, bus: null };
 // Re majör: I – V – vi – iii – IV – I – IV – V (klasik kanon yürüyüşü), her akor 2 ölçü arpej
@@ -3679,7 +3753,7 @@ function showGameEnd() {
   if (UI.table) {                                   // masa oyunu: çip hesabı ve lobi düğmeleri
     const res = lobbySettle();
     openModal('<h2>Oyun Bitti</h2><p class="sub">' + mine + '</p>' + res + '<table class="res">' + rows + '</table>' +
-      '<div class="mrow"><button class="btn pri" data-act="lb-again">Aynı Masada Tekrar</button><button class="btn" data-act="lb-lobby">Lobiye Dön</button><button class="btn" data-act="score">Yazboz</button></div>');
+      (brokeOffer() ? '<div class="ad-offer"><span>Çipin azaldı! Reklam izle, <b>+' + chipFmt(AD_BROKE) + '</b> çip kazan.</span><button class="btn pri sm" data-act="lb-ad-broke-go">▶ İzle</button></div>' : '') + '<div class="mrow"><button class="btn pri" data-act="lb-again">Aynı Masada Tekrar</button><button class="btn" data-act="lb-lobby">Lobiye Dön</button><button class="btn" data-act="score">Yazboz</button></div>');
     return;
   }
   openModal('<h2>Oyun Bitti</h2><p class="sub">' + mine + '</p><table class="res">' + rows + '</table>' +
