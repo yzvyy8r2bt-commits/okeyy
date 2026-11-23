@@ -2152,9 +2152,12 @@ function sitAt(t) {
 }
 function quickPlay() {
   let si = -1;
-  for (let i = SALONS.length - 1; i >= 0; i--) if (canEnter(SALONS[i])) { si = i; break; }
+  // Hemen Oyna tüm çipi tek masaya yatırmasın: en az bahsi çipinin 1/5'ini geçmeyen en yüksek salon
+  for (let i = SALONS.length - 1; i >= 0; i--) if (SALONS[i].min * 5 <= wallet().chips) { si = i; break; }
+  if (si < 0) for (let i = SALONS.length - 1; i >= 0; i--) if (canEnter(SALONS[i])) { si = i; break; }
   if (si < 0) { warn('Çipin hiçbir salona yetmiyor. Günlük hediyeni al.'); return; }
-  const ok = tablesOf(si).filter(t => canSit(t.bet) && t.seats.some(x => !x));
+  const lim = Math.max(SALONS[si].min, wallet().chips / 5);
+  const ok = tablesOf(si).filter(t => canSit(t.bet) && t.bet <= lim && t.seats.some(x => !x));
   if (ok.length) return sitAt(rnd(ok));
   const s = SALONS[si];
   sitAt({ id: 'q' + Date.now(), salon: si, bet: s.min, hands: s.hands[Math.min(1, s.hands.length - 1)], team: false, mode: 'katlamali', hard: false, pen: Object.assign({}, UI.settings.pen), seats: [null, null, null, null] });
