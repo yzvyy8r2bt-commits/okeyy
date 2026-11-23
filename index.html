@@ -297,6 +297,13 @@ button { font-family: inherit; }
 @media (prefers-reduced-motion: reduce) { #rotMsg .rot-ph { animation: none; transform: rotate(-90deg); } }
 #rotMsg[hidden] { display: none; }
 
+/* katlamalı açma limiti */
+.lim { position: absolute; top: calc(var(--u) * .5); left: calc(var(--u) * 1); z-index: 2; pointer-events: none;
+  font-size: calc(var(--u) * 1.9); font-weight: 700; color: #cfeee8; background: rgba(0, 0, 0, .4); border: 1px solid rgba(255, 187, 51, .5);
+  border-radius: calc(var(--u) * 1); padding: calc(var(--u) * .15) calc(var(--u) * .8); line-height: 1.25; letter-spacing: .02em; }
+.lim b { color: var(--amber); font-family: var(--f-num); font-size: 1.15em; }
+.lim[hidden] { display: none; }
+
 button { touch-action: manipulation; }
 </style>
 </head>
@@ -321,11 +328,13 @@ button { touch-action: manipulation; }
         <div class="corner" id="dBL" data-drop="side"></div>
       </div>
       <div class="mat seri">
+        <div class="lim" id="limS" hidden></div>
         <div class="melds" id="melds" aria-label="Masadaki açılmış seri perler"></div>
         <div class="ticker" id="ticker" aria-live="polite"></div>
       </div>
       <div class="mid" id="center"></div>
       <div class="mat cift">
+        <div class="lim" id="limC" hidden></div>
         <div class="melds" id="melds2" aria-label="Masadaki açılmış çiftler"></div>
       </div>
       <div class="col colR">
@@ -1935,6 +1944,13 @@ function renderMelds() {
   const flat = kind => G.table.filter(m => m.kind === kind).map(meldHTML).join('');
   $('melds').innerHTML = flat('series') || '<div class="empty-note">Masada henüz açılmış seri per yok.</div>';
   $('melds2').innerHTML = flat('pair');
+  // katlamalıda açma limiti masada yazar
+  const kat = G.cfg.mode === 'katlamali';
+  $('limS').hidden = $('limC').hidden = !kat;
+  if (kat) {
+    $('limS').innerHTML = 'Limit <b>' + seriesNeed() + '</b>';
+    $('limC').innerHTML = 'Limit <b>' + pairsNeed() + ' çift</b>';
+  }
   fitMats();
 }
 // Masadaki taşlar kaydırma gerektirmesin: sığana kadar küçült
