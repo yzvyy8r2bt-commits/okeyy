@@ -708,10 +708,14 @@ button { font-family: inherit; }
 .pclock { position: absolute; top: calc(var(--u) * -1.3); right: calc(var(--u) * -1); min-width: calc(var(--u) * 6.4); font-size: calc(var(--u) * 2.1); padding: calc(var(--u) * .5) calc(var(--u) * .7); z-index: 4; pointer-events: none; box-shadow: 0 2px 6px rgba(0,0,0,.5); }
 .plate.top .pclock { top: auto; bottom: calc(var(--u) * -1.6); right: auto; left: 50%; transform: translateX(-50%); }
 
+/* akıcılık: ıstaka taşları kendi katmanında; dokununca anında kalkma */
+.rack .tile { will-change: transform; -webkit-backface-visibility: hidden; backface-visibility: hidden; }
+.rack .tile.press { transform: translateY(-6%) scale(1.04); transition: transform .07s ease-out; z-index: 3; }
+
 button { touch-action: manipulation; }
 </style>
 </head>
-<body data-ver="mwto5yzf">
+<body data-ver="mwtoc5uh">
 <div id="stage" lang="tr">
   <div class="app">
     <header class="top">
@@ -3335,14 +3339,14 @@ function ptFmt(s) { s = Math.floor(s); const h = Math.floor(s / 3600), m = Math.
 function ptState() { const w = wallet(); if (!w.pt) w.pt = { sec: 0, got: 0 }; return w.pt; }
 // oynuyor mu: masada, oyun sürüyor, uygulama önde ve oyuncu kendisi oynuyor (süresi üst üste dolmamış)
 function ptActive() { return !!(UI.table && G && G.phase !== 'over' && !document.hidden && (UI.tOut || 0) < 2); }
-let ptLast = Date.now();
+let ptLast = Date.now(), ptSaveN = 0;
 setInterval(() => {
   const now = Date.now(), dt = Math.min(5, (now - ptLast) / 1000); ptLast = now;
   if (!ptActive()) return;
   const p = ptState(); p.sec += dt;
   while (p.got < PT_GOALS.length && p.sec >= PT_GOALS[p.got][0]) {
     const g = PT_GOALS[p.got]; p.got++;
-    addChips(g[1]);
+    addChips(g[1]); saveWallet();
     toast('Oyun süresi ödülü: ' + ptLabel(g[0]) + ' oynadın · +' + chipFmt(g[1]) + ' çip', 'good');
     banner('+' + chipFmt(g[1]) + ' ÇİP', ptLabel(g[0]) + ' oyun süresi ödülü', 'good');
     if (p.got >= PT_GOALS.length) {             // tüm hedefler bitti: en baştan yeniden başlar
@@ -3351,7 +3355,7 @@ setInterval(() => {
       break;
     }
   }
-  saveWallet();
+  if (++ptSaveN % 15 === 0 || p.sec < 2) saveWallet();   // her saniye değil, 15 sn'de bir kaydet (akıcılık)
 }, 1000);
 function ptBadge() {
   const p = ptState(), g = PT_GOALS[p.got];
@@ -4116,6 +4120,7 @@ function onDown(e) {
   initAudio();
   drag = { pid: e.pointerId, id: +el.dataset.id, el, sx: e.clientX, sy: e.clientY, moved: false, ghost: null, target: null, peeked: false, timer: null };
   const pt = G.players[0].slots.find(x => x && x.id === drag.id);
+  if (pt && !pt.wild && !(isGostTwin(pt) && canAnnounce(G.players[0]))) el.classList.add('press');   // dokununca hemen hafifçe kalkar
   if (pt && isGostTwin(pt) && canAnnounce(G.players[0])) {   // göstergeyi basılı tutarak "Gösterge bende"
     const d = drag;
     d.gostT = Date.now();
@@ -4169,7 +4174,7 @@ function onMove(e) {
   if (drag.pid !== undefined && e.pointerId !== drag.pid) return;
   if (e.pointerType === 'mouse' && e.buttons === 0) { endDrag(e, true); return; }
   if (!drag.moved) {
-    if (Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) < 5) return;
+    if (Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) < 3) return;
     if (drag.peeked) { drag.peeked = false; UI.peekId = null; drag.el.classList.remove('peek'); }
     clearTimeout(drag.timer); clearTimeout(drag.timer2);
     drag.moved = true;
@@ -4202,6 +4207,7 @@ function endDrag(e, cancel) {
   if (!drag) return;
   if (e && drag.pid !== undefined && e.pointerId !== undefined && e.pointerId !== drag.pid) return;
   const d = drag; drag = null;
+  if (d.el) d.el.classList.remove('press');
   if (d.raf) cancelAnimationFrame(d.raf);
   clearTimeout(d.timer); clearTimeout(d.timer2);
   if (UI.peekId) { UI.peekId = null; }
@@ -4297,12 +4303,15 @@ function botClock(now, dt) {
   if (!pl) return;
   let el = pl.querySelector('.pclock');
   if (!el) { el = document.createElement('span'); el.className = 'clock pclock'; pl.appendChild(el); }
+  if (el.dataset.s === String(s)) return;
+  el.dataset.s = s;
   el.textContent = '0:' + String(s).padStart(2, '0');
   el.classList.toggle('warn', s <= 10);
   el.style.setProperty('--p', Math.min(1, left / (TURN_SEC * 1000)).toFixed(3));
 }
 function clockTick() {
   const now = Date.now(), dt = now - (UI.cLast || now); UI.cLast = now;
+  if (drag && drag.moved) { if (UI.cEnd) UI.cEnd += dt; return; }   // sürüklerken ekrana dokunma: akıcılık
   try { botClock(now, dt); } catch (e) { /* yok say */ }
   const key = clockKey(), el = $('clock');
   if (!key) { if (el) el.hidden = true; UI.cKey = null; return; }
@@ -4313,7 +4322,8 @@ function clockTick() {
   const paused = document.hidden || $('modal').classList.contains('show') || (UI.drawerOpen === true);
   if (paused || drag) UI.cEnd += dt;                    // pencere açıkken / sürüklerken süre durur
   const left = Math.max(0, UI.cEnd - now), s = Math.ceil(left / 1000);
-  if (el) {
+  if (el && el.dataset.s !== String(s)) {          // sadece saniye değişince ekranı güncelle
+    el.dataset.s = s;
     el.hidden = false;
     el.textContent = '0:' + String(s).padStart(2, '0');
     el.classList.toggle('warn', s <= 10);
