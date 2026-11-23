@@ -1,9 +1,10 @@
 // Hediyeler: web sürümündeki kurallar (tek hediye; kalıcı > günlük > oyunluk; daha pahalısı gönderilebilir)
 import React from 'react';
 import { Text } from 'react-native';
-import { SvgXml } from 'react-native-svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { GIFT_ICONS, GIFT_CATS } from './giftData';
+import { GIFT_CATS } from './giftData';
+// Not: web'deki SVG çizimler giftData.js'de duruyor; Snack react-native-svg paketini yükleyemediği için
+// şimdilik emoji gösteriliyor. Mağaza derlemesinde SvgXml ile çizimlere geçilecek.
 export { GIFT_CATS };
 
 const PERM_MS = 24 * 3600 * 1000, PKEY = 'okey101.permgifts';
@@ -45,8 +46,6 @@ export function placeGift(name, item, cat) {
 export function botLv(name) { let h = 0; for (const c of name) h = (h * 31 + c.charCodeAt(0)) % 997; return 3 + h % 58; }
 
 export function GiftIcon({ name, size }) {
-  const xml = GIFT_ICONS[name];
-  if (xml) return <SvgXml xml={xml} width={size} height={size} />;
   const it = GIFT_CATS.flatMap(c => c.items).find(x => x[0] === name);
-  return <Text style={{ fontSize: size * 0.8 }}>{it ? it[1] : '🎁'}</Text>;
+  return <Text allowFontScaling={false} style={{ fontSize: size * 0.78, lineHeight: size, textAlign: 'center', width: size }}>{it ? it[1] : '🎁'}</Text>;
 }
