@@ -621,10 +621,21 @@ button { font-family: inherit; }
 .pt-bar { height: calc(var(--u) * 1); border-radius: 9px; background: rgba(255,255,255,.12); overflow: hidden; }
 .pt-bar i { display: block; height: 100%; background: var(--amber); }
 
+.dg-row { display: grid; grid-template-columns: repeat(6, 1fr) 1.4fr; gap: calc(var(--u) * 1); margin: calc(var(--u) * 1.4) 0; }
+.dg { display: flex; flex-direction: column; align-items: center; gap: calc(var(--u) * .6); padding: calc(var(--u) * 1.2) calc(var(--u) * .4); border-radius: calc(var(--u) * 1.4); background: rgba(0,0,0,.35); box-shadow: inset 0 0 0 1px rgba(255,255,255,.1); }
+.dg small { font-weight: 700; font-size: calc(var(--u) * 1.9); color: #b9a6ff; }
+.dg b { font: 800 calc(var(--u) * 2.8)/1 var(--f-num); color: #ffe39a; }
+.dg em { font-style: normal; font-size: calc(var(--u) * 1.6); font-weight: 700; }
+.dg .coin.big { width: calc(var(--u) * 5); height: calc(var(--u) * 5); }
+.dg.big { background: linear-gradient(160deg, rgba(255,187,51,.35), rgba(120,60,0,.4)); }
+.dg.big .coin.big { width: calc(var(--u) * 7); height: calc(var(--u) * 7); }
+.dg.done { opacity: .55; } .dg.done em { color: var(--good); }
+.dg.cur { box-shadow: inset 0 0 0 3px var(--amber), 0 0 calc(var(--u) * 2) rgba(255,187,51,.5); } .dg.cur em { color: var(--amber); }
+
 button { touch-action: manipulation; }
 </style>
 </head>
-<body data-ver="mwtjmuey">
+<body data-ver="mwtjpagd">
 <div id="stage" lang="tr">
   <div class="app">
     <header class="top">
@@ -2261,6 +2272,19 @@ function canEnter(s) { return wallet().chips >= salonEntry(s) && !tooRich(s); }
 function enterMsg(s) { return tooRich(s) ? s.name + ' salonuna en fazla ' + chipFmt(s.maxIn) + ' çiple girilebilir. Daha üst bir salonda oyna.' : s.name + ' salonuna girmek için en az ' + chipFmt(salonEntry(s)) + ' çip gerekir.'; }
 function canSit(bet) { return wallet().chips >= bet * ENTRY_MULT; }
 function giftReady() { return wallet().gift !== today(); }
+// 7 günlük seri: her gün art arda gelene artan hediye; bir gün kaçarsa 1. güne döner, 7. günden sonra yeniden başlar
+const DAILY_STREAK = [10000, 15000, 20000, 25000, 30000, 35000, 50000];
+function yesterday() { const d = new Date(); d.setDate(d.getDate() - 1); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
+function nextGiftDay() { const w = wallet(); return w.gift === yesterday() ? (w.gs || 0) % 7 + 1 : 1; }   // bugün alınca kaçıncı gün olacak
+function shownDay() { const w = wallet(); return giftReady() ? nextGiftDay() : (w.gs || 1); }
+function showDailyGift() {
+  const ready = giftReady(), day = shownDay();
+  const cells = DAILY_STREAK.map((v, k) => { const d = k + 1, done = d < day || (!ready && d === day), cur = ready && d === day;
+    return '<div class="dg' + (done ? ' done' : '') + (cur ? ' cur' : '') + (d === 7 ? ' big' : '') + '"><small>' + d + '. gün</small><i class="coin big"></i><b>' + chipShort(v) + '</b>' + (done ? '<em>Alındı ✓</em>' : cur ? '<em>Bugün</em>' : '') + '</div>'; }).join('');
+  openModal('<h2>Günlük Hediye</h2><p class="sub">Her gün art arda gel, hediyen büyüsün! Bir günü kaçırırsan 1. günden başlarsın; 7. günden sonra seri yeniden başlar.</p>' +
+    '<div class="dg-row">' + cells + '</div>' +
+    '<div class="mrow">' + (ready ? '<button class="btn pri" data-act="lb-gift-take">+' + chipFmt(DAILY_STREAK[day - 1]) + ' çip al</button>' : '<button class="btn" disabled>Yarın yine gel</button>') + '<button class="btn" data-act="close">Kapat</button></div>');
+}
 function rnd(a) { return a[Math.floor(Math.random() * a.length)]; }
 
 /* masaları üret (botlar oturuyor) */
@@ -2295,7 +2319,7 @@ function topBar() {
   return '<div class="lb-top"><button class="lb-me" data-act="lb-profile"><span class="lb-av">' + w.name[0].toLocaleUpperCase('tr-TR') + '</span><span class="lb-mn"><b>' + w.name + '</b><small>Seviye ' + lv.lv + '</small></span></button>' +
     '<div class="lb-brand"><em>Kahve Usulü</em><b>101</b><span>OKEY</span></div>' +
     '<div class="lb-right">' + ptBadge() + '<div class="lb-chips"><i class="coin"></i>' + chipFmt(w.chips) + '</div>' +
-    '<button class="btn sm' + (giftReady() ? ' pri glow' : '') + '" data-act="lb-gift">' + (giftReady() ? 'Günlük Hediye' : 'Hediye Alındı') + '</button>' +
+    '<button class="btn sm' + (giftReady() ? ' pri glow' : '') + '" data-act="lb-gift">' + (giftReady() ? 'Günlük Hediye · ' + nextGiftDay() + '. gün' : 'Hediye Alındı') + '</button>' +
     '<button class="btn sm" data-act="lb-settings">Ayarlar</button></div></div>';
 }
 function showLobby() {
@@ -2540,9 +2564,12 @@ function lobbyAct(a) {
     else if (k === 'mode') q.mode = cyc(['katlamali', 'klasik', 'any'], q.mode, d);
     saveSettings(); showSettings(); return;
   }
-  if (a === 'lb-gift') {
+  if (a === 'lb-gift') { showDailyGift(); return; }
+  if (a === 'lb-gift-take') {
     if (!giftReady()) { warn('Bugünün hediyesini aldın. Yarın yine gel.'); return; }
-    wallet().gift = today(); addChips(DAILY_GIFT); bump('gift'); checkTasks(); toast('Günlük hediye: +' + chipFmt(DAILY_GIFT) + ' çip', 'good'); showLobby(); return;
+    const day = nextGiftDay(), amt = DAILY_STREAK[day - 1], w = wallet();
+    w.gs = day; w.gift = today(); addChips(amt); closeModal();
+    banner('+' + chipFmt(amt) + ' ÇİP', day + '. gün hediyesi', 'good'); bump('gift'); checkTasks(); toast('Günlük hediye (' + day + '. gün): +' + chipFmt(amt) + ' çip', 'good'); showLobby(); return;
   }
   if (a.indexOf('lb-salon-') === 0) {
     const i = +a.slice(9);
