@@ -328,6 +328,9 @@ button { font-family: inherit; }
 .mgrid > * { min-width: 0; }
 .mchip { width: 100%; min-width: 0; }
 
+/* gösterge rozeti (sadece ıstakada) */
+.tile .gb { position: absolute; left: 6%; top: 4%; font: 800 .26em/1 var(--f-ui); color: var(--amber-ink); background: var(--amber); border-radius: .3em; padding: .12em .28em; font-style: normal; pointer-events: none; }
+
 button { touch-action: manipulation; }
 </style>
 </head>
@@ -526,8 +529,10 @@ function parseGroup(g) {
   return { melds, value: dp[n] };
 }
 /* ---------- Çift ---------- */
+// Çiftte joker gibi davranan taş: okey ya da "gösterge bende" denmiş gösterge
+function pj(t) { return !!(t && (t.wild || t.gost)); }
 function isPair(a, b) {
-  if (a.wild || b.wild) return true;
+  if (pj(a) || pj(b)) return true;
   return a.c === b.c && a.n === b.n;
 }
 function parsePairsInGroup(g) {
@@ -535,7 +540,7 @@ function parsePairsInGroup(g) {
   const pairs = []; let i = 0;
   while (i < g.length) {
     if (i + 1 < g.length && isPair(g[i], g[i + 1])) { pairs.push([g[i], g[i + 1]]); i += 2; }
-    else if (g[i].wild) i++;
+    else if (pj(g[i])) i++;
     else return [];
   }
   return pairs;
@@ -543,7 +548,7 @@ function parsePairsInGroup(g) {
 function bestPairs(tiles) {
   const byFace = new Map(), wilds = [], pairs = [], singles = [];
   for (const t of tiles) {
-    if (t.wild) { wilds.push(t); continue; }
+    if (pj(t)) { wilds.push(t); continue; }
     const k = t.c * 13 + t.n;
     if (!byFace.has(k)) byFace.set(k, []);
     byFace.get(k).push(t);
@@ -737,11 +742,13 @@ function applyExtend(m, t, opt) {
 // Perdeki jokerin yerine gerçek taşı koyabilir mi?
 function canSwapAt(m, idx, t) {
   const it = m.items[idx];
-  if (!it || !it.t.wild || t.wild) return false;
-  if (m.kind === 'pair') {                       // çiftteki okey: eşi olan taşla alınır
+  if (!it || t.wild) return false;
+  if (m.kind === 'pair') {                       // çiftteki okey ya da gösterge: eşi olan taşla alınır
+    if (!pj(it.t) || t.gost) return false;
     const o = m.items[1 - idx];
-    return !!o && !o.t.wild && t.c === o.t.c && t.n === o.t.n;
+    return !!o && !pj(o.t) && t.c === o.t.c && t.n === o.t.n;
   }
+  if (!it.t.wild) return false;
   if (m.kind !== 'series') return false;
   if (m.type === 'run') return t.c === it.c && t.n === it.n;
   const n = m.items[0].n;
@@ -847,7 +854,7 @@ function scoreHand(players, winner, opts) {
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     COLOR_NAMES, COLS, ROWS, setRng, rand, mulberry, shuffle, tileName, faceName, makeDeck, dealHand,
-    analyzeRun, analyzeSet, analyzeMeld, parseGroup, isPair, parsePairsInGroup, bestPairs,
+    analyzeRun, analyzeSet, analyzeMeld, parseGroup, isPair, pj, parsePairsInGroup, bestPairs,
     rackAnalysis, bestSeries, runBounds, extendOptions, applyExtend, canSwapAt, findSwapIdx, doSwap,
     isWrongDiscard, layoutGroups, arrangeSlots, sortTiles, groupByColor, partnerScore, scoreHand
   };
@@ -891,7 +898,7 @@ function startHand() {
     const human = i === 0 && !G.allBots;
     return {
       i, name: SEATS[i], human, bot: !human, hand: [], slots: null,
-      opened: false, openKind: null, openVal: 0, penalty: 0, penLog: [], sideTile: null, sideUsed: false, sideRef: null, sideReturned: false, pairsThisTurn: 0, openSnap: null, regathered: false, discards: [], openedThisTurn: false
+      opened: false, openKind: null, openVal: 0, penalty: 0, penLog: [], sideTile: null, sideUsed: false, sideRef: null, sideReturned: false, acted: false, gostSaid: false, pairsThisTurn: 0, openSnap: null, regathered: false, discards: [], openedThisTurn: false
     };
   });
   for (let i = 0; i < 4; i++) {
@@ -934,13 +941,27 @@ function pairsNeed() { return G.cfg.mode === 'katlamali' ? Math.max(5, G.maxPair
 function fail(msg) { return { ok: false, msg }; }
 function tableMeldById(id) { return G.table.find(m => m.id === id); }
 const PEN_DEFS = [
+  ['gosterge', 'Gösterge', 'Göstergenin eşi elinde olan elin başında söyleyip çiftte joker gibi kullanır'],
   ['rekor', 'Rekorlu', '150+ puanla ya da 7+ çiftle açana −101 rekor ödülü'],
   ['okeyCal', 'Okey çalma', 'Perdeki okeyi çalınan oyuncuya 101 ceza'],
   ['yanAc', 'Yandan taş alıp açma', 'Yandan alınan taşla açılırsa taşı atana taş×10 (çiftte ×20) ceza'],
   ['herTas', 'Her taş ceza', 'Elini açtıktan sonra yandan alıp per veya çift indirdiğin taşın sahibine taş×10 (çiftte ×20) ceza']
 ];
-const PEN_KEYS = { rekor: 1, okeyCal: 1, yanAc: 1, herTas: 1 };
+const PEN_KEYS = { gosterge: 1, rekor: 1, okeyCal: 1, yanAc: 1, herTas: 1 };
 function penOn(k) { return !PEN_KEYS[k] || !G.cfg.pen || G.cfg.pen[k] !== false; }
+// Gösterge: ortadaki göstergenin eşi. Elin başında (taş çekmeden/atmadan) söylenirse çiftte joker olur.
+function isGostTwin(t) { return !!(G.gosterge && t && !t.fake && !t.wild && t.c === G.gosterge.c && t.n === G.gosterge.n); }
+function canAnnounce(P) { return penOn('gosterge') && !P.acted && !P.gostSaid && handOf(P).some(isGostTwin); }
+function announceGost(i) {
+  const P = G.players[i];
+  if (!canAnnounce(P)) return fail('Gösterge ancak elin başında, taş çekmeden ya da atmadan söylenebilir.');
+  const t = handOf(P).find(isGostTwin);
+  t.gost = true; P.gostSaid = true;
+  logEv(i, 'Gösterge bende');
+  H.toast((P.human ? 'Gösterge bende! ' + tileName(t) + ' çiftte her taşla eşleşir.' : P.name + ': Gösterge bende'), 'info');
+  H.render();
+  return { ok: true, msg: 'Gösterge bende' };
+}
 const LAST_MSG = 'Elini bitirmek için son taşını atmalısın: elinde en az bir taş kalmalı.';
 // Geri alma / son taş koruması için anlık görüntü
 function takeSnap(P) {
@@ -991,9 +1012,11 @@ function noteUse(P, tile) {
   P.sideUsed = true; P.sideRef = null;
 }
 // Birden çok taş: bu taşlardan biri yandan alınansa (3) açılışta ceza + (4) kullanıldı
-function openCharge(P, tiles, kind, gate) {
+function openCharge(P, tiles, kind, gate, pairs) {
   gate = gate || 'yanAc';
   if (!P.sideTile || P.sideUsed || !tiles.includes(P.sideTile) || !penOn(gate)) return;
+  // yandan alınan taş göstergeyle çift yapıldıysa ceza yok
+  if (pairs && pairs.some(p => p.includes(P.sideTile) && p.some(x => x !== P.sideTile && x.gost))) return;
   const V = G.players[(P.i + 3) % 4], t = P.sideTile;
   const mul = kind === 'cift' ? 20 : 10;
   let amt = t.n * mul;
@@ -1013,8 +1036,8 @@ function openCharge(P, tiles, kind, gate) {
 function pairsWith(hand, tile) {
   const rest = hand.filter(x => x !== tile);
   let partner = null;
-  if (!tile.wild) partner = rest.find(x => !x.wild && x.c === tile.c && x.n === tile.n) || rest.find(x => x.wild);
-  else partner = rest.find(x => !x.wild) || rest.find(x => x.wild);
+  if (!pj(tile)) partner = rest.find(x => !pj(x) && x.c === tile.c && x.n === tile.n) || rest.find(x => x.gost) || rest.find(x => x.wild);
+  else partner = rest.find(x => !pj(x)) || rest.find(x => pj(x));
   if (!partner) return null;
   const rem = rest.filter(x => x !== partner);
   return [[tile, partner]].concat(bestPairs(rem).pairs);
@@ -1055,13 +1078,13 @@ function layMelds(i, melds) {
 
 /* ---------- Temel hamleler (insan ve bot ortak) ---------- */
 function drawFromDeck(i) {
-  const P = G.players[i];
+  const P = G.players[i]; P.acted = true;
   const t = G.deck.pop();
   giveTile(P, t); G.phase = 'discard';
   return t;
 }
 function takeSide(i) {
-  const P = G.players[i], prev = G.players[(i + 3) % 4];
+  const P = G.players[i], prev = G.players[(i + 3) % 4]; P.acted = true;
   const t = prev.discards.pop();
   giveTile(P, t); G.phase = 'discard';
   P.sideTile = t; P.sideUsed = false; P.sideRef = null;
@@ -1106,7 +1129,7 @@ function openSeries(i, melds) {
 }
 function openPairs(i, pairs) {
   const P = G.players[i];
-  openCharge(P, pairs.reduce((a, p) => a.concat(p), []), 'cift');
+  openCharge(P, pairs.reduce((a, p) => a.concat(p), []), 'cift', undefined, pairs);
   for (const pr of pairs) {
     for (const t of pr) { removeFromHand(P, t); noteUse(P, t); }
     G.table.push({ id: G.meldSeq++, owner: i, kind: 'pair', type: 'pair', items: pr.map(t => ({ t, c: t.c, n: t.n })) });
@@ -1120,7 +1143,7 @@ function openPairs(i, pairs) {
 }
 function addPairs(i, pairs) {
   const P = G.players[i];
-  openCharge(P, pairs.reduce((a, p) => a.concat(p), []), P.openKind === 'cift' ? 'cift' : 'seri', 'herTas');
+  openCharge(P, pairs.reduce((a, p) => a.concat(p), []), P.openKind === 'cift' ? 'cift' : 'seri', 'herTas', pairs);
   for (const pr of pairs) {
     for (const t of pr) { removeFromHand(P, t); noteUse(P, t); }
     G.table.push({ id: G.meldSeq++, owner: i, kind: 'pair', type: 'pair', items: pr.map(t => ({ t, c: t.c, n: t.n })) });
@@ -1155,11 +1178,12 @@ function processTile(i, t, m, opt) {
 }
 // Atış. Yanlışa atma cezasını burada keser.
 function doDiscard(i, tile) {
-  const P = G.players[i];
+  const P = G.players[i]; P.acted = true;
   removeFromHand(P, tile);
   const finishing = handOf(P).length === 0;
   const wrong = !finishing && penOn('islek') && isWrongDiscard(tile, G.table);
   const okeyThrow = !finishing && !wrong && !!tile.wild && penOn('okeyAt');
+  tile.gost = false;                         // atılan gösterge sıradan taşa döner
   P.discards.push(tile);
   G.lastDiscard = { by: i, id: tile.id };
   logEv(i, 'taş attı: ' + tileName(tile));
@@ -1390,6 +1414,11 @@ function swapOkey(i, m, idx, t) {
   const it = m.items[idx];
   const by = it.by !== undefined ? it.by : m.owner;
   const joker = doSwap(m, idx, t);
+  if (joker.gost) {
+    logEv(i, 'göstergeyi aldı (' + tileName(t) + ' koydu)');
+    H.toast(G.players[i].human ? 'Göstergeyi aldın: çiftte her taşla eşleşir' : G.players[i].name + ' göstergeyi aldı', 'info');
+    return joker;
+  }
   if (by !== i && G.cfg.team && by === (i + 2) % 4) {
     logEv(i, 'eşinin okeyini çaldı (ceza yok)');
     H.toast((G.players[i].human ? 'Eşinin okeyini aldın: ceza yok' : G.players[i].name + ' eşinin okeyini aldı: ceza yok'), 'good');
@@ -1430,13 +1459,13 @@ function hProcessAll() {
 function hSwap(tileId, meldId, idx) {
   const e = humanTurnErr(null); if (e) return e;
   const P = G.players[0];
-  if (!P.opened) return fail('Okey çalmak için önce elini açmalısın.');
+  if (!P.opened) return fail('Okey ya da gösterge almak için önce elini açmalısın.');
   const t = P.slots.find(x => x && x.id === tileId);
   const m = tableMeldById(meldId);
   if (!t || !m) return fail('Taş veya per bulunamadı.');
   if (!canSwapAt(m, idx, t)) {
-    const it = m.items[idx];
-    return fail('Okeyi almak için yerine tam olarak ' + faceName(it.c, it.n) + ' taşını koymalısın.');
+    const it = m.items[idx], o = m.kind === 'pair' ? m.items[1 - idx] : it;
+    return fail((it.t.gost ? 'Göstergeyi' : 'Okeyi') + ' almak için yerine tam olarak ' + faceName(o.c, o.n) + ' taşını koymalısın.');
   }
   const joker = swapOkey(0, m, idx, t);
   removeFromHand(P, t); noteUse(P, t);
@@ -1736,6 +1765,7 @@ async function botTurn(i) {
   const ep = G.epoch, P = G.players[i];
   const alive = () => ep === G.epoch && G.phase !== 'over';
   await H.wait(botDelay()); if (!alive()) return;
+  if (canAnnounce(P)) announceGost(i);
   if (G.phase === 'draw') {
     if (!G.deck.length) { endHandDraw(); return; }
     const ch = botChooseDraw(P);
@@ -1792,7 +1822,7 @@ async function continueFlow() {
 
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { H, newGame, nextHand, getG: () => G, startHand, hDraw, hOpen, hProcess, hSwap, hProcessPairs, hProcessAll, hLay, canPairLay, hRegather, hReturnSide, hDiscard, hArrange, hMove, hInsert,
-    doDiscard, finishHand, endHandDraw, openSeries, openPairs, botTurn, continueFlow, seriesNeed, pairsNeed, handOf, advanceTurn };
+    doDiscard, finishHand, endHandDraw, openSeries, openPairs, addPairs, takeSide, drawFromDeck, announceGost, canAnnounce, isGostTwin, openCharge, botTurn, continueFlow, seriesNeed, pairsNeed, handOf, advanceTurn };
 }
 
 /* =====================================================================
@@ -1801,13 +1831,13 @@ if (typeof module !== 'undefined' && module.exports) {
 const $ = id => document.getElementById(id);
 const UI = {
   selected: new Set(), prefer: 'seri', drawerOpen: false,
-  settings: { pen: { rekor: true, okeyCal: true, yanAc: true, herTas: true }, mode: 'katlamali', hands: 4, team: false, speed: 'normal', sound: true, hint: false, hard: false },
+  settings: { pen: { gosterge: true, rekor: true, okeyCal: true, yanAc: true, herTas: true }, mode: 'katlamali', hands: 4, team: false, speed: 'normal', sound: true, hint: false, hard: false },
   statusMsg: null, statusUntil: 0, lastTap: null, acceptIds: new Set(), swapKeys: new Set(), tickerLines: [], hitBot: -1
 };
 let drag = null;
 
 function loadSettings() {
-  try { const s = JSON.parse(localStorage.getItem('okey101.settings') || 'null'); if (s) Object.assign(UI.settings, s); if (![1, 2, 4, 8].includes(UI.settings.hands)) UI.settings.hands = 4; UI.settings.pen = Object.assign({ rekor: true, okeyCal: true, yanAc: true, herTas: true }, UI.settings.pen || {}); UI.settings.speed = 'normal'; } catch (e) { /* depolama yok */ }
+  try { const s = JSON.parse(localStorage.getItem('okey101.settings') || 'null'); if (s) Object.assign(UI.settings, s); if (![1, 2, 4, 8].includes(UI.settings.hands)) UI.settings.hands = 4; UI.settings.pen = Object.assign({ gosterge: true, rekor: true, okeyCal: true, yanAc: true, herTas: true }, UI.settings.pen || {}); UI.settings.speed = 'normal'; } catch (e) { /* depolama yok */ }
 }
 function saveSettings() {
   try { localStorage.setItem('okey101.settings', JSON.stringify(UI.settings)); } catch (e) { /* depolama yok */ }
@@ -2022,7 +2052,8 @@ function renderRack() {
         if (P.sideTile === t && !P.sideUsed) cls.push('sidemark');
         if (UI.peekId === t.id || t.mark) cls.push('peek');
         const hint = !hardMode() && G.table.length && isWrongDiscard(t, G.table) ? '<i class="hw" title="İşlek taş: atarsan 101 ceza">!</i>' : '';
-        inner_ = tileHTML(t, { cls: cls.join(' '), attrs: 'data-id="' + t.id + '"', extra: hint });
+        const gb = t.gost ? '<i class="gb" title="Gösterge: çiftte her taşla eşleşir">G</i>' : '';
+        inner_ = tileHTML(t, { cls: cls.join(' '), attrs: 'data-id="' + t.id + '"', extra: hint + gb });
       }
       h += '<div class="slot" data-slot="' + i + '">' + inner_ + '</div>';
     }
@@ -2061,8 +2092,9 @@ function renderActions() {
 }
 function defaultStatus() {
   if (G.phase === 'over') return 'El bitti.';
-  if (G.turn !== 0) return G.players[G.turn].name + ' oynuyor…';
   const P = G.players[0];
+  if (canAnnounce(P)) return 'Gösterge sende: taş çekmeden göstergeye basılı tutarak "Gösterge bende" de.';
+  if (G.turn !== 0) return G.players[G.turn].name + ' oynuyor…';
   if (G.phase === 'draw') return 'Sıra sende: desteden ya da yandan bir taşı ıstakana sürükle.';
   if (P.sideTile && !P.sideUsed) {
     const nm = tileName(P.sideTile);
@@ -2119,7 +2151,8 @@ const MODE_CHIPS = [
   ['pen.okeyCal', 'Okey çalma cezası', 'Okeyi çalınan oyuncuya +101 ceza'],
   ['pen.herTas', 'Her taş cezalı', 'Açtıktan sonra yandan alıp indirince: atana taş×10 (çift ×20)'],
   ['pen.yanAc', 'Yandan açma cezalı', 'Yandan alınan taşla el açılırsa: atana taş×10 (çift ×20)'],
-  ['hard', 'Yardımsız', 'Per çizgileri ve ipuçları gösterilmez']];
+  ['hard', 'Yardımsız', 'Per çizgileri ve ipuçları gösterilmez'],
+  ['pen.gosterge', 'Gösterge', 'Eşi elinde olan başta basılı tutup söyler, çiftte joker olur']];
 function chipOn(k) { return k.indexOf('pen.') === 0 ? UI.settings.pen[k.slice(4)] !== false : !!UI.settings[k]; }
 function showMenu(first) {
   const s = UI.settings;
@@ -2139,7 +2172,7 @@ function showRules(back) {
     '<h3>El açma</h3><ul><li>Seri: en az 3 taşlı perlerle (aynı renk ardışık ya da farklı renkte aynı sayı) en az 101 puan. 1 taşı yalnızca başta (1-2-3) kullanılır ve 1 puandır; 12-13-1 per olmaz.</li><li>Çift: en az 5 çift. Çift açan hem çift hem seri perlere işleyebilir; ama bir turda bir perin her ucuna (sağ ve sol) en fazla 2 taş işleyebilir, okey çalabilir.</li><li>Katlamalı modda masadaki en yüksek açılışı geçmek gerekir (seri puanı ya da çift sayısı).</li><li>Istakada yan yana (boşluksuz) duran taşlar bir per sayılır. Yeşil çizgi per, altın çizgi çift demektir.</li></ul>' +
     '<h3>İşleme ve okey çalma</h3><ul><li>Elini açtıysan yerdeki perlere taş işleyebilirsin: taşı seçip pere dokun ya da sürükle. Yardımsız mod kapalıyken Tümünü İşle düğmesi işlenebilen tüm taşları işler.</li><li>Yandan aldığın taşı mutlaka kullanmalısın: elin kapalıysa onunla el açarsın, açıksa pere işler ya da yeni per (çift açtıysan çift) indirirsin. Kullanamayacağını anlarsan taşı Yan kutusuna geri sürükle: ceza yok, ama o turda desteden çekersin.</li><li>Yandan aldığın taşla yanlış el açmaya çalışırsan (puan yetmiyor, Katlamalıda rakibi geçemiyorsun) +101 ceza yersin ve taş geri gider. Yandan taş almadan başarısız el açmaya çalışmak da +101 cezadır.</li><li>Masada hem seri hem çift açan varsa, seri açan oyuncu da elindeki çiftleri Çift Aç düğmesiyle indirebilir (bir turda en fazla 2 çift; sıra tekrar gelince 2 çift daha). Yandan aldığı taşla çift indirirse taşı atana ×10 ceza yazılır (çift açan çift indirirse ×20).</li><li>Her taş ceza: elini açtıktan sonra yandan aldığın taşla yeni per ya da çift indirirsen o taşı atan oyuncu taş sayısı ×10 (çiftte ×20) ceza yer. Yandan aldığın taşı elindeki taşla bağlayıp (örneğin yerde kırmızı 3-4-5, elinde 6, yandan 7) pere işlersen de ceza yazılır; çift açan bunu yaparsa ×10, çift indirirse ×20 yazılır.</li><li>Yandan aldığın taşla el açarsan o taşı atan oyuncu, taş sayısı ×10 (çift açtıysan ×20) ceza yer.</li><li>Yan oyuncu işlek taş atıp 101 ceza yediyse, o taşı yandan alınca cezası 101 yerine taş sayısı ×10 olur (alana ceza yok).</li><li>Bir oyuncunun perde bıraktığı okeyi çalarsan okeyi bırakan oyuncuya 101 ceza yazılır (kendi okeyini alırsan ceza yok).</li><li>Perdeki okeyi almak için yerine tam olarak temsil ettiği taşı koymalısın; okey ıstakana gelir. Çiftteki okey de, çiftin eşi olan taşla alınabilir (eşin değilse okeyi bırakana 101 ceza).</li><li>Masadaki bir okeyin (seri ya da çift) yerini tutan taşı atmak işlek sayılır: atan 101 ceza yer.</li></ul>' +
     '<h3>Ceza ve puan</h3><ul><li>Yanlışa taş atma: attığın taş masadaki bir pere işleniyorsa +101 ceza.</li><li>El sonunda eli açmamış oyuncuya 202. Eli açan, kalan taşlarının toplamını yazar; elinde okey kalırsa +101 ekstra.</li><li>Bitiren −101 alır. Kafa (kimse el açmamışken eli açıp aynı turda son taşı atarak bitirmek) ×2, okey atarak bitme ×2, ikisi birlikte (okey kafa) ×4 çarpan uygular. Başkası açtıktan sonra aynı turda açıp bitirmek normal bitiştir. Çift açıp bitiren −202 alır, rakiplerin kalan puanı ×2 olur. Eli ortada okey atmak 101 cezadır.</li><li>Deste biterse el berabere biter, herkes kalan taşına göre yazılır.</li></ul>' +
-    '<h3>Oyun modları</h3><ul><li>Ayarlardaki Oyun modları bölümünden Rekorlu, Okey çalma cezası, Her taş cezalı, Yandan açma cezalı ve Yardımsız seçenekleri tek tek açılıp kapatılabilir. Kapalı olan kural uygulanmaz. Değişiklik yeni oyunda geçerli olur.</li></ul><h3>El açma ve bitirme</h3><ul><li>Rekor ödülü: 150 ve üzeri puanla ya da 7 ve üzeri çiftle el açan −101 kazanır. Seri ve çift için ödül ayrıdır. Daha yüksek açan olursa ödül ona geçer, öncekinin ödülü silinir.</li><li>Katlamalıda rakibin açtığı sayıyı geçemiyorsan bile, işlek yapmadan elindeki taşlardan tek taş kalacak şekilde 101+ puanla açabilirsen eli açabilir ve o son taşı atıp bitirebilirsin. Rakibin sayısı aranmaz. Bu normal bitiş sayılır (kimse açmamışsa kafa).</li><li>Eli açarken tüm taşlarını indiremezsin: elinde en az bir taş kalmalı. Eli son taşını sağına atarak bitirirsin. Kimse açmadan aynı turda açıp bitirmek kafadır.</li><li>El açtığın turda Geri Topla düğmesiyle indirdiklerini geri alabilirsin. Düzeltip yeniden açabilirsen ceza yok; açamazsan ya da açmadan taş atarsan +101 yanlış el açma cezası yazılır.</li><li>Çift açan oyuncu eli bitirememişse kalan taşının 2 katı yazılır. Rakip okeyle ya da çiftle bitirirse bu 4 kata, seri açanın cezası 2 kata çıkar.</li></ul><h3>Eşli oyun</h3><ul><li>Ayarlardan Eşli seçilirse Sen ile Mehmet (karşılıklı oturanlar) bir takım, Ahmet ile Ayşe rakip takım olur.</li><li>Eli bitiren oyuncunun eşine o el için puan yazılmaz (0), ama eş bitirmeden önce ceza yediyse o ceza yazılır. Eşe katlama yoktur. Rakiplere olağan puanlar yazılır.</li><li>Eşinin perde bıraktığı okeyi çalarsan eşine ceza yazılmaz.</li><li>Oyun sonunda iki oyuncunun toplamı takım puanıdır; düşük olan takım kazanır. El sayısı 1, 2, 4 ya da 8 seçilebilir (Tek oyunda da).</li></ul><h3>Yardımsız mod</h3><ul><li>Ayarlardan açılır, Klasik ve Katlamalı ile birlikte oynanır. Istakadaki per ve çift çizgileri görünmez, taş seçince işleyeceği perler parlamaz, işlek taş ipucu çalışmaz. Perleri kendin dizmelisin.</li></ul><h3>Kontroller</h3><ul><li>Taşa dokun: seç. Sürükle: yerleştir; taşı atmak için Attığın alanına, işlemek için pere bırak.</li><li>Seri Diz ve Çift Diz, ıstakayı en iyi dizilimle düzenler.</li></ul></div>' +
+    '<h3>Oyun modları</h3><ul><li>Ayarlardaki Oyun modları bölümünden Rekorlu, Okey çalma cezası, Her taş cezalı, Yandan açma cezalı ve Yardımsız seçenekleri tek tek açılıp kapatılabilir. Kapalı olan kural uygulanmaz. Değişiklik yeni oyunda geçerli olur.</li></ul><h3>El açma ve bitirme</h3><ul><li>Rekor ödülü: 150 ve üzeri puanla ya da 7 ve üzeri çiftle el açan −101 kazanır. Seri ve çift için ödül ayrıdır. Daha yüksek açan olursa ödül ona geçer, öncekinin ödülü silinir.</li><li>Katlamalıda rakibin açtığı sayıyı geçemiyorsan bile, işlek yapmadan elindeki taşlardan tek taş kalacak şekilde 101+ puanla açabilirsen eli açabilir ve o son taşı atıp bitirebilirsin. Rakibin sayısı aranmaz. Bu normal bitiş sayılır (kimse açmamışsa kafa).</li><li>Eli açarken tüm taşlarını indiremezsin: elinde en az bir taş kalmalı. Eli son taşını sağına atarak bitirirsin. Kimse açmadan aynı turda açıp bitirmek kafadır.</li><li>El açtığın turda Geri Topla düğmesiyle indirdiklerini geri alabilirsin. Düzeltip yeniden açabilirsen ceza yok; açamazsan ya da açmadan taş atarsan +101 yanlış el açma cezası yazılır.</li><li>Çift açan oyuncu eli bitirememişse kalan taşının 2 katı yazılır. Rakip okeyle ya da çiftle bitirirse bu 4 kata, seri açanın cezası 2 kata çıkar.</li></ul><h3>Eşli oyun</h3><ul><li>Ayarlardan Eşli seçilirse Sen ile Mehmet (karşılıklı oturanlar) bir takım, Ahmet ile Ayşe rakip takım olur.</li><li>Eli bitiren oyuncunun eşine o el için puan yazılmaz (0), ama eş bitirmeden önce ceza yediyse o ceza yazılır. Eşe katlama yoktur. Rakiplere olağan puanlar yazılır.</li><li>Eşinin perde bıraktığı okeyi çalarsan eşine ceza yazılmaz.</li><li>Oyun sonunda iki oyuncunun toplamı takım puanıdır; düşük olan takım kazanır. El sayısı 1, 2, 4 ya da 8 seçilebilir (Tek oyunda da).</li></ul><h3>Gösterge</h3><ul><li>Oyun modlarında Gösterge açıksa, ortadaki göstergenin eşi elinde olan oyuncu elin başında, taş çekmeden ya da atmadan o taşa basılı tutarak "Gösterge bende" der. Herkese bildirim gider, puan kazanılmaz.</li><li>Söylenen gösterge yalnızca çiftte joker gibidir: her taşla çift olur. Seri perde sıradan taş olarak kullanılır.</li><li>Seri açtıysan ve masada çift açan varsa, çift indirirken göstergeyi kullanabilirsin.</li><li>Yandan alınan taşı göstergeyle çift yapıp açarsan ya da indirirsen taşı atana ceza yazılmaz (okeyle yapılırsa yazılır).</li><li>Masada gösterge + X çifti varsa, eli açık olan ve X’i olan oyuncu X’i koyup göstergeyi alır ve başka taşla yeniden çift indirebilir. Göstergeyi almanın cezası yoktur. O X taşını atmak işlek sayılır (101).</li><li>El sonunda elde kalan gösterge kendi sayısı kadar yazılır; atılan gösterge sıradan taşa döner.</li></ul><h3>Yardımsız mod</h3><ul><li>Ayarlardan açılır, Klasik ve Katlamalı ile birlikte oynanır. Istakadaki per ve çift çizgileri görünmez, taş seçince işleyeceği perler parlamaz, işlek taş ipucu çalışmaz. Perleri kendin dizmelisin.</li></ul><h3>Kontroller</h3><ul><li>Taşa dokun: seç. Sürükle: yerleştir; taşı atmak için Attığın alanına, işlemek için pere bırak.</li><li>Seri Diz ve Çift Diz, ıstakayı en iyi dizilimle düzenler.</li></ul></div>' +
     '<div class="mrow"><button class="btn pri" data-act="' + (back ? 'menu' : 'close') + '">' + (back ? 'Geri' : 'Kapat') + '</button></div>');
 }
 function showHandEnd(rec, last) {
@@ -2299,7 +2332,10 @@ function onDown(e) {
   initAudio();
   drag = { pid: e.pointerId, id: +el.dataset.id, el, sx: e.clientX, sy: e.clientY, moved: false, ghost: null, target: null, peeked: false, timer: null };
   const pt = G.players[0].slots.find(x => x && x.id === drag.id);
-  if (pt && pt.wild) {
+  if (pt && isGostTwin(pt) && canAnnounce(G.players[0])) {   // göstergeyi basılı tutarak "Gösterge bende"
+    const d = drag;
+    d.timer = setTimeout(() => { if (drag === d && !d.moved) { d.peeked = true; feedback(announceGost(0)); render(); } }, 450);
+  } else if (pt && pt.wild) {
     const d = drag;
     d.timer = setTimeout(() => { if (drag === d && !d.moved) { d.peeked = true; UI.peekId = d.id; d.el.classList.add('peek'); } }, 320);
     d.timer2 = setTimeout(() => { if (drag === d && !d.moved) { pt.mark = !pt.mark; d.marked = true; d.el.classList.toggle('peek', true); } }, 1000);
