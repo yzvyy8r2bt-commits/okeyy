@@ -2642,15 +2642,25 @@ const GIFT_CATS = [
 ];
 // bot seviyesi/çipi: isme göre sabit sanal değerler (taslak)
 function botLv(name) { let h = 0; for (const c of name) h = (h * 31 + c.charCodeAt(0)) % 997; return 3 + h % 58; }
+// kalıcı hediyeler oyuncunun adına 24 saat saklanır
+const PERM_MS = 24 * 3600 * 1000;
+function permStore() { let s = {}; try { s = JSON.parse(localStorage.getItem('okey101.permgifts') || '{}') || {}; } catch (e) { s = {}; } return s; }
+function permOf(name) { const e = permStore()[name]; return e && e.until > Date.now() ? e.em : ''; }
+function savePerm(name, em) {
+  const s = permStore(), now = Date.now();
+  for (const k in s) if (!s[k] || s[k].until <= now) delete s[k];
+  s[name] = { em, until: now + PERM_MS };
+  try { localStorage.setItem('okey101.permgifts', JSON.stringify(s)); } catch (e) { /* depolama yok */ }
+}
 function giftBadge(i) {
-  const g = UI.gifts && UI.gifts[i]; if (!g) return '';
-  const now = Date.now(), tmp = g.tmp && g.tmp.until > now ? g.tmp.em : '';
-  return (g.perm ? '<span class="pg-perm" title="Kalıcı hediye">' + g.perm + '</span>' : '') + (tmp ? '<span class="pg-tmp">' + tmp + '</span>' : '');
+  const g = (UI.gifts && UI.gifts[i]) || {}, now = Date.now(), tmp = g.tmp && g.tmp.until > now ? g.tmp.em : '';
+  const perm = G && G.players[i] ? permOf(G.players[i].name) : '';
+  return (perm ? '<span class="pg-perm" title="Kalıcı hediye (24 saat)">' + perm + '</span>' : '') + (tmp ? '<span class="pg-tmp">' + tmp + '</span>' : '');
 }
 function setGift(i, em, perm) {
   UI.gifts = UI.gifts || {};
   const g = UI.gifts[i] = UI.gifts[i] || {};
-  if (perm) g.perm = em; else g.tmp = { em, until: Date.now() + 9000 };
+  if (perm) savePerm(G.players[i].name, em); else g.tmp = { em, until: Date.now() + 9000 };
   if (G) renderBots();
   clearTimeout(setGift['t' + i]); setGift['t' + i] = setTimeout(() => { if (G) renderBots(); }, 9100);
 }
@@ -2676,7 +2686,7 @@ function showGiftMenu(i) {
   openModal('<div class="gf"><div class="gf-head"><span class="lb-av gf-av">' + P.name[0] + '</span><div><b>' + P.name + team + '</b><small>Seviye ' + botLv(P.name) + '</small></div>' +
     '<div class="lb-chips sm"><i class="coin"></i>' + chipFmt(wallet().chips) + '</div></div>' +
     '<h3 class="pf-h">Hediye Yolla</h3><div class="tk-tabs">' + tabs + '</div><div class="gf-grid">' + items + '</div>' +
-    (cat.perm ? '<p class="st-note">Kalıcı hediyeler oyun boyunca oyuncunun kutusunda durur.</p>' : '<p class="st-note">Hediye birkaç saniye oyuncunun kutusunda görünür. Takılmalık hediyelerle dalga geçmek serbest!</p>') +
+    (cat.perm ? '<p class="st-note">Kalıcı hediyeler 24 saat boyunca oyuncunun kutusunda durur; aynı oyuncuyla başka masada karşılaşırsan da görünür.</p>' : '<p class="st-note">Hediye birkaç saniye oyuncunun kutusunda görünür. Takılmalık hediyelerle dalga geçmek serbest!</p>') +
     '<div class="mrow"><button class="btn pri" data-act="close">Kapat</button></div></div>');
 }
 function sendGift(i, catId, k) {
