@@ -462,6 +462,32 @@ button { font-family: inherit; }
 .st-pick b { flex: 1; font: 800 calc(var(--u) * 2.8)/1 var(--f-num); background: rgba(0, 0, 0, .45); border-radius: calc(var(--u) * 1.2); padding: calc(var(--u) * 1) 0; letter-spacing: .04em; }
 .st-pick .btn.sm { min-width: calc(var(--u) * 6); font-size: calc(var(--u) * 3); }
 
+/* profil */
+.lb-me { display: flex; align-items: center; gap: calc(var(--u) * 1); background: none; border: 0; color: inherit; cursor: pointer; padding: 0; font-family: var(--f-ui); }
+.lb-mn { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.1; }
+.lb-mn b { font-size: calc(var(--u) * 2.6); }
+.lb-mn small { font-size: calc(var(--u) * 1.8); color: var(--amber); font-weight: 700; }
+.pf-top { display: grid; grid-template-columns: 1.6fr 1fr; gap: calc(var(--u) * 2); }
+.pf-card { display: flex; gap: calc(var(--u) * 2); background: rgba(0, 0, 0, .28); border: 1px solid rgba(255, 255, 255, .1); border-radius: calc(var(--u) * 2); padding: calc(var(--u) * 1.6); }
+.pf-av { flex: none; width: calc(var(--u) * 16); height: calc(var(--u) * 16); border-radius: calc(var(--u) * 2); display: grid; place-items: center; font: 800 calc(var(--u) * 9)/1 var(--f-num); color: var(--amber-ink); background: linear-gradient(160deg, var(--amber), var(--amber2)); }
+.pf-rows { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: calc(var(--u) * .6); }
+.pf-row { display: flex; align-items: center; gap: calc(var(--u) * 1); background: rgba(0, 0, 0, .35); border-radius: calc(var(--u) * 1); padding: calc(var(--u) * .7) calc(var(--u) * 1.2); min-height: calc(var(--u) * 4.4); }
+.pf-row small { width: calc(var(--u) * 14); flex: none; color: #b9a6ff; font-weight: 700; font-size: calc(var(--u) * 1.9); text-transform: uppercase; letter-spacing: .05em; }
+.pf-row b { display: flex; align-items: center; font: 800 calc(var(--u) * 2.8)/1 var(--f-num); }
+.pf-row .btn.sm { margin-left: auto; font-size: calc(var(--u) * 1.8); min-height: calc(var(--u) * 3.6); }
+.pf-bar { flex: 1; height: calc(var(--u) * 1.2); border-radius: 9px; background: rgba(255, 255, 255, .12); overflow: hidden; }
+.pf-bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--amber2), var(--amber)); }
+.pf-row em { font-style: normal; font-size: calc(var(--u) * 1.7); color: var(--muted); }
+.pf-soonbox { display: grid; grid-template-columns: 1fr 1fr; gap: calc(var(--u) * 1); }
+.pf-soon { display: flex; flex-direction: column; justify-content: center; font-size: calc(var(--u) * 2.3); opacity: .55; }
+.pf-soon small { font-size: calc(var(--u) * 1.5); font-weight: 600; color: var(--muted); }
+.pf-h { margin: calc(var(--u) * 1.6) 0 calc(var(--u) * .8); font: 800 calc(var(--u) * 2.8)/1 var(--f-num); letter-spacing: .06em; text-transform: uppercase; color: var(--amber); }
+.pf-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: calc(var(--u) * 1.2); }
+.pf-stat { background: rgba(0, 0, 0, .4); border-radius: calc(var(--u) * 1.4); padding: calc(var(--u) * 1.2); text-align: center; }
+.pf-stat small { display: block; font-size: calc(var(--u) * 1.8); color: #b9a6ff; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
+.pf-stat b { font: 800 calc(var(--u) * 5)/1.1 var(--f-num); }
+.pf-in { width: 100%; box-sizing: border-box; font: 700 calc(var(--u) * 3)/1 var(--f-ui); padding: calc(var(--u) * 1.2); border-radius: calc(var(--u) * 1.2); border: 1px solid rgba(255, 255, 255, .2); background: rgba(0, 0, 0, .4); color: var(--ink); -webkit-user-select: text; user-select: text; }
+
 button { touch-action: manipulation; }
 </style>
 </head>
@@ -2063,10 +2089,23 @@ function wallet() {
   let w = null;
   try { w = JSON.parse(localStorage.getItem('okey101.wallet') || 'null'); } catch (e) { w = null; }
   if (!w || typeof w.chips !== 'number') w = { chips: START_CHIPS, gift: '' };
+  if (!w.st) w.st = { games: 0, wins: 0, won: 0, best: 0, xp: 0 };
+  if (!w.since) w.since = new Date().toLocaleDateString('tr-TR');
+  if (!w.name) w.name = 'Oyuncu';
   return (LB.w = w);
 }
 function saveWallet() { try { localStorage.setItem('okey101.wallet', JSON.stringify(LB.w)); } catch (e) { /* depolama yok */ } }
 function addChips(n) { const w = wallet(); w.chips = Math.max(0, Math.round(w.chips + n)); saveWallet(); }
+// Seviye: her oyun +10, kazanılan oyun +25 puan; seviye n'den n+1'e geçmek için n×100 puan
+function levelInfo(xp) { let lv = 1, need = 100, rest = xp; while (rest >= need) { rest -= need; lv++; need = lv * 100; } return { lv, rest, need }; }
+function recordGame(win, gain) {
+  const s = wallet().st; s.games++; s.xp += 10;
+  if (win) { s.wins++; s.xp += 25; }
+  if (gain > 0) { s.won += gain; s.best = Math.max(s.best, gain); }
+  const before = levelInfo(s.xp - 10 - (win ? 25 : 0)).lv, after = levelInfo(s.xp).lv;
+  saveWallet();
+  if (after > before) setTimeout(() => banner('SEVİYE ' + after, 'Tebrikler, seviye atladın!', 'good'), 600);
+}
 function salonEntry(s) { return s.min * ENTRY_MULT; }
 function tooRich(s) { return !!s.maxIn && wallet().chips > s.maxIn; }   // salonun üst sınırını aşan giremez
 function canEnter(s) { return wallet().chips >= salonEntry(s) && !tooRich(s); }
@@ -2103,7 +2142,8 @@ function lobbyEl() {
 }
 function topBar() {
   const w = wallet();
-  return '<div class="lb-top"><div class="lb-me"><span class="lb-av">S</span><b>Sen</b></div>' +
+  const lv = levelInfo(w.st.xp);
+  return '<div class="lb-top"><button class="lb-me" data-act="lb-profile"><span class="lb-av">' + w.name[0].toLocaleUpperCase('tr-TR') + '</span><span class="lb-mn"><b>' + w.name + '</b><small>Seviye ' + lv.lv + '</small></span></button>' +
     '<div class="lb-brand"><em>Kahve Usulü</em><b>101</b><span>OKEY</span></div>' +
     '<div class="lb-right"><div class="lb-chips"><i class="coin"></i>' + chipFmt(w.chips) + '</div>' +
     '<button class="btn sm' + (giftReady() ? ' pri glow' : '') + '" data-act="lb-gift">' + (giftReady() ? 'Günlük Hediye' : 'Hediye Alındı') + '</button>' +
@@ -2240,6 +2280,7 @@ function lobbySettle() {
   win = Math.round(win);
   addChips(win);
   const net = win - T.bet;
+  recordGame(net > 0, net);
   T.resHTML = '<div class="lb-res ' + (net > 0 ? 'good' : net < 0 ? 'bad' : '') + '"><i class="coin"></i>' + (net > 0 ? '+' + chipFmt(net) : net < 0 ? '−' + chipFmt(-net) : '±0') + ' çip <small>Bakiye: ' + chipFmt(wallet().chips) + '</small></div>';
   return T.resHTML;
 }
@@ -2249,6 +2290,30 @@ function showTableMenu() {
     '<div class="lb-modes">' + modeList(T.cfg.pen).map(m => '<span class="' + (m[1] ? 'on' : 'off') + '">' + (m[1] ? '✓ ' : '✕ ') + m[0] + '</span>').join('') + '</div>' +
     '<p class="sub">Oyun bitmeden masadan kalkarsan ortaya koyduğun ' + chipFmt(T.bet) + ' çip geri gelmez.</p>' +
     '<div class="mrow"><button class="btn pri" data-act="close">Oyuna Dön</button><button class="btn" data-act="lb-settings">Ayarlar</button><button class="btn" data-act="rules">Kurallar</button><button class="btn bad" data-act="lb-leave">Masadan Kalk</button></div>');
+}
+
+/* ---------- Profil (sınırlı; online sürümde genişleyecek) ---------- */
+function showProfile() {
+  const w = wallet(), s = w.st, lv = levelInfo(s.xp), pct = s.games ? Math.round(s.wins * 100 / s.games) : 0;
+  const stat = (t, v) => '<div class="pf-stat"><small>' + t + '</small><b>' + v + '</b></div>';
+  const soon = t => '<button class="btn pf-soon" disabled>' + t + '<small>Online sürümde</small></button>';
+  openModal('<div class="pf"><div class="pf-top">' +
+    '<div class="pf-card"><div class="pf-av">' + w.name[0].toLocaleUpperCase('tr-TR') + '</div><div class="pf-rows">' +
+      '<div class="pf-row"><small>İsim</small><b>' + w.name + '</b><button class="btn sm" data-act="lb-rename">Değiştir</button></div>' +
+      '<div class="pf-row"><small>Çip</small><b><i class="coin"></i>' + chipFmt(w.chips) + '</b></div>' +
+      '<div class="pf-row"><small>Seviye</small><b>' + lv.lv + '</b><span class="pf-bar"><i style="width:' + Math.round(lv.rest * 100 / lv.need) + '%"></i></span><em>' + lv.rest + '/' + lv.need + '</em></div>' +
+      '<div class="pf-row"><small>Başlangıç</small><b>' + w.since + '</b></div>' +
+    '</div></div>' +
+    '<div class="pf-soonbox">' + soon('Sıralamalar') + soon('Görevler') + soon('Hediye Yolla') + soon('Arkadaşlar') + '</div></div>' +
+    '<h3 class="pf-h">İstatistikler</h3><div class="pf-stats">' +
+      stat('Oynadığı oyun', s.games) + stat('Kazandığı oyun', s.wins) + stat('Galibiyet yüzdesi', '%' + pct) + stat('En büyük kazanç', chipShort(s.best)) +
+    '</div><p class="st-note">Seviye puanı: her oyun +10, kazanılan oyun +25.</p>' +
+    '<div class="mrow"><button class="btn pri" data-act="close">Kapat</button></div></div>');
+}
+function showRename() {
+  openModal('<h2>İsim Değiştir</h2><div class="field"><input id="pfName" class="pf-in" maxlength="14" value="' + wallet().name.replace(/"/g, '') + '"></div>' +
+    '<div class="mrow"><button class="btn pri" data-act="lb-rename-ok">Kaydet</button><button class="btn" data-act="lb-profile">Vazgeç</button></div>');
+  setTimeout(() => { const i = document.getElementById('pfName'); if (i) i.focus(); }, 50);
 }
 
 /* ---------- Ayarlar ---------- */
@@ -2289,6 +2354,13 @@ function cyc(arr, v, d) { const i = arr.indexOf(v); return arr[(i + d + arr.leng
 /* ---------- Eylemler ---------- */
 function lobbyAct(a) {
   if (a === 'lb-settings') { showSettings(); return; }
+  if (a === 'lb-profile') { showProfile(); return; }
+  if (a === 'lb-rename') { showRename(); return; }
+  if (a === 'lb-rename-ok') {
+    const v = (document.getElementById('pfName').value || '').replace(/[<>"&]/g, '').trim().slice(0, 14);
+    if (v.length < 2) { warn('İsim en az 2 harf olmalı.'); return; }
+    wallet().name = v; saveWallet(); showProfile(); if (!UI.table) showLobby(); else showProfile(); return;
+  }
   if (a === 'lb-st-close') { closeModal(); return; }
   if (a === 'lb-howto') { showHowto(); return; }
   if (a === 'lb-rules') { showRules(false); return; }
@@ -2335,7 +2407,7 @@ function lobbyAct(a) {
     sitAt({ id: 'c' + Date.now(), salon: LB.salon, bet: LB.cBet, hands: sh.includes(st.hands) ? st.hands : sh[sh.length - 1], team: st.team, mode: st.mode, hard: st.hard, pen: Object.assign({}, st.pen), seats: [null, null, null, null] });
     return;
   }
-  if (a === 'lb-leave') { toast('Masadan kalktın: ' + chipFmt(UI.table.bet) + ' çip gitti', 'bad'); showLobby(); return; }
+  if (a === 'lb-leave') { recordGame(false, 0); toast('Masadan kalktın: ' + chipFmt(UI.table.bet) + ' çip gitti', 'bad'); showLobby(); return; }
   if (a === 'lb-lobby') { showLobby(); return; }
   if (a === 'lb-wait-go') { startSeat(); return; }
   if (a === 'lb-wait-leave') { clearInterval(LB.waitT); LB.wait = null; closeModal(); toast('Masadan kalktın, çipin gitmedi', 'info'); if (G && G.phase !== 'over') showLobby(); else { const el = document.getElementById('lobby'); if (el) el.hidden = false; showLobby(); } return; }
@@ -2364,8 +2436,11 @@ function musicBus() {
   const fb = AC.createGain(); fb.gain.value = .28;
   const wet = AC.createGain(); wet.gain.value = .35;
   const lp = AC.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2600;
-  out.connect(lp); lp.connect(dry); dry.connect(AC.destination);
-  lp.connect(dl); dl.connect(fb); fb.connect(dl); dl.connect(wet); wet.connect(AC.destination);
+  const comp = AC.createDynamicsCompressor(); comp.threshold.value = -20; comp.ratio.value = 4; comp.knee.value = 12;
+  const mk = AC.createGain(); mk.gain.value = 2.4; MUS.mk = mk;   // telefon hoparlöründe duyulsun
+  comp.connect(mk); mk.connect(master());
+  out.connect(lp); lp.connect(dry); dry.connect(comp);
+  lp.connect(dl); dl.connect(fb); fb.connect(dl); dl.connect(wet); wet.connect(comp);
   MUS.bus = out; return out;
 }
 function pluck(m, t, dur, vol, type) {
@@ -2383,9 +2458,9 @@ function schedule() {
   if (!AC || !MUS.on) return;
   while (MUS.next < AC.currentTime + .6) {
     const s = MUS.step, ci = Math.floor(s / 16) % CHORDS.length, k = s % 16, ch = CHORDS[ci], t = MUS.next;
-    if (k === 0 || k === 8) pluck(ch[0] - 12, t, BEAT * 7, .16, 'sine');             // bas
-    pluck(ch[1 + (k % 3)] + (k >= 8 ? 12 : 0), t, BEAT * 3, .05);                    // arpej
-    if (k % 2 === 0) { const m = MELODY[ci][k / 2]; if (m) pluck(m, t, BEAT * 5, .07); } // ezgi
+    if (k === 0 || k === 8) pluck(ch[0], t, BEAT * 7, .22, 'triangle');             // bas
+    pluck(ch[1 + (k % 3)] + (k >= 8 ? 12 : 0), t, BEAT * 3, .1);                    // arpej
+    if (k % 2 === 0) { const m = MELODY[ci][k / 2]; if (m) pluck(m, t, BEAT * 5, .15); } // ezgi
     MUS.step++; MUS.next += BEAT;
   }
 }
@@ -2394,7 +2469,7 @@ function startMusic() {
   if (!AC || MUS.on) return;
   MUS.on = true; musicBus();
   MUS.next = AC.currentTime + .1;
-  const g = MUS.bus.gain; g.cancelScheduledValues(AC.currentTime); g.setValueAtTime(Math.max(.0001, g.value), AC.currentTime); g.exponentialRampToValueAtTime(.55, AC.currentTime + 1.5);
+  const g = MUS.bus.gain; g.cancelScheduledValues(AC.currentTime); g.setValueAtTime(Math.max(.0001, g.value), AC.currentTime); g.exponentialRampToValueAtTime(1, AC.currentTime + 1.5);
   MUS.timer = setInterval(schedule, 150); schedule();
 }
 function stopMusic() {
@@ -2447,11 +2522,18 @@ function initAudio() {
   if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { AC = null; } }
   if (AC && AC.state !== 'running') { try { AC.resume(); } catch (e) { /* yok say */ } }
 }
-let SFXBUS = null;
+let SFXBUS = null, MASTER = null;
+// son aşama sınırlayıcı: müzik + efektler toplanınca bozulmasın
+function master() {
+  if (MASTER) return MASTER;
+  const l = AC.createDynamicsCompressor(); l.threshold.value = -2; l.knee.value = 0; l.ratio.value = 20; l.attack.value = .003; l.release.value = .15;
+  l.connect(AC.destination); MASTER = l; return l;
+}
 function sfxBus() {
   if (SFXBUS) return SFXBUS;
-  const c = AC.createDynamicsCompressor(), g = AC.createGain(); g.gain.value = 2.6;   // efektler müziğin üstünde duyulsun
-  g.connect(c); c.connect(AC.destination); SFXBUS = g; return g;
+  const c = AC.createDynamicsCompressor(), g = AC.createGain(), mk = AC.createGain(); g.gain.value = 3; mk.gain.value = 4;   // efektler telefonda net duyulsun
+  c.threshold.value = -18; c.ratio.value = 6;
+  g.connect(c); c.connect(mk); mk.connect(master()); SFXBUS = g; return g;
 }
 function tone(f, d, type, v, t0, slide) {
   if (!AC || !UI.settings.sound || AC.state !== 'running') return;
