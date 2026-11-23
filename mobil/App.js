@@ -6,9 +6,11 @@ import { StatusBar } from 'expo-status-bar';
 import * as ScreenOrientation from 'expo-screen-orientation';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { FEEL, tick, bump, warn, err } from './src/feel';
+import { SOUND, sfx } from './src/sound';
 import { HOWTO, RULES } from './src/content';
 import * as L from './src/lobby';
 import LobbyScreen from './src/LobbyScreen';
+import { GIFT_CATS, GiftIcon, curGift, giftBlock, placeGift, botLv, loadPerm } from './src/gifts';
 import { C, Btn, Toggle, Pick, cyc, Coin } from './src/ui';
 import { GestureHandlerRootView, Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -119,8 +121,21 @@ function stateChips(u, P) {
     </>
   );
 }
+// hediye yeri: üzerindeki hediye ya da "Hediye" düğmesi
+function GiftSlot({ u, cur, size, onPress }) {
+  return (
+    <Pressable onPress={onPress} hitSlop={8} style={{ alignItems: 'center', justifyContent: 'center' }}>
+      {cur ? <GiftIcon name={cur.em} size={size * u} /> : (
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 0.5 * u, borderWidth: 1, borderColor: 'rgba(255,187,51,0.55)', backgroundColor: 'rgba(255,187,51,0.12)', borderRadius: 2 * u, paddingHorizontal: 1.1 * u, paddingVertical: 0.4 * u }}>
+          <GiftIcon name="Kalp" size={2.6 * u} />
+          <Text allowFontScaling={false} style={{ color: '#ffe39a', fontWeight: '800', fontSize: 1.9 * u }}>Hediye</Text>
+        </View>
+      )}
+    </Pressable>
+  );
+}
 // yan oyuncu kutusu (.plate)
-function SidePlate({ u, i, g }) {
+function SidePlate({ u, i, g, cur, onGift }) {
   const P = g.players[i], active = g.turn === i && g.phase !== 'over';
   return (
     <View style={{ flex: 1 }}>
@@ -129,13 +144,13 @@ function SidePlate({ u, i, g }) {
       <Avatar u={u} i={i} name={P.name} size={6.4} />
       <Text allowFontScaling={false} numberOfLines={1} style={[styles.nm, { fontSize: 3 * u }]}>{P.name}{g.cfg.team ? ' · Rakip' : ''}</Text>
       <View style={[styles.chips, { gap: 0.5 * u }]}>{stateChips(u, P)}</View>
-      <View style={[styles.shelf, { marginHorizontal: -1.1 * u }]} />
+      <View style={[styles.shelf, { marginHorizontal: -1.1 * u, alignItems: 'center', justifyContent: 'center' }]}><GiftSlot u={u} cur={cur} size={9} onPress={onGift} /></View>
     </View>
     </View>
   );
 }
 // karşı oyuncu (üst şeritte, .plate.top)
-function TopPlate({ u, g }) {
+function TopPlate({ u, g, cur, onGift }) {
   const P = g.players[2], active = g.turn === 2 && g.phase !== 'over';
   return (
     <View style={[styles.plate, styles.plateTop, { height: 8 * u, borderRadius: 2 * u, paddingHorizontal: 1.4 * u, gap: 1.2 * u }, active && styles.plateOn]}>
@@ -143,6 +158,9 @@ function TopPlate({ u, g }) {
       <Text allowFontScaling={false} numberOfLines={1} style={[styles.nm, { fontSize: 3 * u }]}>{P.name}{g.cfg.team ? ' · Eşin' : ''}</Text>
       <View style={{ flexDirection: 'row', gap: 0.5 * u }}>{stateChips(u, P)}</View>
       {active ? <ClockPill u={u} who="bot" /> : null}
+      <View style={{ alignSelf: 'stretch', justifyContent: 'center', borderLeftWidth: 1, borderStyle: 'dashed', borderColor: 'rgba(255,255,255,0.14)', paddingLeft: u, minWidth: 8 * u, alignItems: 'center' }}>
+        <GiftSlot u={u} cur={cur} size={6.6} onPress={onGift} />
+      </View>
     </View>
   );
 }
@@ -291,6 +309,10 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
   const [rulesOpen, setRulesOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [settle, setSettle] = useState(null);       // oyun sonu çip hesabı
+  const [tmpGifts, setTmpGifts] = useState({});     // bu oyunluk hediyeler
+  const [giftFor, setGiftFor] = useState(null);     // hediye penceresi açık olan oyuncu
+  const [gcat, setGcat] = useState('kahve');
+  const tmpRef = useRef({}); tmpRef.current = tmpGifts;
   const rackRef = useRef(null), atRef = useRef(null), yanRef = useRef(null);
   const [ghost, setGhost] = useState(null);                 // sürüklenen deste/yan taşı
   const ghostPos = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
@@ -321,8 +343,9 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
       render: rerender,
       toast: (m, k) => toast(m, k),
       banner: (title, sub, kind) => toast(title + (sub ? ' · ' + sub : ''), kind === 'gold' ? 'good' : kind),
-      sfx: (k) => { if (k === 'penalty') warn(); },
+      sfx: (k) => { sfx(k); if (k === 'penalty') warn(); },
       wait: (ms) => sleep(ms),
+      ev: (name, d) => { if (name === 'penalty' && d && d.amt >= 101) giftReact('penalty', d.i); else if (name === 'finish' && d) giftReact('win', d.i); },
       handEnd: (rec, last) => { setTimeout(() => setHandEnd({ rec, last }), 900); },
       turn: () => { if (G() && G().turn === 0) bump(); },
     });
@@ -330,7 +353,7 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
   }, []);
 
   // pencere açıkken süre durur; süre dolunca otomatik oyna
-  useEffect(() => { CLK.paused = !!(settle || handEnd || scoreOpen || setOpen || rulesOpen || menuOpen); }, [settle, handEnd, scoreOpen, setOpen, rulesOpen, menuOpen]);
+  useEffect(() => { CLK.paused = !!(giftFor !== null || settle || handEnd || scoreOpen || setOpen || rulesOpen || menuOpen); }, [giftFor, settle, handEnd, scoreOpen, setOpen, rulesOpen, menuOpen]);
   useEffect(() => {
     const id = setInterval(() => {
       const now = Date.now(), dt = now - (CLK.last || now); CLK.last = now;
@@ -348,7 +371,7 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
   const geom = useMemo(() => rackGeom(rackW, u), [rackW, u]);
   const setMeldRef = useCallback((id, ref) => { if (ref) meldRefs.current[id] = ref; else delete meldRefs.current[id]; }, []);
 
-  const onDrop = useCallback((from, to, after) => { GM.hInsert(from, to, after); bumpRack(); }, [bumpRack]);
+  const onDrop = useCallback((from, to, after) => { GM.hInsert(from, to, after); sfx('place'); bumpRack(); }, [bumpRack]);
   const inRect = (r, x, y) => r && x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h;
   const measure = (ref) => new Promise(res => {
     if (!ref || !ref.current) return res(null);
@@ -418,6 +441,39 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
   const deckDrag = useMemo(() => drawDrag('deck'), [drawDrag]);
   const sideDrag = useMemo(() => drawDrag('side'), [drawDrag]);
 
+  // ---------- hediyeler ----------
+  const nameOf = i => { const gg = G(); return gg ? gg.players[i].name : ''; };
+  const giftOf = i => curGift(nameOf(i), tmpRef.current[i]);
+  const putGift = (i, item, cat) => { const t = placeGift(nameOf(i), item, cat); setTmpGifts(o => ({ ...o, [i]: t })); };
+  const botGift = useCallback((from, catId) => {
+    const gg = G(); if (!gg) return;
+    const cat = GIFT_CATS.find(c => c.id === catId) || GIFT_CATS[0];
+    const ok = cat.items.filter(x => !giftBlock(giftOf(0), cat, x[2]));
+    if (!ok.length) return;
+    const it = ok[Math.floor(Math.random() * ok.length)];
+    putGift(0, it, cat);
+    toast(gg.players[from].name + ' sana ' + it[0] + ' gönderdi', catId === 'takil' ? 'bad' : 'good');
+  }, [toast]);
+  const giftReact = useCallback((kind, who) => {
+    const gg = G(); if (!gg) return;
+    if (kind === 'penalty' && who === 0 && Math.random() < 0.55) setTimeout(() => botGift(1 + Math.floor(Math.random() * 3), 'takil'), 1200);
+    else if (kind === 'penalty' && who > 0 && Math.random() < 0.25) {
+      setTimeout(() => {
+        const cat = GIFT_CATS[3], it = cat.items[Math.floor(Math.random() * cat.items.length)];
+        if (!giftBlock(giftOf(who), cat, it[2])) putGift(who, it, cat);
+      }, 1200);
+    } else if (kind === 'win' && who === 0 && Math.random() < 0.5) setTimeout(() => botGift(1 + Math.floor(Math.random() * 3), Math.random() < 0.5 ? 'kahve' : 'gonul'), 1500);
+  }, [botGift]);
+  const sendGift = (i, cat, it) => {
+    if (L.wallet().chips < it[2]) { toast('Bu hediye için yeterli çipin yok.', 'bad'); return; }
+    const why = giftBlock(giftOf(i), cat, it[2]);
+    if (why) { toast(why === 'Kalıcı hediyesi var' ? 'Bu oyuncunun üzerinde kalıcı hediye var. Sadece Kalıcı bölümünden hediye gönderebilirsin.' : 'Oyuncunun üzerindeki hediyeden daha pahalı bir hediye seçmelisin.', 'bad'); return; }
+    L.addChips(-it[2]); setGiftFor(null);
+    putGift(i, it, cat); sfx('tap');
+    toast(nameOf(i) + ' oyuncusuna ' + it[0] + ' gönderdin', 'info');
+    if (Math.random() < 0.35) setTimeout(() => botGift(i, cat.id === 'takil' ? 'takil' : 'kahve'), 2200 + Math.random() * 1500);
+  };
+
   const g = G();
   if (!g) return <View style={styles.root} />;
   const P = g.players[0];
@@ -468,7 +524,7 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
           <Text allowFontScaling={false} style={[styles.brandS, { fontSize: 3.6 * u, letterSpacing: 0.7 * u, marginLeft: 0.8 * u }]}>OKEY</Text>
           <Text allowFontScaling={false} numberOfLines={1} style={[styles.brandSmall, { fontSize: 2.3 * u, marginLeft: 1.2 * u }]}>{modeLbl}</Text>
         </View>
-        <TopPlate u={u} g={g} />
+        <TopPlate u={u} g={g} cur={giftOf(2)} onGift={() => setGiftFor(2)} />
         <View style={[styles.topActions, { gap: 0.8 * u }]}>
           <Btn u={u} sm label="Yazboz" onPress={() => setScoreOpen(true)} />
           <Btn u={u} sm label="Kurallar" onPress={() => setRulesOpen(true)} />
@@ -481,7 +537,7 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
       <View style={[styles.board, { gap: u, marginTop: 0.8 * u }]}>
         <View style={[styles.col, { width: 17.5 * u, gap: 0.8 * u, paddingBottom: 6.5 * u }]}>
           <Corner u={u} tile={lastOf(2)} />
-          <SidePlate u={u} i={3} g={g} />
+          <SidePlate u={u} i={3} g={g} cur={giftOf(3)} onGift={() => setGiftFor(3)} />
         </View>
         <Mat u={u} title="SERİ PERLER" limit={kat ? String(GM.seriesNeed()) : null} style={{ flex: 1 }}>
           <ScrollView contentContainerStyle={[styles.melds, { padding: 1.2 * u, paddingTop: 3.4 * u, rowGap: u * ms, columnGap: 1.2 * u * ms }]}>
@@ -511,7 +567,7 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
         </Mat>
         <View style={[styles.col, { width: 17.5 * u, gap: 0.8 * u, paddingBottom: 6.5 * u }]}>
           <Corner u={u} tile={lastOf(1)} />
-          <SidePlate u={u} i={1} g={g} />
+          <SidePlate u={u} i={1} g={g} cur={giftOf(1)} onGift={() => setGiftFor(1)} />
         </View>
       </View>
 
@@ -527,6 +583,11 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
               <Text allowFontScaling={false} numberOfLines={1} style={[styles.nm, { fontSize: 2.4 * u }]}>{L.wallet().name}</Text>
               {stateChips(u, P)}
             </View>
+            {giftOf(0) ? (
+              <Pressable onPress={() => setGiftFor(0)} style={{ width: 6.6 * u, height: 6.6 * u, borderRadius: 1.2 * u, backgroundColor: 'rgba(0,0,0,0.3)', borderWidth: 1, borderStyle: 'dashed', borderColor: 'rgba(255,255,255,0.16)', alignItems: 'center', justifyContent: 'center', marginBottom: -0.6 * u }}>
+                <GiftIcon name={giftOf(0).em} size={6.2 * u} />
+              </Pressable>
+            ) : null}
             <ClockPill u={u} who="me" style={{ alignSelf: 'center' }} />
             {gbId ? <Btn u={u} label="Gösterge Bende" pri onPress={() => feedback(GM.announceGost(0))} /> : null}
             <View style={{ flex: 1, alignItems: statusMsg ? 'flex-start' : 'flex-end' }}>
@@ -621,6 +682,61 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
         </View>
       </Modal>
 
+      <Modal visible={giftFor !== null} transparent animationType="fade" supportedOrientations={['landscape']}>
+        <View style={styles.modalBg}>
+          {giftFor !== null ? (() => {
+            const i = giftFor, P = g.players[i], cur = giftOf(i), cat = GIFT_CATS.find(c => c.id === gcat) || GIFT_CATS[0];
+            const curName = cur ? cur.em : '';
+            const mp = !cur ? '' : cur.kind === 'oz' ? 'Üzerinde kalıcı hediye var (' + curName + '). Bu oyuncuya sadece Kalıcı bölümünden hediye gönderebilirsin.'
+              : 'Üzerinde ' + L.chipFmt(cur.p) + ' çiplik bir hediye var (' + curName + '). Ondan daha pahalı bir hediye ya da Kalıcı hediye gönderebilirsin.';
+            const nm = i === 0 ? L.wallet().name : P.name;
+            return (
+              <View style={[styles.modal, { width: '88%', maxHeight: '94%', borderRadius: 2.4 * u, padding: 2.2 * u }]}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 1.2 * u }}>
+                  <Avatar u={u} i={i} name={nm} size={6} />
+                  <View style={{ flex: 1 }}>
+                    <Text allowFontScaling={false} style={{ color: C.ink, fontWeight: '800', fontSize: 3 * u }}>{nm}{g.cfg.team && i ? (i === 2 ? ' · Eşin' : ' · Rakip') : ''}</Text>
+                    <Text allowFontScaling={false} style={{ color: C.muted, fontSize: 1.9 * u }}>Seviye {i === 0 ? L.levelInfo(L.wallet().st.xp).lv : botLv(P.name)}</Text>
+                  </View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.4)', borderWidth: 1, borderColor: 'rgba(255,201,60,0.45)', borderRadius: 3 * u, paddingVertical: 0.6 * u, paddingHorizontal: 1.3 * u }}>
+                    <Coin s={2.4 * u} /><Text allowFontScaling={false} style={{ fontFamily: NUM_FONT, fontWeight: '800', fontSize: 2.6 * u, color: '#ffe39a' }}>{L.chipFmt(L.wallet().chips)}</Text>
+                  </View>
+                </View>
+                {i === 0 ? (
+                  <Text allowFontScaling={false} style={{ color: C.muted, fontSize: 2.1 * u, marginTop: u }}>{cur ? 'Üzerindeki hediye: ' + cur.em : ''}</Text>
+                ) : (
+                  <>
+                    {mp ? <Text allowFontScaling={false} style={{ color: '#ffe39a', fontSize: 1.9 * u, marginTop: u }}>{mp}</Text> : null}
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 0.6 * u, marginTop: 1.2 * u }}>
+                      {GIFT_CATS.map(c => (
+                        <Pressable key={c.id} onPress={() => setGcat(c.id)} style={{ paddingHorizontal: 1.4 * u, paddingVertical: 0.7 * u, borderRadius: u, backgroundColor: c.id === cat.id ? C.amber : 'rgba(255,255,255,0.1)' }}>
+                          <Text allowFontScaling={false} style={{ fontWeight: '800', fontSize: 2.1 * u, color: c.id === cat.id ? C.amberInk : C.ink }}>{c.name}</Text>
+                        </Pressable>
+                      ))}
+                    </View>
+                    <ScrollView style={{ marginTop: 1.2 * u }} contentContainerStyle={{ flexDirection: 'row', flexWrap: 'wrap', gap: u }}>
+                      {cat.items.slice().sort((a, b) => a[2] - b[2]).map(it => {
+                        const why = giftBlock(cur, cat, it[2]), off = !!why || L.wallet().chips < it[2];
+                        return (
+                          <Pressable key={it[0]} disabled={off} onPress={() => sendGift(i, cat, it)} style={[{ width: 15 * u, alignItems: 'center', paddingVertical: u, borderRadius: 1.4 * u, borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', backgroundColor: 'rgba(0,0,0,0.3)' }, off && { opacity: 0.4 }]}>
+                            <Text allowFontScaling={false} numberOfLines={1} style={{ color: C.ink, fontWeight: '700', fontSize: 1.8 * u }}>{it[0]}</Text>
+                            <GiftIcon name={it[0]} size={8 * u} />
+                            <View style={{ flexDirection: 'row', alignItems: 'center' }}><Coin s={1.8 * u} /><Text allowFontScaling={false} style={{ color: '#ffe39a', fontWeight: '800', fontSize: 1.9 * u }}>{L.chipShort(it[2])}</Text></View>
+                            {why ? <Text allowFontScaling={false} style={{ color: '#ffb3a8', fontSize: 1.4 * u }}>{why}</Text> : null}
+                          </Pressable>
+                        );
+                      })}
+                    </ScrollView>
+                    <Text allowFontScaling={false} style={{ color: C.muted, fontSize: 1.8 * u, marginTop: u }}>{cat.forever ? 'Kalıcı hediyeler süresizdir: başka biri farklı bir kalıcı hediye gönderene kadar oyuncunun kutusunda kalır. Her biri 1 milyon çip.' : cat.perm ? 'Günlük hediyeler 24 saat boyunca oyuncunun kutusunda durur; aynı oyuncuyla başka masada karşılaşırsan da görünür.' : 'Hediye oyun bitene kadar oyuncunun kutusunda durur. Takılmalık hediyelerle dalga geçmek serbest!'}</Text>
+                  </>
+                )}
+                <View style={{ alignItems: 'center', marginTop: 1.4 * u }}><Btn u={u} pri label="Kapat" onPress={() => setGiftFor(null)} /></View>
+              </View>
+            );
+          })() : null}
+        </View>
+      </Modal>
+
       <SettingsModal u={u} visible={setOpen} set={set} saveSet={saveSet} onClose={() => setSetOpen(false)} onRules={() => { setSetOpen(false); setRulesOpen(true); }} />
       <RulesModal u={u} visible={rulesOpen} onClose={() => setRulesOpen(false)} />
       <Modal visible={menuOpen} transparent animationType="fade" supportedOrientations={['landscape']}>
@@ -690,14 +806,14 @@ function Root() {
 
   useEffect(() => {
     ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE).catch(() => {});
-    Promise.all([AsyncStorage.getItem(SET_KEY).catch(() => null), L.loadWallet().catch(() => null)]).then(([v]) => {
+    Promise.all([AsyncStorage.getItem(SET_KEY).catch(() => null), L.loadWallet().catch(() => null), loadPerm().catch(() => null)]).then(([v]) => {
       let st = DEF_SET;
       try { if (v) st = { ...DEF_SET, ...JSON.parse(v) }; } catch (e) { /* bozuk kayıt */ }
-      FEEL.vibrate = st.vibrate !== false;
+      FEEL.vibrate = st.vibrate !== false; SOUND.on = st.sound !== false;
       setSet(st); setReady(true);
     });
   }, []);
-  const saveSet = (st) => { setSet(st); FEEL.vibrate = st.vibrate !== false; AsyncStorage.setItem(SET_KEY, JSON.stringify(st)).catch(() => {}); };
+  const saveSet = (st) => { setSet(st); FEEL.vibrate = st.vibrate !== false; SOUND.on = st.sound !== false; AsyncStorage.setItem(SET_KEY, JSON.stringify(st)).catch(() => {}); };
   const start = (t, cfg) => { CLK.tOut = 0; CLK.cKey = null; setTable(t); GM.newGame(cfg); setScreen('game'); };
 
   if (!ready) return <View style={styles.root} />;

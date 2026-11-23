@@ -7,11 +7,6 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
     "backgroundColor": "#170a2e",
-    "splash": {
-      "image": "./assets/icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#170a2e"
-    },
     "ios": {
       "bundleIdentifier": "com.kahveusulu.okey101",
       "supportsTablet": true,
@@ -23,10 +18,22 @@
     "android": {
       "package": "com.kahveusulu.okey101",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/icon.png",
-        "backgroundColor": "#170a2e"
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#2c1252"
       }
     },
-    "plugins": ["expo-screen-orientation"]
+    "plugins": [
+      "expo-screen-orientation",
+      "expo-audio",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 260,
+          "resizeMode": "contain",
+          "backgroundColor": "#170a2e"
+        }
+      ]
+    ]
   }
 }
