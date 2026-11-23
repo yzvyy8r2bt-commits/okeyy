@@ -7,6 +7,9 @@ import * as ScreenOrientation from 'expo-screen-orientation';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { FEEL, tick, bump, warn, err } from './src/feel';
 import { HOWTO, RULES } from './src/content';
+import * as L from './src/lobby';
+import LobbyScreen from './src/LobbyScreen';
+import { C, Btn, Toggle, Pick, cyc, Coin } from './src/ui';
 import { GestureHandlerRootView, Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Rack, { rackGeom, slotAt } from './src/Rack';
@@ -16,10 +19,7 @@ const GM = require('./src/game');
 
 const G = () => GM.getG();
 const sleep = ms => new Promise(r => setTimeout(r, ms));
-const C = {
-  amber: '#ffbb33', amber2: '#e98a0c', amberInk: '#2d1800', ink: '#f7f0e3', muted: '#bdb0dc',
-  line: 'rgba(255,255,255,0.14)', panel: 'rgba(18,8,38,0.78)', good: '#4fe0a3', bad: '#ff6b5e',
-};
+GM.H.wait = sleep;   // masa ekranı açılmadan da botlar acele etmesin
 const AV = ['#f29a32', '#c4366f', '#2389bd', '#e07d1d'];
 const fmt = n => (n < 0 ? '−' + Math.abs(n) : String(n));
 
@@ -96,15 +96,6 @@ function ClockPill({ u, who, style }) {
 }
 
 // ---------- küçük parçalar ----------
-function Btn({ u, label, onPress, pri, sm, disabled, style }) {
-  return (
-    <Pressable disabled={disabled} onPress={onPress} style={({ pressed }) => [
-      styles.btn, { minHeight: (sm ? 5.4 : 5.6) * u, paddingHorizontal: (sm ? 1.3 : 1.5) * u, borderRadius: 1.4 * u },
-      pri && [styles.btnPri, { borderBottomWidth: 0.4 * u }], disabled && { opacity: 0.36 }, pressed && { transform: [{ translateY: 1 }], opacity: 0.85 }, style]}>
-      <Text allowFontScaling={false} style={[styles.btnTxt, { fontSize: (sm ? 2.5 : 2.4) * u }, pri && { color: C.amberInk }]}>{label}</Text>
-    </Pressable>
-  );
-}
 function Chip({ u, kind, children }) {
   const bg = kind === 'ok' ? 'rgba(79,224,163,0.2)' : kind === 'gold' ? 'rgba(255,187,51,0.2)' : kind === 'bad' ? 'rgba(255,107,94,0.22)' : 'rgba(255,255,255,0.12)';
   const col = kind === 'ok' ? '#92f0c6' : kind === 'gold' ? C.amber : kind === 'bad' ? '#ffaaa2' : C.ink;
@@ -223,33 +214,71 @@ function CenterBox({ u, label, children, drag }) {
   );
 }
 
-const cyc = (arr, v, d) => { const i = arr.indexOf(v); return arr[(i + d + arr.length) % arr.length]; };
-function Toggle({ u, label, desc, on, onPress }) {
+
+// ---------- ayarlar ve kurallar pencereleri (lobi ve masa ortak) ----------
+function SettingsModal({ u, visible, set, saveSet, onClose, onRules }) {
   return (
-    <Pressable onPress={onPress} style={[styles.mchip, { borderRadius: 1.2 * u, paddingHorizontal: 1.3 * u, minHeight: 5.6 * u, gap: 1.1 * u, marginBottom: 0.55 * u }, on && styles.mchipOn]}>
-      <View style={[styles.box2, { width: 2.6 * u, height: 2.6 * u, borderRadius: 0.6 * u }, on && { backgroundColor: C.amber, borderColor: C.amber }]}>
-        {on ? <Text allowFontScaling={false} style={{ color: C.amberInk, fontWeight: '900', fontSize: 1.9 * u }}>✓</Text> : null}
-      </View>
-      <View style={{ flex: 1 }}>
-        <Text allowFontScaling={false} style={{ color: C.ink, fontWeight: '700', fontSize: 2.4 * u }}>{label}</Text>
-        {desc ? <Text allowFontScaling={false} numberOfLines={2} style={{ color: C.muted, fontSize: 1.75 * u }}>{desc}</Text> : null}
-      </View>
-    </Pressable>
+      <Modal visible={visible} transparent animationType="fade" supportedOrientations={['landscape']}>
+        <View style={styles.modalBg}>
+          <View style={[styles.modal, { width: '86%', maxHeight: '92%', borderRadius: 2.4 * u, padding: 2.4 * u }]}>
+            <Text allowFontScaling={false} style={[styles.modalT, { fontSize: 4.2 * u }]}>Ayarlar</Text>
+            <ScrollView>
+              <View style={{ flexDirection: 'row', gap: 2.4 * u }}>
+                <View style={{ flex: 1 }}>
+                  <Text allowFontScaling={false} style={[styles.stH, { fontSize: 2.6 * u, marginBottom: u }]}>Genel Ayarlar</Text>
+                  <Toggle u={u} label="Ses efektleri" on={set.sound} onPress={() => saveSet({ ...set, sound: !set.sound })} />
+                  <Toggle u={u} label="Titreşim" on={set.vibrate} onPress={() => saveSet({ ...set, vibrate: !set.vibrate })} />
+                  <Text allowFontScaling={false} style={[styles.stH, { fontSize: 2.6 * u, marginVertical: u }]}>Oyun</Text>
+                  <Pick u={u} title="El sayısı" val={set.hands + ' El'} onPrev={() => saveSet({ ...set, hands: cyc([1, 2, 4, 8], set.hands, -1) })} onNext={() => saveSet({ ...set, hands: cyc([1, 2, 4, 8], set.hands, 1) })} />
+                  <Pick u={u} title="Tek / Eşli" val={set.team ? 'Eşli' : 'Tek'} onPrev={() => saveSet({ ...set, team: !set.team })} onNext={() => saveSet({ ...set, team: !set.team })} />
+                  <Pick u={u} title="Katlamalı / Klasik" val={set.mode === 'katlamali' ? 'Katlamalı' : 'Klasik'} onPrev={() => saveSet({ ...set, mode: set.mode === 'katlamali' ? 'klasik' : 'katlamali' })} onNext={() => saveSet({ ...set, mode: set.mode === 'katlamali' ? 'klasik' : 'katlamali' })} />
+                  <Pick u={u} title="Yardımlı / Yardımsız" val={set.hard ? 'Yardımsız' : 'Yardımlı'} onPrev={() => saveSet({ ...set, hard: !set.hard })} onNext={() => saveSet({ ...set, hard: !set.hard })} />
+                </View>
+                <View style={{ flex: 1.3 }}>
+                  <Text allowFontScaling={false} style={[styles.stH, { fontSize: 2.6 * u, marginBottom: u }]}>Cezalar</Text>
+                  {PEN_DEFS.map(([k, label, desc]) => (
+                    <Toggle key={k} u={u} label={label} desc={desc} on={set.pen[k] !== false} onPress={() => saveSet({ ...set, pen: { ...set.pen, [k]: set.pen[k] === false } })} />
+                  ))}
+                  <Text allowFontScaling={false} style={{ color: C.muted, fontSize: 1.9 * u, marginTop: u }}>Oyun ve ceza ayarları Hemen Oyna ve Masa Aç için kullanılır.</Text>
+                </View>
+              </View>
+            </ScrollView>
+            <View style={{ flexDirection: 'row', justifyContent: 'center', gap: u, marginTop: 1.6 * u }}>
+              <Btn u={u} pri label="Tamam" onPress={onClose} />
+              <Btn u={u} label="Kurallar" onPress={onRules} />
+            </View>
+          </View>
+        </View>
+      </Modal>
   );
 }
-function Pick({ u, title, val, onPrev, onNext }) {
+function RulesModal({ u, visible, onClose }) {
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 0.8 * u }}>
-      <Text allowFontScaling={false} style={{ color: C.muted, fontSize: 2.1 * u, flex: 1 }}>{title}</Text>
-      <Btn u={u} sm label="‹" onPress={onPrev} />
-      <Text allowFontScaling={false} style={{ color: C.ink, fontWeight: '800', fontSize: 2.4 * u, minWidth: 14 * u, textAlign: 'center' }}>{val}</Text>
-      <Btn u={u} sm label="›" onPress={onNext} />
-    </View>
+      <Modal visible={visible} transparent animationType="fade" supportedOrientations={['landscape']}>
+        <View style={styles.modalBg}>
+          <View style={[styles.modal, { width: '86%', maxHeight: '92%', borderRadius: 2.4 * u, padding: 2.4 * u }]}>
+            <Text allowFontScaling={false} style={[styles.modalT, { fontSize: 4.2 * u }]}>Kurallar</Text>
+            <ScrollView>
+              <Text allowFontScaling={false} style={[styles.stH, { fontSize: 2.6 * u, marginTop: u }]}>Nasıl Oynanır?</Text>
+              {HOWTO.map((t, k) => <Text key={'h' + k} allowFontScaling={false} style={[styles.ruleLi, { fontSize: 2.2 * u, marginTop: 0.6 * u }]}>• {t}</Text>)}
+              {RULES.map((sec, k) => (
+                <View key={k}>
+                  <Text allowFontScaling={false} style={[styles.stH, { fontSize: 2.6 * u, marginTop: 1.6 * u }]}>{sec.t}</Text>
+                  {sec.i.map((t, j) => <Text key={j} allowFontScaling={false} style={[styles.ruleLi, { fontSize: 2.2 * u, marginTop: 0.6 * u }]}>• {t}</Text>)}
+                </View>
+              ))}
+            </ScrollView>
+            <View style={{ alignItems: 'center', marginTop: 1.6 * u }}>
+              <Btn u={u} pri label="Kapat" onPress={onClose} />
+            </View>
+          </View>
+        </View>
+      </Modal>
   );
 }
 
 // ---------- oyun ekranı ----------
-function Game() {
+function Game({ set, saveSet, table, onLeave, onAgain }) {
   const ins = useSafeAreaInsets();
   const win = useWindowDimensions();
   const [, setTick] = useState(0);
@@ -258,10 +287,10 @@ function Game() {
   const [statusMsg, setStatusMsg] = useState(null);
   const [handEnd, setHandEnd] = useState(null);
   const [scoreOpen, setScoreOpen] = useState(false);
-  const [set, setSet] = useState(DEF_SET);
   const [setOpen, setSetOpen] = useState(false);
   const [rulesOpen, setRulesOpen] = useState(false);
-  const setRef = useRef(DEF_SET); setRef.current = set;
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [settle, setSettle] = useState(null);       // oyun sonu çip hesabı
   const rackRef = useRef(null), atRef = useRef(null), yanRef = useRef(null);
   const [ghost, setGhost] = useState(null);                 // sürüklenen deste/yan taşı
   const ghostPos = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
@@ -297,19 +326,11 @@ function Game() {
       handEnd: (rec, last) => { setTimeout(() => setHandEnd({ rec, last }), 900); },
       turn: () => { if (G() && G().turn === 0) bump(); },
     });
-    AsyncStorage.getItem(SET_KEY).then(v => {
-      let st = DEF_SET;
-      try { if (v) st = { ...DEF_SET, ...JSON.parse(v) }; } catch (e) { /* bozuk kayıt */ }
-      FEEL.vibrate = st.vibrate !== false;
-      setSet(st);
-      if (!G()) GM.newGame(gameCfg(st));
-      bumpRack();
-    }).catch(() => { if (!G()) GM.newGame(gameCfg(DEF_SET)); bumpRack(); });
+    bumpRack();
   }, []);
-  const saveSet = (st) => { setSet(st); FEEL.vibrate = st.vibrate !== false; AsyncStorage.setItem(SET_KEY, JSON.stringify(st)).catch(() => {}); };
 
   // pencere açıkken süre durur; süre dolunca otomatik oyna
-  useEffect(() => { CLK.paused = !!(handEnd || scoreOpen || setOpen || rulesOpen); }, [handEnd, scoreOpen, setOpen, rulesOpen]);
+  useEffect(() => { CLK.paused = !!(settle || handEnd || scoreOpen || setOpen || rulesOpen || menuOpen); }, [settle, handEnd, scoreOpen, setOpen, rulesOpen, menuOpen]);
   useEffect(() => {
     const id = setInterval(() => {
       const now = Date.now(), dt = now - (CLK.last || now); CLK.last = now;
@@ -420,11 +441,16 @@ function Game() {
   const modeLbl = (kat ? 'Katlamalı' : 'Klasik') + (g.cfg.team ? ' · Eşli' : '') + ' · El ' + Math.min(g.hands.length + (g.phase === 'over' ? 0 : 1), g.cfg.hands) + '/' + g.cfg.hands;
 
 
+  const leave = (flash) => { const gg = G(); if (gg) { gg.phase = 'over'; gg.epoch++; } onLeave(flash); };
   const nextHand = () => {
     const last = handEnd && handEnd.last;
     setHandEnd(null);
-    if (last) { CLK.tOut = 0; GM.newGame(gameCfg(setRef.current)); } else GM.nextHand();
-    bumpRack();
+    if (!last) { GM.nextHand(); bumpRack(); return; }
+    // oyun bitti: çip hesabı (bir kez)
+    const gg = G(), r = L.payouts(gg.totals, table.bet, !!gg.cfg.team), win = r.pay[0], net = win - table.bet;
+    L.addChips(win);
+    const up = L.recordGame(net > 0, net);
+    setSettle({ r, net, up });
   };
   const ms = 0.74;
   const series = g.table.filter(m => m.kind === 'series'), pairs = g.table.filter(m => m.kind === 'pair');
@@ -446,7 +472,7 @@ function Game() {
         <View style={[styles.topActions, { gap: 0.8 * u }]}>
           <Btn u={u} sm label="Yazboz" onPress={() => setScoreOpen(true)} />
           <Btn u={u} sm label="Kurallar" onPress={() => setRulesOpen(true)} />
-          <Btn u={u} sm label="Ayarlar" onPress={() => setSetOpen(true)} />
+          <Btn u={u} sm label="Ayarlar" onPress={() => (table ? setMenuOpen(true) : setSetOpen(true))} />
           <Btn u={u} sm label={set.sound ? 'Ses: Açık' : 'Ses: Kapalı'} onPress={() => saveSet({ ...set, sound: !set.sound })} />
         </View>
       </View>
@@ -498,7 +524,7 @@ function Game() {
           <View style={[styles.srow, { gap: 1.2 * u }]}>
             <View style={[styles.meplate, { height: 6 * u, borderRadius: 3 * u, paddingLeft: 0.6 * u, paddingRight: 1.4 * u, gap: 0.9 * u, maxWidth: 34 * u }, g.turn === 0 && g.phase !== 'over' && styles.plateOn]}>
               <Avatar u={u} i={0} name={P.name} size={4.8} />
-              <Text allowFontScaling={false} numberOfLines={1} style={[styles.nm, { fontSize: 2.4 * u }]}>{P.name === 'Sen' ? 'Oyuncu' : P.name}</Text>
+              <Text allowFontScaling={false} numberOfLines={1} style={[styles.nm, { fontSize: 2.4 * u }]}>{L.wallet().name}</Text>
               {stateChips(u, P)}
             </View>
             <ClockPill u={u} who="me" style={{ alignSelf: 'center' }} />
@@ -542,7 +568,7 @@ function Game() {
                 const r = handEnd.rec.per[i];
                 return (
                   <View key={i} style={[styles.resRow, { paddingVertical: 0.9 * u }]}>
-                    <Text allowFontScaling={false} style={[styles.resName, { fontSize: 2.6 * u, width: 18 * u }, i === handEnd.rec.winner && { color: C.amber }]}>{p.name === 'Sen' ? 'Oyuncu' : p.name}</Text>
+                    <Text allowFontScaling={false} style={[styles.resName, { fontSize: 2.6 * u, width: 18 * u }, i === handEnd.rec.winner && { color: C.amber }]}>{i === 0 ? L.wallet().name : p.name}</Text>
                     <Text allowFontScaling={false} numberOfLines={1} style={{ flex: 1, color: C.muted, fontSize: 2 * u }}>{r.notes.join(', ')}</Text>
                     <Text allowFontScaling={false} style={{ color: '#fff', width: 12 * u, textAlign: 'right', fontWeight: '700', fontSize: 2.6 * u }}>{r.total > 0 ? '+' + r.total : fmt(r.total)}</Text>
                     <Text allowFontScaling={false} style={{ color: C.amber, width: 12 * u, textAlign: 'right', fontWeight: '800', fontSize: 2.6 * u }}>{fmt(g.totals[i])}</Text>
@@ -551,67 +577,72 @@ function Game() {
               })}
               <Text allowFontScaling={false} style={{ color: C.muted, fontSize: 1.9 * u, marginTop: u, textAlign: 'center' }}>El {g.hands.length} / {g.cfg.hands} · Az puan kazanır</Text>
               <View style={{ marginTop: 2 * u, alignItems: 'center' }}>
-                <Btn u={u} pri label={handEnd.last ? 'Yeni Oyun' : 'Sonraki El'} onPress={nextHand} />
+                <Btn u={u} pri label={handEnd.last ? 'Sonucu Gör' : 'Sonraki El'} onPress={nextHand} />
               </View>
             </View>
           ) : null}
         </View>
       </Modal>
 
-      {/* ayarlar */}
-      <Modal visible={setOpen} transparent animationType="fade" supportedOrientations={['landscape']}>
+      <Modal visible={!!settle} transparent animationType="fade" supportedOrientations={['landscape']}>
         <View style={styles.modalBg}>
-          <View style={[styles.modal, { width: '86%', maxHeight: '92%', borderRadius: 2.4 * u, padding: 2.4 * u }]}>
-            <Text allowFontScaling={false} style={[styles.modalT, { fontSize: 4.2 * u }]}>Ayarlar</Text>
-            <ScrollView>
-              <View style={{ flexDirection: 'row', gap: 2.4 * u }}>
-                <View style={{ flex: 1 }}>
-                  <Text allowFontScaling={false} style={[styles.stH, { fontSize: 2.6 * u, marginBottom: u }]}>Genel Ayarlar</Text>
-                  <Toggle u={u} label="Ses efektleri" on={set.sound} onPress={() => saveSet({ ...set, sound: !set.sound })} />
-                  <Toggle u={u} label="Titreşim" on={set.vibrate} onPress={() => saveSet({ ...set, vibrate: !set.vibrate })} />
-                  <Text allowFontScaling={false} style={[styles.stH, { fontSize: 2.6 * u, marginVertical: u }]}>Oyun</Text>
-                  <Pick u={u} title="El sayısı" val={set.hands + ' El'} onPrev={() => saveSet({ ...set, hands: cyc([1, 2, 4, 8], set.hands, -1) })} onNext={() => saveSet({ ...set, hands: cyc([1, 2, 4, 8], set.hands, 1) })} />
-                  <Pick u={u} title="Tek / Eşli" val={set.team ? 'Eşli' : 'Tek'} onPrev={() => saveSet({ ...set, team: !set.team })} onNext={() => saveSet({ ...set, team: !set.team })} />
-                  <Pick u={u} title="Katlamalı / Klasik" val={set.mode === 'katlamali' ? 'Katlamalı' : 'Klasik'} onPrev={() => saveSet({ ...set, mode: set.mode === 'katlamali' ? 'klasik' : 'katlamali' })} onNext={() => saveSet({ ...set, mode: set.mode === 'katlamali' ? 'klasik' : 'katlamali' })} />
-                  <Pick u={u} title="Yardımlı / Yardımsız" val={set.hard ? 'Yardımsız' : 'Yardımlı'} onPrev={() => saveSet({ ...set, hard: !set.hard })} onNext={() => saveSet({ ...set, hard: !set.hard })} />
+          {settle ? (() => {
+            const order = [0, 1, 2, 3].sort((a, b) => g.totals[a] - g.totals[b]);
+            const best = g.totals[order[0]];
+            const mine = g.cfg.team ? ((g.totals[0] + g.totals[2]) < (g.totals[1] + g.totals[3]) ? 'Tebrikler, takımınız oyunu kazandı!' : (g.totals[0] + g.totals[2]) === (g.totals[1] + g.totals[3]) ? 'Berabere bitti.' : 'Rakip takım oyunu kazandı.')
+              : g.totals[0] === best ? 'Tebrikler, oyunu sen kazandın!' : g.players[order[0]].name + ' oyunu kazandı.';
+            const po = [0, 1, 2, 3].sort((a, b) => settle.r.pay[b] - settle.r.pay[a]);
+            return (
+              <View style={[styles.modal, { borderRadius: 2.4 * u, padding: 3 * u }]}>
+                <Text allowFontScaling={false} style={[styles.modalT, { fontSize: 4.2 * u }]}>Oyun Bitti</Text>
+                <Text allowFontScaling={false} style={{ color: C.muted, textAlign: 'center', fontSize: 2.3 * u }}>{mine}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', marginVertical: 1.4 * u }}>
+                  <Coin s={4 * u} />
+                  <Text allowFontScaling={false} style={{ fontFamily: NUM_FONT, fontWeight: '800', fontSize: 4.4 * u, color: settle.net > 0 ? C.good : settle.net < 0 ? '#ff8a7a' : C.ink }}>{settle.net > 0 ? '+' + L.chipFmt(settle.net) : settle.net < 0 ? '−' + L.chipFmt(-settle.net) : '±0'} çip</Text>
+                  <Text allowFontScaling={false} style={{ color: C.muted, fontSize: 2.2 * u, marginLeft: 1.4 * u }}>Bakiye: {L.chipFmt(L.wallet().chips)}</Text>
                 </View>
-                <View style={{ flex: 1.3 }}>
-                  <Text allowFontScaling={false} style={[styles.stH, { fontSize: 2.6 * u, marginBottom: u }]}>Cezalar</Text>
-                  {PEN_DEFS.map(([k, label, desc]) => (
-                    <Toggle key={k} u={u} label={label} desc={desc} on={set.pen[k] !== false} onPress={() => saveSet({ ...set, pen: { ...set.pen, [k]: set.pen[k] === false } })} />
-                  ))}
-                  <Text allowFontScaling={false} style={{ color: C.muted, fontSize: 1.9 * u, marginTop: u }}>Oyun ve ceza ayarları yeni oyunda geçerli olur.</Text>
+                {po.map(i => (
+                  <View key={i} style={[styles.resRow, { paddingVertical: 0.7 * u }, i === 0 && { backgroundColor: 'rgba(255,187,51,0.1)' }]}>
+                    <Text allowFontScaling={false} style={[styles.resName, { fontSize: 2.4 * u, flex: 1 }]}>{i === 0 ? L.wallet().name : g.players[i].name}</Text>
+                    <Text allowFontScaling={false} style={{ color: C.muted, fontSize: 1.9 * u, marginRight: 2 * u }}>{settle.r.fee[i] ? 'masa ücreti −' + L.chipFmt(settle.r.fee[i]) : settle.r.pay[i] && settle.r.pay[i] <= table.bet ? 'bahis iadesi' : ''}</Text>
+                    <Text allowFontScaling={false} style={{ color: settle.r.pay[i] ? C.good : C.muted, fontWeight: '800', fontSize: 2.4 * u, width: 14 * u, textAlign: 'right' }}>{settle.r.pay[i] ? '+' + L.chipFmt(settle.r.pay[i]) : '0'}</Text>
+                  </View>
+                ))}
+                {settle.up ? <Text allowFontScaling={false} style={{ color: C.amber, textAlign: 'center', fontSize: 2.4 * u, fontWeight: '800', marginTop: u }}>SEVİYE {settle.up.lv} · Seviye ödülü: +{L.chipFmt(settle.up.reward)} çip</Text> : null}
+                <Text allowFontScaling={false} style={{ color: C.muted, textAlign: 'center', fontSize: 1.9 * u, marginTop: u }}>{g.cfg.team ? 'Kazanan takım ortadaki çipleri paylaşır. Kazananların payından %7 masa ücreti kesilir.' : 'Birinci, ortadaki çiplerin kalanını alır ve kazancından %7 masa ücreti kesilir. İkinci, yatırdığı çipi geri alır.'}</Text>
+                <View style={{ flexDirection: 'row', justifyContent: 'center', gap: u, marginTop: 2 * u }}>
+                  <Btn u={u} pri label="Aynı Masada Tekrar" onPress={() => { setSettle(null); onAgain(); }} />
+                  <Btn u={u} label="Lobiye Dön" onPress={() => { setSettle(null); leave(null); }} />
+                  <Btn u={u} label="Yazboz" onPress={() => setScoreOpen(true)} />
                 </View>
               </View>
-            </ScrollView>
-            <View style={{ flexDirection: 'row', justifyContent: 'center', gap: u, marginTop: 1.6 * u }}>
-              <Btn u={u} pri label="Tamam" onPress={() => setSetOpen(false)} />
-              <Btn u={u} label="Yeni Oyunu Başlat" onPress={() => { setSetOpen(false); CLK.tOut = 0; GM.newGame(gameCfg(setRef.current)); bumpRack(); }} />
-              <Btn u={u} label="Kurallar" onPress={() => { setSetOpen(false); setRulesOpen(true); }} />
-            </View>
-          </View>
+            );
+          })() : null}
         </View>
       </Modal>
 
-      {/* kurallar */}
-      <Modal visible={rulesOpen} transparent animationType="fade" supportedOrientations={['landscape']}>
+      <SettingsModal u={u} visible={setOpen} set={set} saveSet={saveSet} onClose={() => setSetOpen(false)} onRules={() => { setSetOpen(false); setRulesOpen(true); }} />
+      <RulesModal u={u} visible={rulesOpen} onClose={() => setRulesOpen(false)} />
+      <Modal visible={menuOpen} transparent animationType="fade" supportedOrientations={['landscape']}>
         <View style={styles.modalBg}>
-          <View style={[styles.modal, { width: '86%', maxHeight: '92%', borderRadius: 2.4 * u, padding: 2.4 * u }]}>
-            <Text allowFontScaling={false} style={[styles.modalT, { fontSize: 4.2 * u }]}>Kurallar</Text>
-            <ScrollView>
-              <Text allowFontScaling={false} style={[styles.stH, { fontSize: 2.6 * u, marginTop: u }]}>Nasıl Oynanır?</Text>
-              {HOWTO.map((t, k) => <Text key={'h' + k} allowFontScaling={false} style={[styles.ruleLi, { fontSize: 2.2 * u, marginTop: 0.6 * u }]}>• {t}</Text>)}
-              {RULES.map((sec, k) => (
-                <View key={k}>
-                  <Text allowFontScaling={false} style={[styles.stH, { fontSize: 2.6 * u, marginTop: 1.6 * u }]}>{sec.t}</Text>
-                  {sec.i.map((t, j) => <Text key={j} allowFontScaling={false} style={[styles.ruleLi, { fontSize: 2.2 * u, marginTop: 0.6 * u }]}>• {t}</Text>)}
-                </View>
-              ))}
-            </ScrollView>
-            <View style={{ alignItems: 'center', marginTop: 1.6 * u }}>
-              <Btn u={u} pri label="Kapat" onPress={() => setRulesOpen(false)} />
+          {table ? (
+            <View style={[styles.modal, { borderRadius: 2.4 * u, padding: 3 * u }]}>
+              <Text allowFontScaling={false} style={[styles.modalT, { fontSize: 4.2 * u }]}>Masa</Text>
+              <Text allowFontScaling={false} style={{ color: C.muted, textAlign: 'center', fontSize: 2.2 * u }}>Bahis {L.chipFmt(table.bet)} çip · {L.tableTags(table).join(' · ')}</Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 0.6 * u, marginTop: u }}>
+                {L.modeList(table.pen).map(([n, on]) => (
+                  <Text key={n} allowFontScaling={false} style={{ fontSize: 1.9 * u, fontWeight: '700', color: on ? '#7ef0b5' : '#ff9a9a', borderWidth: 1, borderColor: on ? 'rgba(126,240,181,0.55)' : 'rgba(255,120,120,0.45)', borderRadius: u, paddingHorizontal: u, paddingVertical: 0.4 * u }}>{on ? '✓ ' : '✕ '}{n}</Text>
+                ))}
+              </View>
+              <Text allowFontScaling={false} style={{ color: C.muted, textAlign: 'center', fontSize: 2.1 * u, marginTop: 1.4 * u }}>Oyun bitmeden masadan kalkarsan ortaya koyduğun {L.chipFmt(table.bet)} çip geri gelmez.</Text>
+              <View style={{ flexDirection: 'row', justifyContent: 'center', gap: u, marginTop: 2 * u }}>
+                <Btn u={u} pri label="Oyuna Dön" onPress={() => setMenuOpen(false)} />
+                <Btn u={u} label="Ayarlar" onPress={() => { setMenuOpen(false); setSetOpen(true); }} />
+                <Btn u={u} label="Kurallar" onPress={() => { setMenuOpen(false); setRulesOpen(true); }} />
+                <Btn u={u} label="Masadan Kalk" style={{ backgroundColor: 'rgba(255,107,94,0.25)', borderColor: 'rgba(255,107,94,0.6)' }} onPress={() => { setMenuOpen(false); L.recordGame(false, 0); leave({ m: 'Masadan kalktın: ' + L.chipFmt(table.bet) + ' çip gitti', bad: true }); }} />
+              </View>
             </View>
-          </View>
+          ) : null}
         </View>
       </Modal>
 
@@ -622,7 +653,7 @@ function Game() {
             <Text allowFontScaling={false} style={[styles.modalT, { fontSize: 4.2 * u }]}>Yazboz</Text>
             <View style={[styles.resRow, { paddingVertical: 0.6 * u }]}>
               <Text allowFontScaling={false} style={{ width: 10 * u, color: C.muted, fontSize: 2 * u }}>El</Text>
-              {g.players.map((p, i) => <Text key={i} allowFontScaling={false} style={{ flex: 1, textAlign: 'right', color: '#fff', fontWeight: '800', fontSize: 2.4 * u }}>{p.name === 'Sen' ? 'Oyuncu' : p.name}</Text>)}
+              {g.players.map((p, i) => <Text key={i} allowFontScaling={false} style={{ flex: 1, textAlign: 'right', color: '#fff', fontWeight: '800', fontSize: 2.4 * u }}>{i === 0 ? L.wallet().name : p.name}</Text>)}
             </View>
             {g.hands.map((h, k) => (
               <View key={k} style={[styles.resRow, { paddingVertical: 0.6 * u }]}>
@@ -644,11 +675,57 @@ function Game() {
   );
 }
 
+// ---------- uygulama: lobi ↔ masa ----------
+function Root() {
+  const ins = useSafeAreaInsets();
+  const win = useWindowDimensions();
+  const u = Math.min(win.width, win.height) / 100;
+  const [ready, setReady] = useState(false);
+  const [set, setSet] = useState(DEF_SET);
+  const [screen, setScreen] = useState('lobby');
+  const [table, setTable] = useState(null);
+  const [flash, setFlash] = useState(null);
+  const [setOpen, setSetOpen] = useState(false);
+  const [rulesOpen, setRulesOpen] = useState(false);
+
+  useEffect(() => {
+    ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE).catch(() => {});
+    Promise.all([AsyncStorage.getItem(SET_KEY).catch(() => null), L.loadWallet().catch(() => null)]).then(([v]) => {
+      let st = DEF_SET;
+      try { if (v) st = { ...DEF_SET, ...JSON.parse(v) }; } catch (e) { /* bozuk kayıt */ }
+      FEEL.vibrate = st.vibrate !== false;
+      setSet(st); setReady(true);
+    });
+  }, []);
+  const saveSet = (st) => { setSet(st); FEEL.vibrate = st.vibrate !== false; AsyncStorage.setItem(SET_KEY, JSON.stringify(st)).catch(() => {}); };
+  const start = (t, cfg) => { CLK.tOut = 0; CLK.cKey = null; setTable(t); GM.newGame(cfg); setScreen('game'); };
+
+  if (!ready) return <View style={styles.root} />;
+  if (screen === 'game' && table) {
+    return <Game key={table.id + ':' + GM.getG().epoch} set={set} saveSet={saveSet} table={table}
+      onLeave={(f) => { setScreen('lobby'); setFlash(f ? { ...f, at: Date.now() } : null); }}
+      onAgain={() => {
+        const s = L.SALONS[table.salon];
+        if (!L.canEnter(s)) { setScreen('lobby'); setFlash({ m: L.enterMsg(s), bad: true, at: Date.now() }); return; }
+        if (!L.canSit(table.bet)) { setScreen('lobby'); setFlash({ m: 'Aynı masa için yeterli çipin kalmadı.', bad: true, at: Date.now() }); return; }
+        L.addChips(-table.bet); start(table, L.tableCfg(table, 'Sen'));
+      }} />;
+  }
+  return (
+    <>
+      <StatusBar hidden />
+      <LobbyScreen u={u} ins={ins} set={set} saveSet={saveSet} onStart={start} flash={flash} openSettings={() => setSetOpen(true)} />
+      <SettingsModal u={u} visible={setOpen} set={set} saveSet={saveSet} onClose={() => setSetOpen(false)} onRules={() => { setSetOpen(false); setRulesOpen(true); }} />
+      <RulesModal u={u} visible={rulesOpen} onClose={() => setRulesOpen(false)} />
+    </>
+  );
+}
+
 export default function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <Game />
+        <Root />
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
