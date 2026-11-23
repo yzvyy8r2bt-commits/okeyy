@@ -346,6 +346,84 @@ button { font-family: inherit; }
 .rack .slot { perspective: calc(var(--u) * 60); }
 .rack .tile.lifted { z-index: 5; box-shadow: 0 calc(var(--u) * 1.6) calc(var(--u) * 2.4) rgba(0, 0, 0, .55), 0 calc(var(--u) * .5) 0 var(--ivory-lip); }
 
+/* ================= LOBİ ================= */
+#lobby { position: absolute; inset: 0; z-index: 60; display: flex; flex-direction: column; gap: calc(var(--u) * 1.6);
+  padding: calc(var(--u) * 1.4 + var(--st, 0px)) calc(var(--u) * 2 + var(--sr, 0px)) calc(var(--u) * 1.6 + var(--sb, 0px)) calc(var(--u) * 2 + var(--sl, 0px));
+  background: radial-gradient(ellipse at 50% 0%, #3a1a66 0%, #1d0b3a 55%, #12062a 100%); color: var(--ink); font-family: var(--f-ui); overflow: hidden; }
+#lobby[hidden] { display: none; }
+.coin { display: inline-block; width: 1em; height: 1em; border-radius: 50%; vertical-align: -.12em; margin-right: .35em; flex: none;
+  background: radial-gradient(circle at 35% 30%, #fff3c4, #ffc93c 40%, #d98a00 75%, #a35f00); box-shadow: inset 0 0 0 .08em rgba(120, 60, 0, .55); }
+.lb-top { display: flex; align-items: center; gap: calc(var(--u) * 2); min-height: calc(var(--u) * 7); }
+.lb-me { display: flex; align-items: center; gap: calc(var(--u) * 1); font-size: calc(var(--u) * 2.8); }
+.lb-av { display: inline-grid; place-items: center; width: calc(var(--u) * 6); height: calc(var(--u) * 6); border-radius: 50%; font: 800 calc(var(--u) * 3)/1 var(--f-num);
+  background: linear-gradient(160deg, var(--amber), var(--amber2)); color: var(--amber-ink); box-shadow: 0 0 0 calc(var(--u) * .4) rgba(255, 255, 255, .12); }
+.lb-av.sm { width: calc(var(--u) * 4.4); height: calc(var(--u) * 4.4); font-size: calc(var(--u) * 2.2); }
+.lb-brand { flex: 1; display: flex; align-items: baseline; justify-content: center; gap: calc(var(--u) * .8); font-family: var(--f-num); }
+.lb-brand em { font: 700 calc(var(--u) * 2) var(--f-ui); letter-spacing: .14em; text-transform: uppercase; color: #e9d3ff; font-style: normal; align-self: center; }
+.lb-brand b { font-size: calc(var(--u) * 5.6); color: var(--amber); font-weight: 800; line-height: 1; }
+.lb-brand span { font-size: calc(var(--u) * 3.2); font-weight: 700; letter-spacing: calc(var(--u) * .6); }
+.lb-right { display: flex; align-items: center; gap: calc(var(--u) * 1); }
+.lb-chips { display: flex; align-items: center; font: 800 calc(var(--u) * 3)/1 var(--f-num); padding: calc(var(--u) * 1) calc(var(--u) * 1.6); border-radius: calc(var(--u) * 3);
+  background: rgba(0, 0, 0, .4); border: 1px solid rgba(255, 201, 60, .45); color: #ffe39a; }
+.btn.glow { animation: lbglow 1.6s ease-in-out infinite; }
+@keyframes lbglow { 50% { box-shadow: 0 0 calc(var(--u) * 2.4) rgba(255, 187, 51, .8); } }
+.lb-salons { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: calc(var(--u) * 1.8); }
+.lb-salon { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: calc(var(--u) * .8); text-align: left; cursor: pointer; color: #fff; font-family: var(--f-ui);
+  border: 0; border-radius: calc(var(--u) * 2.6); padding: calc(var(--u) * 2.4) calc(var(--u) * 2.2); overflow: hidden;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .14), 0 calc(var(--u) * 1) calc(var(--u) * 3) rgba(0, 0, 0, .45); }
+.lb-salon::after { content: ''; position: absolute; right: -18%; bottom: -14%; width: 70%; aspect-ratio: 1; border-radius: 50%; background: rgba(255, 255, 255, .07); pointer-events: none; }
+.lb-salon.tea { background: linear-gradient(160deg, #1f7a5c, #0d3b2c); }
+.lb-salon.coffee { background: linear-gradient(160deg, #8a4b22, #3b1c09); }
+.lb-salon.master { background: linear-gradient(160deg, #3c47b8, #161b55); }
+.lb-salon.legend { background: linear-gradient(160deg, #b8860b, #4a2d00); }
+.lb-sn { font: 800 calc(var(--u) * 5.2)/1 var(--f-num); letter-spacing: .02em; }
+.lb-ss { font-size: calc(var(--u) * 2); opacity: .75; margin-bottom: auto; }
+.lb-row { display: flex; flex-direction: column; }
+.lb-row small { font-size: calc(var(--u) * 1.7); opacity: .7; text-transform: uppercase; letter-spacing: .08em; }
+.lb-row b { font: 700 calc(var(--u) * 3)/1.1 var(--f-num); }
+.lb-go, .lb-lock { margin-top: calc(var(--u) * .6); font-weight: 700; font-size: calc(var(--u) * 2.1); padding: calc(var(--u) * .6) calc(var(--u) * 1.4); border-radius: calc(var(--u) * 2); background: rgba(255, 255, 255, .16); }
+.lb-salon.locked { filter: saturate(.35) brightness(.7); }
+.lb-lock { background: rgba(0, 0, 0, .45); color: #ffb3a8; }
+.lb-bottom { display: flex; justify-content: center; gap: calc(var(--u) * 1.4); }
+.lb-quick { min-width: calc(var(--u) * 34); font-size: calc(var(--u) * 3.2); }
+.lb-sh { display: flex; align-items: center; gap: calc(var(--u) * 1.6); }
+.lb-sw { display: flex; align-items: center; gap: calc(var(--u) * 1.2); }
+.lb-sw > div { display: flex; flex-direction: column; align-items: center; min-width: calc(var(--u) * 22); }
+.lb-sw b { font: 800 calc(var(--u) * 3.6)/1 var(--f-num); color: var(--amber); }
+.lb-sw small { font-size: calc(var(--u) * 1.8); color: var(--muted); }
+.lb-filters { margin-left: auto; display: flex; gap: calc(var(--u) * 1); }
+.seg.sm button { min-height: calc(var(--u) * 4.4); font-size: calc(var(--u) * 2); padding: 0 calc(var(--u) * 1.2); }
+.lb-tables { flex: 1; min-height: 0; overflow-y: auto; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-rows: calc(var(--u) * 30); gap: calc(var(--u) * 1.6); padding: calc(var(--u) * .4); }
+.lb-table { position: relative; }
+.lb-felt { position: absolute; inset: 0; border-radius: calc(var(--u) * 15); background: radial-gradient(ellipse at 50% 40%, #1d5e57, #0c2f2c 75%);
+  border: calc(var(--u) * .9) solid #5a2e14; box-shadow: inset 0 0 calc(var(--u) * 3) rgba(0, 0, 0, .6), 0 calc(var(--u) * .8) calc(var(--u) * 2) rgba(0, 0, 0, .5); }
+.lb-seat { position: absolute; display: flex; flex-direction: column; align-items: center; gap: calc(var(--u) * .2); font-size: calc(var(--u) * 1.6); color: #e7fffb; }
+.lb-seat small { font-size: calc(var(--u) * 1.6); max-width: calc(var(--u) * 12); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lb-seat.top { top: calc(var(--u) * .8); left: 50%; transform: translateX(-50%); }
+.lb-seat.bot { bottom: calc(var(--u) * .8); left: 50%; transform: translateX(-50%); }
+.lb-seat.left { left: calc(var(--u) * 1.2); top: 50%; transform: translateY(-50%); }
+.lb-seat.right { right: calc(var(--u) * 1.2); top: 50%; transform: translateY(-50%); }
+.lb-seat.free { border: 0; cursor: pointer; font: 800 calc(var(--u) * 1.9)/1 var(--f-ui); color: #052b1e; width: calc(var(--u) * 7.2); height: calc(var(--u) * 7.2); border-radius: 50%; justify-content: center;
+  background: radial-gradient(circle at 40% 35%, #7bf0b8, #23b874); box-shadow: 0 0 0 calc(var(--u) * .4) rgba(255, 255, 255, .18), 0 calc(var(--u) * .4) calc(var(--u) * 1) rgba(0, 0, 0, .5); }
+.lb-seat.free:disabled { background: #3b4a48; color: #9fb3ae; cursor: not-allowed; }
+.lb-mid { position: absolute; left: 22%; right: 22%; top: 30%; bottom: 30%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: calc(var(--u) * .6); }
+.lb-bet { display: flex; align-items: center; font: 800 calc(var(--u) * 2.8)/1 var(--f-num); color: #ffe39a; background: rgba(0, 0, 0, .45); padding: calc(var(--u) * .5) calc(var(--u) * 1.2); border-radius: calc(var(--u) * 2); }
+.lb-tags { display: flex; flex-wrap: wrap; justify-content: center; gap: calc(var(--u) * .4); }
+.lb-tags span { font-size: calc(var(--u) * 1.45); font-weight: 700; background: rgba(255, 255, 255, .12); padding: calc(var(--u) * .2) calc(var(--u) * .7); border-radius: calc(var(--u) * 1); white-space: nowrap; }
+.lb-table.locked .lb-felt { filter: grayscale(.6) brightness(.7); }
+.lb-tl { position: absolute; left: 50%; bottom: calc(var(--u) * -1.2); transform: translateX(-50%); font-size: calc(var(--u) * 1.5); color: #ffb3a8; background: #1a0b36; padding: calc(var(--u) * .2) calc(var(--u) * .8); border-radius: calc(var(--u) * 1); white-space: nowrap; }
+.lb-slider { display: flex; align-items: center; gap: calc(var(--u) * 1.4); }
+.lb-slider input { flex: 1; accent-color: var(--amber); height: calc(var(--u) * 4); }
+.lb-slider b { display: flex; align-items: center; font: 800 calc(var(--u) * 3)/1 var(--f-num); color: #ffe39a; min-width: calc(var(--u) * 16); }
+.lb-res { display: flex; align-items: center; gap: calc(var(--u) * .6); justify-content: center; font: 800 calc(var(--u) * 4.4)/1 var(--f-num); margin: calc(var(--u) * 1) 0 calc(var(--u) * 1.6); }
+.lb-res.good { color: var(--good); } .lb-res.bad { color: #ff8a7a; }
+.lb-res small { font: 600 calc(var(--u) * 2.2) var(--f-ui); color: var(--muted); margin-left: calc(var(--u) * 1.4); }
+.btn.bad { background: rgba(255, 107, 90, .18); border-color: rgba(255, 107, 90, .5); color: #ffb3a8; }
+
+.lb-betl { display: flex; align-items: center; justify-content: space-between; }
+.lb-betl b { display: flex; align-items: center; font: 800 calc(var(--u) * 2.8)/1 var(--f-num); color: #ffe39a; letter-spacing: 0; text-transform: none; }
+.lb-salons > .lb-salon { align-self: stretch; height: 100%; margin: 0; }
+
 button { touch-action: manipulation; }
 </style>
 </head>
@@ -913,7 +991,7 @@ function startHand() {
   G.players = [0, 1, 2, 3].map(i => {
     const human = i === 0 && !G.allBots;
     return {
-      i, name: SEATS[i], human, bot: !human, hand: [], slots: null,
+      i, name: (G.cfg.names && G.cfg.names[i]) || SEATS[i], human, bot: !human, hand: [], slots: null,
       opened: false, openKind: null, openVal: 0, penalty: 0, penLog: [], sideTile: null, sideUsed: false, sideRef: null, sideReturned: false, acted: false, gostSaid: false, pairsThisTurn: 0, swapThisTurn: false, openSnap: null, regathered: false, discards: [], openedThisTurn: false
     };
   });
@@ -923,7 +1001,7 @@ function startHand() {
     else P.hand = d.hands[i];
   }
   G.turn = starter; G.phase = 'discard'; G.turnNo = 1;
-  logEv(-1, 'Yeni el başladı. ' + SEATS[starter] + ' 22 taşla başlıyor.');
+  logEv(-1, 'Yeni el başladı. ' + G.players[starter].name + ' 22 taşla başlıyor.');
   H.handStart();
   H.render();
   if (G.players[G.turn].bot) continueFlow();
@@ -1927,6 +2005,212 @@ if (typeof module !== 'undefined' && module.exports) {
     doDiscard, finishHand, endHandDraw, openSeries, openPairs, addPairs, layMelds, takeSide, drawFromDeck, announceGost, canAnnounce, isGostTwin, openCharge, botTurn, continueFlow, seriesNeed, pairsNeed, handOf, advanceTurn };
 }
 
+/* ---------- Lobi: salonlar, masalar, çip (şimdilik cihazda; online sürümde sunucuya taşınacak) ---------- */
+const SALONS = [
+  { id: 'cayci', name: 'Çaycı', sub: 'Yeni başlayanlar', min: 1000, max: 5000, step: 500, hue: 'tea' },
+  { id: 'kahveci', name: 'Kahveci', sub: 'Mahallenin müdavimleri', min: 10000, max: 50000, step: 5000, hue: 'coffee' },
+  { id: 'usta', name: 'Usta', sub: 'Masanın ağır topları', min: 100000, max: 500000, step: 50000, hue: 'master' },
+  { id: 'efsane', name: 'Efsane', sub: 'Sadece büyükler', min: 1000000, max: 5000000, step: 500000, hue: 'legend' }
+];
+const START_CHIPS = 50000, DAILY_GIFT = 5000, ENTRY_MULT = 10;
+const BOT_NAMES = ['Ahmet', 'Mehmet', 'Ayşe', 'Fatma', 'Hasan', 'Hüseyin', 'Zeynep', 'Emine', 'Mustafa', 'Ali', 'Hatice', 'Osman', 'Yusuf', 'Elif', 'İbrahim', 'Murat', 'Serkan', 'Gül', 'Kemal', 'Sevim', 'Cemil', 'Nuri', 'Recep', 'Dilek', 'Erol', 'Tülay', 'Bayram', 'Şükrü'];
+const LB = { view: 'home', salon: 0, tables: {}, filter: { team: 'all', mode: 'all' } };
+
+function chipFmt(n) { return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }
+function chipShort(n) { return n >= 1e6 ? (n / 1e6).toLocaleString('tr-TR', { maximumFractionDigits: 1 }) + ' Mn' : n >= 1000 ? (n / 1000).toLocaleString('tr-TR', { maximumFractionDigits: 1 }) + ' B' : String(n); }
+function today() { const d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
+function wallet() {
+  if (LB.w) return LB.w;
+  let w = null;
+  try { w = JSON.parse(localStorage.getItem('okey101.wallet') || 'null'); } catch (e) { w = null; }
+  if (!w || typeof w.chips !== 'number') w = { chips: START_CHIPS, gift: '' };
+  return (LB.w = w);
+}
+function saveWallet() { try { localStorage.setItem('okey101.wallet', JSON.stringify(LB.w)); } catch (e) { /* depolama yok */ } }
+function addChips(n) { const w = wallet(); w.chips = Math.max(0, Math.round(w.chips + n)); saveWallet(); }
+function salonEntry(s) { return s.min * ENTRY_MULT; }
+function canEnter(s) { return wallet().chips >= salonEntry(s); }
+function canSit(bet) { return wallet().chips >= bet * ENTRY_MULT; }
+function giftReady() { return wallet().gift !== today(); }
+function rnd(a) { return a[Math.floor(Math.random() * a.length)]; }
+
+/* masaları üret (botlar oturuyor) */
+function genTables(si) {
+  const s = SALONS[si], out = [], steps = Math.round((s.max - s.min) / s.step);
+  const used = new Set();
+  for (let k = 0; k < 8; k++) {
+    const bet = s.min + s.step * Math.floor(Math.random() * (steps + 1) * (Math.random() < .6 ? .5 : 1));
+    const seats = [null, null, null, null], filled = 1 + Math.floor(Math.random() * 3);
+    const idx = [0, 1, 2, 3].sort(() => Math.random() - .5).slice(0, filled);
+    for (const i of idx) { let n; do { n = rnd(BOT_NAMES); } while (used.has(n) && used.size < BOT_NAMES.length - 4); used.add(n); seats[i] = n; }
+    out.push({
+      id: si + '-' + k + '-' + Date.now(), salon: si, bet: Math.min(bet, s.max),
+      hands: rnd([1, 2, 2, 4, 4, 8]), team: Math.random() < .3, mode: Math.random() < .7 ? 'katlamali' : 'klasik', hard: Math.random() < .3,
+      pen: { gosterge: Math.random() < .6, rekor: Math.random() < .7, okeyCal: true, yanAc: Math.random() < .8, herTas: Math.random() < .6 },
+      seats
+    });
+  }
+  return out.sort((a, b) => a.bet - b.bet);
+}
+function tablesOf(si) { if (!LB.tables[si]) LB.tables[si] = genTables(si); return LB.tables[si]; }
+
+/* ---------- Görünüm ---------- */
+function lobbyEl() {
+  let el = document.getElementById('lobby');
+  if (!el) { el = document.createElement('div'); el.id = 'lobby'; el.setAttribute('lang', 'tr'); $('stage').appendChild(el); }
+  return el;
+}
+function topBar() {
+  const w = wallet();
+  return '<div class="lb-top"><div class="lb-me"><span class="lb-av">S</span><b>Sen</b></div>' +
+    '<div class="lb-brand"><em>Kahve Usulü</em><b>101</b><span>OKEY</span></div>' +
+    '<div class="lb-right"><div class="lb-chips"><i class="coin"></i>' + chipFmt(w.chips) + '</div>' +
+    '<button class="btn sm' + (giftReady() ? ' pri glow' : '') + '" data-act="lb-gift">' + (giftReady() ? 'Günlük Hediye' : 'Hediye Alındı') + '</button>' +
+    '<button class="btn sm" data-act="rules">Kurallar</button></div></div>';
+}
+function showLobby() {
+  UI.table = null; closeModal();
+  if (G) { G.phase = 'over'; G.epoch++; }
+  const el = lobbyEl(); el.hidden = false;
+  if (LB.view === 'salon') return renderSalon();
+  const cards = SALONS.map((s, i) => {
+    const ok = canEnter(s);
+    return '<button class="lb-salon ' + s.hue + (ok ? '' : ' locked') + '" data-act="lb-salon-' + i + '">' +
+      '<span class="lb-sn">' + s.name + '</span><span class="lb-ss">' + s.sub + '</span>' +
+      '<span class="lb-row"><small>Bahis</small><b>' + chipShort(s.min) + ' – ' + chipShort(s.max) + '</b></span>' +
+      '<span class="lb-row"><small>En az giriş</small><b>' + chipShort(salonEntry(s)) + '</b></span>' +
+      (ok ? '<span class="lb-go">Masalara bak</span>' : '<span class="lb-lock">Yetersiz çip</span>') + '</button>';
+  }).join('');
+  el.innerHTML = topBar() + '<div class="lb-salons">' + cards + '</div>' +
+    '<div class="lb-bottom"><button class="btn pri lb-quick" data-act="lb-quick">Hemen Oyna</button></div>';
+}
+function tableHTML(t) {
+  const s = SALONS[t.salon], ok = canSit(t.bet);
+  const seat = (i, pos) => t.seats[i]
+    ? '<div class="lb-seat ' + pos + '"><span class="lb-av sm">' + t.seats[i][0] + '</span><small>' + t.seats[i] + '</small></div>'
+    : '<button class="lb-seat ' + pos + ' free" data-act="lb-sit-' + t.id + '"' + (ok ? '' : ' disabled') + '>Otur</button>';
+  const tags = [t.team ? 'Eşli' : 'Tek', t.hands + ' El', t.mode === 'katlamali' ? 'Katlamalı' : 'Klasik', t.hard ? 'Yardımsız' : 'Yardımlı'];
+  if (t.pen.gosterge) tags.push('Gösterge');
+  return '<div class="lb-table' + (ok ? '' : ' locked') + '"><div class="lb-felt">' +
+    seat(2, 'top') + seat(3, 'left') + seat(1, 'right') + seat(0, 'bot') +
+    '<div class="lb-mid"><div class="lb-bet"><i class="coin"></i>' + chipShort(t.bet) + '</div><div class="lb-tags">' + tags.map(x => '<span>' + x + '</span>').join('') + '</div></div>' +
+    '</div>' + (ok ? '' : '<div class="lb-tl">Bu masa için ' + chipShort(t.bet * ENTRY_MULT) + ' çip gerekir</div>') + '</div>';
+}
+function renderSalon() {
+  const si = LB.salon, s = SALONS[si], el = lobbyEl();
+  const f = LB.filter;
+  const list = tablesOf(si).filter(t => t.seats.some(x => !x) && (f.team === 'all' || (f.team === 'esli') === t.team) && (f.mode === 'all' || f.mode === t.mode));
+  const fseg = (key, opts) => '<div class="seg sm" data-lbf="' + key + '">' + opts.map(o => '<button data-act="lb-f-' + key + '-' + o[0] + '" class="' + (f[key] === o[0] ? 'on' : '') + '">' + o[1] + '</button>').join('') + '</div>';
+  el.innerHTML = topBar() +
+    '<div class="lb-sh"><button class="btn sm" data-act="lb-home">‹ Salonlar</button>' +
+    '<div class="lb-sw"><button class="btn sm" data-act="lb-prev"' + (si > 0 ? '' : ' disabled') + '>◀</button><div><b>' + s.name + '</b><small>Bahis ' + chipShort(s.min) + ' – ' + chipShort(s.max) + '</small></div><button class="btn sm" data-act="lb-next"' + (si < SALONS.length - 1 ? '' : ' disabled') + '>▶</button></div>' +
+    '<div class="lb-filters">' + fseg('team', [['all', 'Hepsi'], ['tek', 'Tek'], ['esli', 'Eşli']]) + fseg('mode', [['all', 'Hepsi'], ['klasik', 'Klasik'], ['katlamali', 'Katlamalı']]) + '</div></div>' +
+    '<div class="lb-tables">' + (list.length ? list.map(tableHTML).join('') : '<div class="empty-note">Bu filtrede boş yeri olan masa yok. Masa açabilirsin.</div>') + '</div>' +
+    '<div class="lb-bottom"><button class="btn" data-act="lb-refresh">Yenile</button><button class="btn pri" data-act="lb-create">Masa Aç</button><button class="btn pri lb-quick" data-act="lb-quick">Hemen Oyna</button></div>';
+}
+function hideLobby() { const el = document.getElementById('lobby'); if (el) el.hidden = true; }
+
+/* ---------- Masa Aç ---------- */
+function showCreate() {
+  const s = SALONS[LB.salon], st = UI.settings;
+  const maxOk = Math.max(s.min, Math.min(s.max, Math.floor(wallet().chips / ENTRY_MULT / s.step) * s.step));
+  if (!LB.cBet || LB.cBet < s.min || LB.cBet > maxOk) LB.cBet = s.min;
+  openModal('<div class="menu-c"><h2>Masa Aç · ' + s.name + '</h2><p class="sub">Bahis: herkes ortaya koyar, en düşük puanlı oyuncu ortadakini alır.</p>' +
+    '<div class="mgrid"><div>' +
+    '<div class="field"><div class="lbl lb-betl">Bahis <b id="lbBetV"><i class="coin"></i>' + chipFmt(LB.cBet) + '</b></div><div class="lb-slider"><input type="range" id="lbBet" min="' + s.min + '" max="' + maxOk + '" step="' + s.step + '" value="' + LB.cBet + '"></div></div>' +
+    seg('mode', 'Oyun', [['klasik', 'Klasik 101'], ['katlamali', 'Katlamalı 101']], st.mode) +
+    seg('team', 'Biçim', [[false, 'Tek'], [true, 'Eşli']], st.team) +
+    seg('hands', 'El sayısı', [[1, '1'], [2, '2'], [4, '4'], [8, '8']], st.hands) +
+    '</div><div class="field"><div class="lbl">Oyun modları</div><div class="chips">' +
+    MODE_CHIPS.map(c => '<button type="button" class="mchip' + (chipOn(c[0]) ? ' on' : '') + '" data-tog="' + c[0] + '"><i></i><span><b>' + c[1] + '</b><small>' + c[2] + '</small></span></button>').join('') +
+    '</div></div></div>' +
+    '<div class="mrow"><button class="btn pri" data-act="lb-create-go">Masayı Aç ve Otur</button><button class="btn" data-act="close">Vazgeç</button></div></div>');
+  const r = document.getElementById('lbBet');
+  r.addEventListener('input', () => { LB.cBet = +r.value; document.getElementById('lbBetV').innerHTML = '<i class="coin"></i>' + chipFmt(LB.cBet); });
+}
+
+/* ---------- Oyuna otur ---------- */
+function sitAt(t) {
+  if (!canSit(t.bet)) { warn('Bu masaya oturmak için en az ' + chipFmt(t.bet * ENTRY_MULT) + ' çip gerekir.'); return; }
+  const names = t.seats.filter(Boolean).slice();
+  const pool = BOT_NAMES.filter(n => !names.includes(n));
+  while (names.length < 3) { const n = rnd(pool); pool.splice(pool.indexOf(n), 1); names.push(n); }
+  const cfg = { mode: t.mode, hands: t.hands, team: t.team, speed: 'normal', hard: t.hard, pen: Object.assign({}, t.pen), names: ['Sen', names[0], names[1], names[2]] };
+  addChips(-t.bet);
+  UI.table = { t, bet: t.bet, pot: t.bet * 4, cfg, settled: false };
+  hideLobby(); closeModal(); UI.selected.clear(); UI.prefer = 'seri'; UI.statusMsg = null; UI.tOut = 0;
+  newGame(cfg);
+  toast('Masaya oturdun: ' + chipFmt(t.bet) + ' çip ortaya kondu', 'info');
+}
+function quickPlay() {
+  let si = -1;
+  for (let i = SALONS.length - 1; i >= 0; i--) if (canEnter(SALONS[i])) { si = i; break; }
+  if (si < 0) { warn('Çipin hiçbir salona yetmiyor. Günlük hediyeni al.'); return; }
+  const ok = tablesOf(si).filter(t => canSit(t.bet) && t.seats.some(x => !x));
+  if (ok.length) return sitAt(rnd(ok));
+  const s = SALONS[si];
+  sitAt({ id: 'q' + Date.now(), salon: si, bet: s.min, hands: 2, team: false, mode: 'katlamali', hard: false, pen: Object.assign({}, UI.settings.pen), seats: [null, null, null, null] });
+}
+
+/* ---------- Çip hesabı ---------- */
+function lobbySettle() {
+  const T = UI.table; if (!T || T.settled) return T && T.resHTML || '';
+  T.settled = true;
+  let win = 0;
+  if (G.cfg.team) {
+    const A = G.totals[0] + G.totals[2], B = G.totals[1] + G.totals[3];
+    win = A < B ? T.pot / 2 : A === B ? T.bet : 0;
+  } else {
+    const best = Math.min.apply(null, G.totals), k = G.totals.filter(x => x === best).length;
+    win = G.totals[0] === best ? T.pot / k : 0;
+  }
+  win = Math.round(win);
+  addChips(win);
+  const net = win - T.bet;
+  T.resHTML = '<div class="lb-res ' + (net > 0 ? 'good' : net < 0 ? 'bad' : '') + '"><i class="coin"></i>' + (net > 0 ? '+' + chipFmt(net) : net < 0 ? '−' + chipFmt(-net) : '±0') + ' çip <small>Bakiye: ' + chipFmt(wallet().chips) + '</small></div>';
+  return T.resHTML;
+}
+function showTableMenu() {
+  const T = UI.table;
+  openModal('<h2>Masa</h2><p class="sub">Bahis ' + chipFmt(T.bet) + ' çip · ' + (T.cfg.team ? 'Eşli' : 'Tek') + ' · ' + T.cfg.hands + ' El · ' + (T.cfg.mode === 'katlamali' ? 'Katlamalı' : 'Klasik') + (T.cfg.hard ? ' · Yardımsız' : '') + '</p>' +
+    '<p class="sub">Oyun bitmeden masadan kalkarsan ortaya koyduğun ' + chipFmt(T.bet) + ' çip geri gelmez.</p>' +
+    '<div class="mrow"><button class="btn pri" data-act="close">Oyuna Dön</button><button class="btn" data-act="rules">Kurallar</button><button class="btn bad" data-act="lb-leave">Masadan Kalk</button></div>');
+}
+
+/* ---------- Eylemler ---------- */
+function lobbyAct(a) {
+  if (a === 'lb-gift') {
+    if (!giftReady()) { warn('Bugünün hediyesini aldın. Yarın yine gel.'); return; }
+    wallet().gift = today(); addChips(DAILY_GIFT); toast('Günlük hediye: +' + chipFmt(DAILY_GIFT) + ' çip', 'good'); showLobby(); return;
+  }
+  if (a.indexOf('lb-salon-') === 0) {
+    const i = +a.slice(9);
+    if (!canEnter(SALONS[i])) { warn(SALONS[i].name + ' salonuna girmek için en az ' + chipFmt(salonEntry(SALONS[i])) + ' çip gerekir.'); return; }
+    LB.salon = i; LB.view = 'salon'; renderSalon(); return;
+  }
+  if (a === 'lb-home') { LB.view = 'home'; showLobby(); return; }
+  if (a === 'lb-prev' || a === 'lb-next') {
+    const i = LB.salon + (a === 'lb-next' ? 1 : -1);
+    if (i < 0 || i >= SALONS.length) return;
+    if (!canEnter(SALONS[i])) { warn(SALONS[i].name + ' salonuna girmek için en az ' + chipFmt(salonEntry(SALONS[i])) + ' çip gerekir.'); return; }
+    LB.salon = i; renderSalon(); return;
+  }
+  if (a.indexOf('lb-f-') === 0) { const p = a.slice(5).split('-'); LB.filter[p[0]] = p[1]; renderSalon(); return; }
+  if (a === 'lb-refresh') { LB.tables[LB.salon] = genTables(LB.salon); renderSalon(); return; }
+  if (a.indexOf('lb-sit-') === 0) { const id = a.slice(7); const t = tablesOf(LB.salon).find(x => x.id === id); if (t) sitAt(t); return; }
+  if (a === 'lb-quick') { quickPlay(); return; }
+  if (a === 'lb-create') { if (!canSit(SALONS[LB.salon].min)) { warn('Masa açmak için yeterli çipin yok.'); return; } showCreate(); return; }
+  if (a === 'lb-create-go') {
+    saveSettings();
+    const st = UI.settings;
+    sitAt({ id: 'c' + Date.now(), salon: LB.salon, bet: LB.cBet, hands: st.hands, team: st.team, mode: st.mode, hard: st.hard, pen: Object.assign({}, st.pen), seats: [null, null, null, null] });
+    return;
+  }
+  if (a === 'lb-leave') { toast('Masadan kalktın: ' + chipFmt(UI.table.bet) + ' çip gitti', 'bad'); showLobby(); return; }
+  if (a === 'lb-lobby') { showLobby(); return; }
+  if (a === 'lb-again') { const T = UI.table; if (!canSit(T.bet)) { warn('Aynı masa için yeterli çipin kalmadı.'); showLobby(); return; } sitAt(T.t); return; }
+}
+
 /* =====================================================================
    ARAYÜZ
    ===================================================================== */
@@ -2233,7 +2517,7 @@ function renderScore() {
   }
   const min = Math.min.apply(null, G.totals);
   h += '</tbody><tfoot><tr><td class="no">Σ</td>' + G.totals.map(t => '<td class="' + (G.hands.length && t === min ? 'low' : '') + '"><div class="v">' + fmt(t) + '</div></td>').join('') + '</tr>' +
-    (G.cfg.team ? '<tr><td class="no">Takım</td><td colspan="2"><div class="v">Sen + Mehmet: ' + fmt(G.totals[0] + G.totals[2]) + '</div></td><td colspan="2"><div class="v">Ahmet + Ayşe: ' + fmt(G.totals[1] + G.totals[3]) + '</div></td></tr>' : '') + '</tfoot></table>';
+    (G.cfg.team ? '<tr><td class="no">Takım</td><td colspan="2"><div class="v">' + teamName(0) + ': ' + fmt(G.totals[0] + G.totals[2]) + '</div></td><td colspan="2"><div class="v">' + teamName(1) + ': ' + fmt(G.totals[1] + G.totals[3]) + '</div></td></tr>' : '') + '</tfoot></table>';
   h += '<div class="legend">Düşük puan kazanır. Bitiren −101 alır.' + (G.cfg.team ? ' Eşli oyunda bitirenin eşi 0 yazılır (yediği ceza varsa o yazılır), takımın toplamı iki oyuncunun toplamıdır.' : '') + ' El açamayan 202, yanlışa taş atan 101 ceza yer. Kafa (kimse açmadan, açtığı turda bitirmek) ve okey atarak bitme puanları ikiye katlar, ikisi birlikte (okey kafa) dörde katlar. Çift açıp bitiren olursa bitirenin puanı da (−202) rakiplerin puanı da ikiye katlanır. Çift açıp bitiremeyen kalan taşının 2 katını yazar. Yandan alınan taşla açılırsa taşı atan, taş sayısı ×10 (çiftte ×20) ceza yer. Okey atan 101 ceza yer.</div>';
   $('scoreBody').innerHTML = h;
 }
@@ -2290,19 +2574,26 @@ function showHandEnd(rec, last) {
     '<p class="sub">Toplam: ' + G.players.map((p, i) => p.name + ' ' + fmt(G.totals[i])).join(' · ') + '</p>' +
     '<div class="mrow"><button class="btn pri" data-act="next">' + (last ? 'Sonucu Gör' : 'Sonraki El') + '</button><button class="btn" data-act="score">Yazboz</button></div>');
 }
+function teamName(k) { const p = G.players; return k === 0 ? p[0].name + ' + ' + p[2].name : p[1].name + ' + ' + p[3].name; }
 function showGameEnd() {
   let rows, mine;
   if (G.cfg.team) {
     const A = G.totals[0] + G.totals[2], B = G.totals[1] + G.totals[3];
-    const tm = [{ n: 'Sen + Mehmet', t: A }, { n: 'Ahmet + Ayşe', t: B }].sort((x, y) => x.t - y.t);
+    const tm = [{ n: teamName(0), t: A }, { n: teamName(1), t: B }].sort((x, y) => x.t - y.t);
     const tie = A === B;
     rows = tm.map((o, k) => '<tr class="' + (!tie && k === 0 ? 'w' : '') + '"><td class="nm">' + (k + 1) + '. ' + o.n + '</td><td class="nt">' + (!tie && k === 0 ? 'Kazanan' : '') + '</td><td class="tt">' + fmt(o.t) + '</td></tr>').join('');
-    mine = tie ? 'Berabere bitti.' : (A < B ? 'Tebrikler, takımınız oyunu kazandı!' : 'Rakip takım (Ahmet + Ayşe) oyunu kazandı.');
+    mine = tie ? 'Berabere bitti.' : (A < B ? 'Tebrikler, takımınız oyunu kazandı!' : 'Rakip takım (' + teamName(1) + ') oyunu kazandı.');
   } else {
     const order = G.players.map((p, i) => ({ i, name: p.name, t: G.totals[i] })).sort((a, b) => a.t - b.t);
     const best = order[0].t;
     rows = order.map((o, k) => '<tr class="' + (o.t === best ? 'w' : '') + '"><td class="nm">' + (k + 1) + '. ' + o.name + '</td><td class="nt">' + (o.t === best ? 'Kazanan' : '') + '</td><td class="tt">' + fmt(o.t) + '</td></tr>').join('');
     mine = G.totals[0] === best ? 'Tebrikler, oyunu sen kazandın!' : order[0].name + ' oyunu kazandı.';
+  }
+  if (UI.table) {                                   // masa oyunu: çip hesabı ve lobi düğmeleri
+    const res = lobbySettle();
+    openModal('<h2>Oyun Bitti</h2><p class="sub">' + mine + '</p>' + res + '<table class="res">' + rows + '</table>' +
+      '<div class="mrow"><button class="btn pri" data-act="lb-again">Aynı Masada Tekrar</button><button class="btn" data-act="lb-lobby">Lobiye Dön</button><button class="btn" data-act="score">Yazboz</button></div>');
+    return;
   }
   openModal('<h2>Oyun Bitti</h2><p class="sub">' + mine + '</p><table class="res">' + rows + '</table>' +
     '<div class="mrow"><button class="btn pri" data-act="start">Yeni Oyun</button><button class="btn" data-act="score">Yazboz</button><button class="btn" data-act="menu">Ayarlar</button></div>');
@@ -2343,7 +2634,7 @@ function act(a) {
     case 'start': startNew(); break;
     case 'close': closeModal(); break;
     case 'next': closeModal(); nextHand(); break;
-    default: break;
+    default: if (a.indexOf('lb-') === 0) lobbyAct(a); break;
   }
 }
 function tryDiscardTile(id) {
@@ -2703,7 +2994,7 @@ function init() {
   $('btnScore').addEventListener('click', () => toggleDrawer());
   $('btnScoreClose').addEventListener('click', () => toggleDrawer(false));
   $('btnRules').addEventListener('click', () => showRules(false));
-  $('btnSettings').addEventListener('click', () => showMenu(false));
+  $('btnSettings').addEventListener('click', () => UI.table ? showTableMenu() : showMenu(false));
   $('btnSound').addEventListener('click', () => act('sound'));
   const rack = $('rack');
   rack.addEventListener('pointerdown', onDown);
@@ -2716,8 +3007,7 @@ function init() {
   document.addEventListener('visibilitychange', () => { if (document.hidden && drag) endDrag({ pointerId: drag.pid, clientX: 0, clientY: 0 }, true); killGhosts(); });
   window.addEventListener('blur', e => endDrag(e, true));
   rack.addEventListener('contextmenu', e => e.preventDefault());
-  newGame({ mode: UI.settings.mode, hands: UI.settings.hands, team: UI.settings.team, speed: 'normal', hard: UI.settings.hard, pen: UI.settings.pen });
-  showMenu(true);
+  showLobby();
 }
 init();
 
