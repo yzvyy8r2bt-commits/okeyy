@@ -606,10 +606,25 @@ button { font-family: inherit; }
 .pc-why { display: grid; grid-template-columns: 1fr 1fr; gap: calc(var(--u) * 1); margin: calc(var(--u) * 1.4) 0; }
 .pg-tmp, .pg-perm, .pg-oz, .pg-btn { pointer-events: auto; cursor: pointer; z-index: 3; }
 
+.pt-btn { display: flex; align-items: center; gap: calc(var(--u) * .8); }
+.pt-btn b { font-size: calc(var(--u) * 2.6); }
+.pt-btn span { display: flex; flex-direction: column; gap: calc(var(--u) * .3); }
+.pt-btn small { font-size: calc(var(--u) * 1.6); white-space: nowrap; }
+.pt-btn i { display: block; height: calc(var(--u) * .7); border-radius: 9px; background: rgba(255,255,255,.15); overflow: hidden; }
+.pt-btn em { display: block; height: 100%; background: var(--good); }
+.pt-tot { color: var(--amber); }
+.pt-list { display: grid; grid-template-columns: 1fr 1fr; gap: calc(var(--u) * .7) calc(var(--u) * 1.6); max-height: calc(var(--u) * 46); overflow-y: auto; }
+.pt-row { display: grid; grid-template-columns: calc(var(--u) * 13) 1fr auto calc(var(--u) * 9); align-items: center; gap: calc(var(--u) * 1); padding: calc(var(--u) * .7) calc(var(--u) * 1); border-radius: calc(var(--u) * 1.2); background: rgba(0,0,0,.3); font-size: calc(var(--u) * 2); }
+.pt-row.cur { box-shadow: inset 0 0 0 2px var(--amber); }
+.pt-row.done { opacity: .6; }
+.pt-row em { font-style: normal; font-weight: 700; font-size: calc(var(--u) * 1.7); color: var(--good); text-align: right; }
+.pt-bar { height: calc(var(--u) * 1); border-radius: 9px; background: rgba(255,255,255,.12); overflow: hidden; }
+.pt-bar i { display: block; height: 100%; background: var(--amber); }
+
 button { touch-action: manipulation; }
 </style>
 </head>
-<body data-ver="mwtj2pmp">
+<body data-ver="mwtjgqo2">
 <div id="stage" lang="tr">
   <div class="app">
     <header class="top">
@@ -2279,7 +2294,7 @@ function topBar() {
   const lv = levelInfo(w.st.xp);
   return '<div class="lb-top"><button class="lb-me" data-act="lb-profile"><span class="lb-av">' + w.name[0].toLocaleUpperCase('tr-TR') + '</span><span class="lb-mn"><b>' + w.name + '</b><small>Seviye ' + lv.lv + '</small></span></button>' +
     '<div class="lb-brand"><em>Kahve Usulü</em><b>101</b><span>OKEY</span></div>' +
-    '<div class="lb-right"><div class="lb-chips"><i class="coin"></i>' + chipFmt(w.chips) + '</div>' +
+    '<div class="lb-right">' + ptBadge() + '<div class="lb-chips"><i class="coin"></i>' + chipFmt(w.chips) + '</div>' +
     '<button class="btn sm' + (giftReady() ? ' pri glow' : '') + '" data-act="lb-gift">' + (giftReady() ? 'Günlük Hediye' : 'Hediye Alındı') + '</button>' +
     '<button class="btn sm" data-act="lb-settings">Ayarlar</button></div></div>';
 }
@@ -2497,6 +2512,7 @@ function cyc(arr, v, d) { const i = arr.indexOf(v); return arr[(i + d + arr.leng
 /* ---------- Eylemler ---------- */
 function lobbyAct(a) {
   if (a === 'lb-settings') { showSettings(); return; }
+  if (a === 'lb-pt') { showPlaytime(); return; }
   if (a === 'lb-profile') { showProfile(); return; }
   if (a.indexOf('lb-ptab-') === 0) { LB.ptab = a.slice(8); showProfile(); return; }
   if (a.indexOf('lb-tcat-') === 0) { LB.tcat = a.slice(8); showProfile(); return; }
@@ -3100,6 +3116,55 @@ H.turn = i => {
   if (AC && UI.settings.sound) { tone(660, .12, 'sine', .09); tone(990, .18, 'sine', .08, .12); }
   buzz([80, 60, 80]);
 };
+
+/* ---------- Oyun süresi ödülleri: sadece masada oyun oynarken süre işler ---------- */
+const PT_GOALS = [
+  [60, 1000], [600, 2000], [1800, 5000], [3600, 10000], [7200, 25000], [14400, 50000], [25200, 75000],
+  [36000, 100000], [43200, 150000], [86400, 250000], [129600, 375000], [172800, 500000], [345600, 750000],
+  [604800, 1000000], [1209600, 2000000], [2592000, 5000000]
+];
+function ptLabel(s) {
+  if (s < 3600) return (s / 60) + ' dakika';
+  if (s < 604800) return (s / 3600) + ' saat';
+  if (s === 604800) return '1 hafta'; if (s === 1209600) return '2 hafta'; if (s === 2592000) return '1 ay';
+  return (s / 86400) + ' gün';
+}
+function ptFmt(s) { s = Math.floor(s); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60; return h ? h + ' sa ' + m + ' dk' : m ? m + ' dk ' + x + ' sn' : x + ' sn'; }
+function ptState() { const w = wallet(); if (!w.pt) w.pt = { sec: 0, got: 0 }; return w.pt; }
+// oynuyor mu: masada, oyun sürüyor, uygulama önde ve oyuncu kendisi oynuyor (süresi üst üste dolmamış)
+function ptActive() { return !!(UI.table && G && G.phase !== 'over' && !document.hidden && (UI.tOut || 0) < 2); }
+let ptLast = Date.now();
+setInterval(() => {
+  const now = Date.now(), dt = Math.min(5, (now - ptLast) / 1000); ptLast = now;
+  if (!ptActive()) return;
+  const p = ptState(); p.sec += dt;
+  while (p.got < PT_GOALS.length && p.sec >= PT_GOALS[p.got][0]) {
+    const g = PT_GOALS[p.got]; p.got++;
+    addChips(g[1]);
+    toast('Oyun süresi ödülü: ' + ptLabel(g[0]) + ' oynadın · +' + chipFmt(g[1]) + ' çip', 'good');
+    banner('+' + chipFmt(g[1]) + ' ÇİP', ptLabel(g[0]) + ' oyun süresi ödülü', 'good');
+  }
+  saveWallet();
+}, 1000);
+function ptBadge() {
+  const p = ptState(), g = PT_GOALS[p.got];
+  if (!g) return '<button class="btn sm pt-btn" data-act="lb-pt"><b>⏱</b> Tüm süre ödülleri alındı</button>';
+  const pct = Math.min(100, Math.round(p.sec * 100 / g[0]));
+  return '<button class="btn sm pt-btn" data-act="lb-pt"><b>⏱</b><span><small>' + ptLabel(g[0]) + ' → +' + chipShort(g[1]) + '</small><i><em style="width:' + pct + '%"></em></i></span></button>';
+}
+function showPlaytime() {
+  const p = ptState();
+  const rows = PT_GOALS.map((g, k) => {
+    const done = k < p.got, cur = k === p.got, pct = cur ? Math.min(100, Math.round(p.sec * 100 / g[0])) : done ? 100 : 0;
+    return '<div class="pt-row' + (done ? ' done' : cur ? ' cur' : '') + '"><b>' + ptLabel(g[0]) + '</b><span class="pt-bar"><i style="width:' + pct + '%"></i></span>' +
+      '<span class="tk-r"><i class="coin"></i>' + chipShort(g[1]) + '</span><em>' + (done ? 'Alındı ✓' : cur ? pct + '%' : '') + '</em></div>';
+  }).join('');
+  openModal('<h2>Oyun Süresi Ödülleri</h2><p class="sub">Toplam oyun süren: <b class="pt-tot">' + ptFmt(p.sec) + '</b>. Süre sadece masada oyun oynarken işler; oyun bitince durur, yeni oyunda kaldığı yerden devam eder.</p>' +
+    '<div class="pt-list">' + rows + '</div>' +
+    '<div class="mrow"><button class="btn pri" data-act="close">Kapat</button></div>');
+}
+// test için bir kerelik çip yüklemesi
+(function testChips() { const w = wallet(); if (w.test1 !== 1) { w.test1 = 1; w.chips += 5000000; saveWallet(); setTimeout(() => toast('Test için hesabına 5.000.000 çip yüklendi', 'good'), 1500); } })();
 
 /* ---------- Arka plan müziği: cihazda üretilen sakin, klasik bir döngü (dosya indirmeden) ---------- */
 const MUS = { on: false, timer: null, next: 0, step: 0, bus: null };
