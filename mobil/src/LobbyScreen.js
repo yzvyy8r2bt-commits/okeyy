@@ -1,10 +1,12 @@
 // Lobi ekranı: salonlar, masalar, masa açma, bekleme, günlük hediye, profil (web sürümünün düzeni)
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, Pressable, StyleSheet, ScrollView, Modal, TextInput } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { C, Btn, Toggle, Coin, NUM_FONT } from './ui';
 import * as L from './lobby';
 
 const GOLD = '#ffe39a';
+const cLbl = u => ({ color: C.muted, fontWeight: '800', fontSize: 2.2 * u, letterSpacing: 0.15 * u, marginBottom: 0.6 * u });
 
 function Av({ u, name, size, sm }) {
   const s = size * u;
@@ -24,6 +26,48 @@ function Seg({ u, opts, val, onPick }) {
       ))}
     </View>
   );
+}
+// web'deki gibi eşit genişlikte bölmeli seçici (Masa Aç)
+function SegFull({ u, opts, val, onPick }) {
+  return (
+    <View style={[styles.seg, { borderRadius: 1.4 * u, padding: 0.5 * u, flexDirection: 'row' }]}>
+      {opts.map(([v, label]) => (
+        <Pressable key={String(v)} onPress={() => onPick(v)} style={[{ flex: 1, height: 5.4 * u, borderRadius: 1.1 * u, alignItems: 'center', justifyContent: 'center' }, val === v && { backgroundColor: C.amber }]}>
+          <Text allowFontScaling={false} numberOfLines={1} style={{ fontSize: 2.5 * u, fontWeight: '800', color: val === v ? C.amberInk : C.ink }}>{label}</Text>
+        </Pressable>
+      ))}
+    </View>
+  );
+}
+// bahis kaydırıcısı (web'deki range)
+function BetSlider({ u, min, max, step, value, onChange }) {
+  const [w, setW] = useState(0);
+  const cb = useRef(onChange); cb.current = onChange;
+  const geo = useRef({ w: 0, min, max, step }); geo.current = { w, min, max, step };
+  const knob = 6 * u;
+  const pick = (x) => {
+    const g = geo.current; if (!g.w || g.max <= g.min) return;
+    const f = Math.max(0, Math.min(1, (x - knob / 2) / (g.w - knob)));
+    cb.current(g.min + Math.round(f * (g.max - g.min) / g.step) * g.step);
+  };
+  const gesture = useMemo(() => Gesture.Simultaneous(
+    Gesture.Pan().runOnJS(true).minDistance(0).onBegin(e => pick(e.x)).onUpdate(e => pick(e.x)),
+    Gesture.Tap().runOnJS(true).onEnd(e => pick(e.x))), []);
+  const f = max > min ? (value - min) / (max - min) : 0;
+  return (
+    <GestureDetector gesture={gesture}>
+      <View onLayout={e => setW(e.nativeEvent.layout.width)} style={{ height: 5 * u, justifyContent: 'center' }}>
+        <View style={{ height: 1.1 * u, borderRadius: u, backgroundColor: 'rgba(0,0,0,0.55)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)' }} />
+        <View style={{ position: 'absolute', left: f * Math.max(0, w - knob), width: knob, height: 3.6 * u, borderRadius: 2 * u, backgroundColor: '#fff', shadowColor: '#000', shadowOpacity: 0.4, shadowRadius: 3, shadowOffset: { width: 0, height: 1 } }} />
+      </View>
+    </GestureDetector>
+  );
+}
+// "Her taş cezalı" açılınca "Yandan açma cezalı" da açılır (tersi değil)
+export function linkPen(pen, k, val) {
+  const p = { ...pen, [k]: val };
+  if (k === 'herTas' && val === true) p.yanAc = true;
+  return p;
 }
 function Dlg({ u, visible, children, wide }) {
   return (
@@ -285,50 +329,49 @@ export default function LobbyScreen({ u, ins, set, saveSet, onStart, openSetting
         </View>
       </Dlg>
 
-      {/* masa aç */}
-      <Dlg u={u} visible={!!create} wide>
-        {create ? (
-          <>
-            <H2 u={u}>Masa Aç · {cs.name}</H2>
-            <Sub u={u}>Bahis: herkes ortaya koyar, en düşük puanlı oyuncu ortadakini alır.</Sub>
-            <ScrollView style={{ marginTop: 1.6 * u }}>
-              <View style={{ flexDirection: 'row', gap: 2.4 * u }}>
-                <View style={{ flex: 1, gap: 1.3 * u }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <Text allowFontScaling={false} style={{ color: C.muted, fontSize: 1.9 * u }}>BAHİS</Text>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: u }}>
-                      <Btn u={u} sm label="−" disabled={create.bet <= cs.min} onPress={() => setCreate({ ...create, bet: Math.max(cs.min, create.bet - cs.step) })} />
-                      <View style={{ flexDirection: 'row', alignItems: 'center', minWidth: 16 * u, justifyContent: 'center' }}><Coin s={2.6 * u} /><Text allowFontScaling={false} style={{ fontFamily: NUM_FONT, fontWeight: '800', fontSize: 3 * u, color: GOLD }}>{L.chipFmt(create.bet)}</Text></View>
-                      <Btn u={u} sm label="+" disabled={create.bet >= maxOk} onPress={() => setCreate({ ...create, bet: Math.min(maxOk, create.bet + cs.step) })} />
+      {/* masa aç — web'deki düzen */}
+      <Modal visible={!!create} transparent animationType="fade" supportedOrientations={['landscape']}>
+        <View style={styles.modalBg}>
+          {create ? (
+            <View style={[styles.modal, { width: '70%', maxHeight: '96%', borderRadius: 2.4 * u, paddingHorizontal: 3 * u, paddingVertical: 2.4 * u }]}>
+              <Text allowFontScaling={false} style={{ color: C.amber, fontFamily: NUM_FONT, fontWeight: '800', fontSize: 6.4 * u, letterSpacing: 0.3 * u }}>MASA AÇ · {cs.name.toLocaleUpperCase('tr-TR')}</Text>
+              <Text allowFontScaling={false} style={{ color: C.muted, fontSize: 2.6 * u, marginBottom: 1.4 * u }}>Bahis: herkes ortaya koyar, en düşük puanlı oyuncu ortadakini alır.</Text>
+              <ScrollView>
+                <View style={{ flexDirection: 'row', gap: 2.4 * u }}>
+                  <View style={{ flex: 1 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <Text allowFontScaling={false} style={cLbl(u)}>BAHİS</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center' }}><Coin s={2.8 * u} /><Text allowFontScaling={false} style={{ fontFamily: NUM_FONT, fontWeight: '800', fontSize: 3.2 * u, color: GOLD }}>{L.chipFmt(create.bet)}</Text></View>
                     </View>
+                    <BetSlider u={u} min={cs.min} max={maxOk} step={cs.step} value={create.bet} onChange={v => setCreate(c => c && ({ ...c, bet: v }))} />
+                    <Text allowFontScaling={false} style={[cLbl(u), { marginTop: 1.2 * u }]}>OYUN</Text>
+                    <SegFull u={u} opts={[['klasik', 'Klasik 101'], ['katlamali', 'Katlamalı 101']]} val={create.mode} onPick={v => setCreate({ ...create, mode: v })} />
+                    <Text allowFontScaling={false} style={[cLbl(u), { marginTop: 1.2 * u }]}>BİÇİM</Text>
+                    <SegFull u={u} opts={[[false, 'Tek'], [true, 'Eşli']]} val={create.team} onPick={v => setCreate({ ...create, team: v })} />
+                    <Text allowFontScaling={false} style={[cLbl(u), { marginTop: 1.2 * u }]}>EL SAYISI</Text>
+                    <SegFull u={u} opts={cs.hands.map(h => [h, String(h)])} val={create.hands} onPick={v => setCreate({ ...create, hands: v })} />
                   </View>
-                  <Text allowFontScaling={false} style={{ color: C.muted, fontSize: 1.9 * u }}>OYUN</Text>
-                  <Seg u={u} opts={[['klasik', 'Klasik 101'], ['katlamali', 'Katlamalı 101']]} val={create.mode} onPick={v => setCreate({ ...create, mode: v })} />
-                  <Text allowFontScaling={false} style={{ color: C.muted, fontSize: 1.9 * u }}>BİÇİM</Text>
-                  <Seg u={u} opts={[[false, 'Tek'], [true, 'Eşli']]} val={create.team} onPick={v => setCreate({ ...create, team: v })} />
-                  <Text allowFontScaling={false} style={{ color: C.muted, fontSize: 1.9 * u }}>EL SAYISI</Text>
-                  <Seg u={u} opts={cs.hands.map(h => [h, String(h)])} val={create.hands} onPick={v => setCreate({ ...create, hands: v })} />
+                  <View style={{ flex: 1.3 }}>
+                    <Text allowFontScaling={false} style={cLbl(u)}>OYUN MODLARI</Text>
+                    {L.MODE_CHIPS.map(([k, label, desc]) => {
+                      const pk = k.slice(4), on = k === 'hard' ? create.hard : create.pen[pk] !== false;
+                      const flip = () => k === 'hard' ? setCreate({ ...create, hard: !create.hard }) : setCreate({ ...create, pen: linkPen(create.pen, pk, !on) });
+                      return <Toggle key={k} u={u} label={label} desc={desc} on={on} onPress={flip} />;
+                    })}
+                  </View>
                 </View>
-                <View style={{ flex: 1.3 }}>
-                  <Text allowFontScaling={false} style={{ color: C.muted, fontSize: 1.9 * u, marginBottom: 0.5 * u }}>OYUN MODLARI</Text>
-                  {L.MODE_CHIPS.map(([k, label, desc]) => {
-                    const on = k === 'hard' ? create.hard : create.pen[k.slice(4)] !== false;
-                    const flip = () => k === 'hard' ? setCreate({ ...create, hard: !create.hard }) : setCreate({ ...create, pen: { ...create.pen, [k.slice(4)]: !on } });
-                    return <Toggle key={k} u={u} label={label} desc={desc} on={on} onPress={flip} />;
-                  })}
-                </View>
+              </ScrollView>
+              <View style={{ flexDirection: 'row', gap: 1.4 * u, marginTop: 1.6 * u }}>
+                <Btn u={u} pri label="Masayı Aç ve Otur" style={{ flex: 1.35, minHeight: 6.6 * u }} onPress={() => {
+                  saveSet({ ...set, mode: create.mode, team: create.team, hands: create.hands, hard: create.hard, pen: create.pen });
+                  sitAt({ id: 'c' + Date.now(), salon, bet: create.bet, hands: create.hands, team: create.team, mode: create.mode, hard: create.hard, pen: { ...create.pen }, seats: [null, null, null, null] });
+                }} />
+                <Btn u={u} label="Vazgeç" style={{ flex: 1, minHeight: 6.6 * u }} onPress={() => setCreate(null)} />
               </View>
-            </ScrollView>
-            <View style={[styles.mrow, { marginTop: 1.6 * u }]}>
-              <Btn u={u} pri label="Masayı Aç ve Otur" onPress={() => {
-                saveSet({ ...set, mode: create.mode, team: create.team, hands: create.hands, hard: create.hard, pen: create.pen });
-                sitAt({ id: 'c' + Date.now(), salon, bet: create.bet, hands: create.hands, team: create.team, mode: create.mode, hard: create.hard, pen: { ...create.pen }, seats: [null, null, null, null] });
-              }} />
-              <Btn u={u} label="Vazgeç" onPress={() => setCreate(null)} />
             </View>
-          </>
-        ) : null}
-      </Dlg>
+          ) : null}
+        </View>
+      </Modal>
 
       {/* masaya oturdun: bekleme */}
       <Dlg u={u} visible={!!wait} wide>

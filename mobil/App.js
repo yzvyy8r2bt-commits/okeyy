@@ -306,7 +306,7 @@ function SettingsModal({ u, visible, set, saveSet, onClose, onRules, onHowto }) 
                     const v = q.pen[k] === 'any' ? undefined : q.pen[k];
                     const st = v === undefined ? styles.qpAny : v ? styles.qpOn : styles.qpOff;
                     return (
-                      <Pressable key={k} onPress={() => putQ('pen', { ...q.pen, [k]: cyc(tri, v, 1) })} style={[styles.qp, st, { width: '48%', borderRadius: u, paddingVertical: 0.8 * u }]}>
+                      <Pressable key={k} onPress={() => { const nv = cyc(tri, v, 1), np = { ...q.pen, [k]: nv }; if (k === 'herTas' && nv === true) np.yanAc = true; putQ('pen', np); }} style={[styles.qp, st, { width: '48%', borderRadius: u, paddingVertical: 0.8 * u }]}>
                         <Text allowFontScaling={false} style={{ fontWeight: '800', fontSize: 1.8 * u, textAlign: 'center', color: v === undefined ? '#cfc4ee' : v ? '#7ef0b5' : '#ff9a9a', textDecorationLine: v === false ? 'line-through' : 'none' }}>{v === undefined ? '' : v ? '✓ ' : '✕ '}{n}</Text>
                       </Pressable>
                     );
