@@ -134,13 +134,12 @@ function Game() {
   const [rackVer, setRackVer] = useState(0);
   const [toasts, setToasts] = useState([]);
   const [statusMsg, setStatusMsg] = useState(null);
-  const [banner, setBanner] = useState(null);
   const [handEnd, setHandEnd] = useState(null);
   const [scoreOpen, setScoreOpen] = useState(false);
   const [sound, setSound] = useState(true);
   const rackRef = useRef(null), atRef = useRef(null), yanRef = useRef(null);
   const meldRefs = useRef({});
-  const stT = useRef(null), bannerT = useRef(null);
+  const stT = useRef(null);
 
   const rerender = useCallback(() => setTick(t => t + 1), []);
   const bumpRack = useCallback(() => { setRackVer(v => v + 1); setTick(t => t + 1); }, []);
@@ -165,11 +164,7 @@ function Game() {
     Object.assign(GM.H, {
       render: rerender,
       toast: (m, k) => toast(m, k),
-      banner: (title, sub, kind) => {
-        clearTimeout(bannerT.current);
-        setBanner({ title, sub, kind });
-        bannerT.current = setTimeout(() => setBanner(null), 1700);
-      },
+      banner: (title, sub, kind) => toast(title + (sub ? ' · ' + sub : ''), kind === 'gold' ? 'good' : kind),
       sfx: (k) => { if (k === 'penalty') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {}); },
       wait: (ms) => sleep(ms),
       handEnd: (rec, last) => { setTimeout(() => setHandEnd({ rec, last }), 900); },
@@ -279,11 +274,13 @@ function Game() {
           </ScrollView>
         </Mat>
         <View style={[styles.mid, { width: 12 * u, gap: 1.2 * u }]}>
-          {toasts.map(t => (
+          <View pointerEvents="none" style={{ flex: 1, justifyContent: 'flex-end', overflow: 'hidden', gap: 0.5 * u }}>
+          {toasts.slice(-2).map(t => (
             <View key={t.id} style={[styles.toast, { borderRadius: u, padding: 0.5 * u }, t.kind === 'bad' && { backgroundColor: '#7a1d22' }, t.kind === 'good' && { backgroundColor: '#145c3c' }]}>
-              <Text allowFontScaling={false} style={{ color: '#fff', fontSize: 1.8 * u, fontWeight: '700', textAlign: 'center' }}>{t.msg}</Text>
+              <Text allowFontScaling={false} numberOfLines={4} style={{ color: '#fff', fontSize: 1.8 * u, fontWeight: '700', textAlign: 'center' }}>{t.msg}</Text>
             </View>
           ))}
+          </View>
           <CenterBox u={u} label="DESTE" onPress={() => canDraw && feedback(GM.hDraw('deck'))}>
             <TileBack w={9 * u} h={11 * u} fs={6.4 * u} count={g.deck.length} hot={canDraw} />
           </CenterBox>
@@ -335,15 +332,6 @@ function Game() {
           <Corner u={u} cref={atRef} tile={lastOf(0)} hot={disc} />
         </View>
       </View>
-
-      {banner ? (
-        <View pointerEvents="none" style={styles.bannerWrap}>
-          <View style={[styles.banner, { borderRadius: 2 * u, paddingVertical: 2 * u, paddingHorizontal: 5 * u }, banner.kind === 'bad' && { backgroundColor: '#8e1f24' }, banner.kind === 'gold' && { backgroundColor: '#a86b00' }, banner.kind === 'good' && { backgroundColor: '#145c3c' }]}>
-            <Text allowFontScaling={false} style={{ color: '#fff', fontFamily: NUM_FONT, fontWeight: '900', fontSize: 6 * u, letterSpacing: 0.3 * u }}>{banner.title}</Text>
-            {banner.sub ? <Text allowFontScaling={false} style={{ color: '#fff', fontSize: 2.6 * u, marginTop: 0.4 * u }}>{banner.sub}</Text> : null}
-          </View>
-        </View>
-      ) : null}
 
       {/* el sonu */}
       <Modal visible={!!handEnd} transparent animationType="fade" supportedOrientations={['landscape']}>

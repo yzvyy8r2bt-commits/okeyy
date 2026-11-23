@@ -4,6 +4,9 @@ import { View, Text, StyleSheet, Platform } from 'react-native';
 
 export const TILE_COLORS = ['#d2232b', '#15151c', '#1b5ed8', '#e28900'];
 export const NUM_FONT = Platform.select({ ios: 'AvenirNextCondensed-Heavy', default: undefined });
+// Avenir Next: üst boşluk ≈ 1.00 − 0.708 (rakam yüksekliği), alt boşluk ≈ 0.366 (inen kısım)
+const DIGIT_TOP = Platform.OS === 'ios' ? 0.29 : 0.24;
+const DIGIT_BOT = Platform.OS === 'ios' ? 0.366 : 0.24;
 
 // Sahte okey simgesi (web'deki FAKE_SVG'nin karşılığı)
 function FakeIcon({ s }) {
@@ -28,12 +31,11 @@ export default function TileFace({ tile, w, h, fs, mark, glow, gb }) {
       <View style={[styles.face, { borderRadius: r, bottom: lip }, glow && styles.glow]}>
         {tile.fake ? <FakeIcon s={fs * 0.9} /> : (
           <>
-            {/* rakamın görünen yüksekliği kadar kutu: yazı tipinin üst/alt boşluğu ortalamayı bozmasın */}
-            <View style={{ height: fs * 0.74, alignItems: 'center', overflow: 'visible' }}>
-              <Text allowFontScaling={false} style={[styles.num, { fontSize: fs, lineHeight: fs * 1.02, marginTop: fs * 0.02, color }]}>{tile.n}</Text>
-            </View>
+            {/* yazı tipinin doğal satır yüksekliği korunur; üst/alt boşluk eksi kenar boşluğuyla
+                kırpılır, böylece kutu sadece rakamın kendisi kadar olur ve tam ortalanır */}
+            <Text allowFontScaling={false} style={[styles.num, { fontSize: fs, marginTop: -fs * DIGIT_TOP, marginBottom: -fs * DIGIT_BOT, color }]}>{tile.n}</Text>
             <View style={{
-              width: fs * 0.3, height: fs * 0.3, borderRadius: fs, marginTop: fs * 0.14,
+              width: fs * 0.3, height: fs * 0.3, borderRadius: fs, marginTop: fs * 0.12,
               backgroundColor: color, borderWidth: Math.max(1, fs * 0.06), borderColor: 'rgba(255,255,255,0.55)',
             }} />
           </>
