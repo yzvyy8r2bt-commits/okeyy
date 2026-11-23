@@ -570,7 +570,7 @@ button { font-family: inherit; }
 button { touch-action: manipulation; }
 </style>
 </head>
-<body>
+<body data-ver="mwti6vtu">
 <div id="stage" lang="tr">
   <div class="app">
     <header class="top">
@@ -3868,7 +3868,9 @@ init();
 if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').then(r=>{
  const ask=w=>{if(w&&navigator.serviceWorker.controller){if(typeof UI==='undefined'||!UI.table){w.postMessage('skip');return;}const b=document.createElement('div');b.textContent='Yeni sürüm var — dokun, yenile';b.style.cssText='position:fixed;left:50%;top:8px;transform:translateX(-50%);background:#ffbb33;color:#2d1800;padding:8px 14px;border-radius:20px;font:600 14px sans-serif;z-index:9999;cursor:pointer';b.onclick=()=>{w.postMessage('skip')};document.body.appendChild(b);}};
  if(r.waiting)ask(r.waiting);
- document.addEventListener('visibilitychange',()=>{if(!document.hidden)r.update().catch(()=>{})});
+ const chk=()=>r.update().catch(()=>{});chk();setInterval(chk,60000);
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden)chk()});
+ window.addEventListener('focus',chk);
  r.addEventListener('updatefound',()=>{const n=r.installing;n.addEventListener('statechange',()=>{if(n.state==='installed')ask(n)})});
  }).catch(()=>{});
  let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(rl)return;rl=true;location.reload()});});}
