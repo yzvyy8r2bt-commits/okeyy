@@ -624,7 +624,7 @@ button { font-family: inherit; }
 button { touch-action: manipulation; }
 </style>
 </head>
-<body data-ver="mwtjgqo2">
+<body data-ver="mwtjmuey">
 <div id="stage" lang="tr">
   <div class="app">
     <header class="top">
@@ -3143,6 +3143,11 @@ setInterval(() => {
     addChips(g[1]);
     toast('Oyun süresi ödülü: ' + ptLabel(g[0]) + ' oynadın · +' + chipFmt(g[1]) + ' çip', 'good');
     banner('+' + chipFmt(g[1]) + ' ÇİP', ptLabel(g[0]) + ' oyun süresi ödülü', 'good');
+    if (p.got >= PT_GOALS.length) {             // tüm hedefler bitti: en baştan yeniden başlar
+      p.sec = 0; p.got = 0; p.round = (p.round || 1) + 1;
+      setTimeout(() => toast('Tüm süre ödüllerini topladın! Ödüller ' + p.round + '. tur için en baştan başladı.', 'good'), 2500);
+      break;
+    }
   }
   saveWallet();
 }, 1000);
@@ -3159,7 +3164,7 @@ function showPlaytime() {
     return '<div class="pt-row' + (done ? ' done' : cur ? ' cur' : '') + '"><b>' + ptLabel(g[0]) + '</b><span class="pt-bar"><i style="width:' + pct + '%"></i></span>' +
       '<span class="tk-r"><i class="coin"></i>' + chipShort(g[1]) + '</span><em>' + (done ? 'Alındı ✓' : cur ? pct + '%' : '') + '</em></div>';
   }).join('');
-  openModal('<h2>Oyun Süresi Ödülleri</h2><p class="sub">Toplam oyun süren: <b class="pt-tot">' + ptFmt(p.sec) + '</b>. Süre sadece masada oyun oynarken işler; oyun bitince durur, yeni oyunda kaldığı yerden devam eder.</p>' +
+  openModal('<h2>Oyun Süresi Ödülleri</h2><p class="sub">Toplam oyun süren: <b class="pt-tot">' + ptFmt(p.sec) + '</b>. Süre sadece masada oyun oynarken işler; oyun bitince durur, yeni oyunda kaldığı yerden devam eder. Son ödülden sonra hepsi en baştan yeniden başlar.' + ((p.round || 1) > 1 ? ' (' + p.round + '. tur)' : '') + '</p>' +
     '<div class="pt-list">' + rows + '</div>' +
     '<div class="mrow"><button class="btn pri" data-act="close">Kapat</button></div>');
 }
