@@ -2012,10 +2012,10 @@ if (typeof module !== 'undefined' && module.exports) {
 
 /* ---------- Lobi: salonlar, masalar, çip (şimdilik cihazda; online sürümde sunucuya taşınacak) ---------- */
 const SALONS = [
-  { id: 'cayci', name: 'Çaycı', sub: 'Yeni başlayanlar', min: 1000, max: 10000, step: 1000, hands: [1], hue: 'tea' },
-  { id: 'kahveci', name: 'Kahveci', sub: 'Mahallenin müdavimleri', min: 10000, max: 50000, step: 5000, hands: [1, 2], hue: 'coffee' },
-  { id: 'usta', name: 'Usta', sub: 'Masanın ağır topları', min: 50000, max: 150000, step: 10000, hands: [1, 2, 4], hue: 'master' },
-  { id: 'efsane', name: 'Efsane', sub: 'Sadece büyükler', min: 150000, max: 1000000, step: 50000, hands: [1, 2, 4, 8], hue: 'legend' },
+  { id: 'cayci', name: 'Çaycı', sub: 'Yeni başlayanlar', min: 1000, max: 10000, step: 1000, hands: [1], maxIn: 50000, hue: 'tea' },
+  { id: 'kahveci', name: 'Kahveci', sub: 'Mahallenin müdavimleri', min: 10000, max: 50000, step: 5000, hands: [1, 2], maxIn: 150000, hue: 'coffee' },
+  { id: 'usta', name: 'Usta', sub: 'Masanın ağır topları', min: 50000, max: 150000, step: 10000, hands: [1, 2, 4], maxIn: 1000000, hue: 'master' },
+  { id: 'efsane', name: 'Efsane', sub: 'Sadece büyükler', min: 150000, max: 1000000, step: 50000, hands: [1, 2, 4, 8], maxIn: 10000000, hue: 'legend' },
   { id: 'kral', name: 'Kral', sub: 'Kahvenin sahibi', min: 1000000, max: 100000000, step: 1000000, hands: [1, 2, 4, 8, 12], hue: 'king' }
 ];
 const START_CHIPS = 50000, DAILY_GIFT = 5000, ENTRY_MULT = 1;   // salona/masaya giriş: bahsin 1 katı
@@ -2035,7 +2035,9 @@ function wallet() {
 function saveWallet() { try { localStorage.setItem('okey101.wallet', JSON.stringify(LB.w)); } catch (e) { /* depolama yok */ } }
 function addChips(n) { const w = wallet(); w.chips = Math.max(0, Math.round(w.chips + n)); saveWallet(); }
 function salonEntry(s) { return s.min * ENTRY_MULT; }
-function canEnter(s) { return wallet().chips >= salonEntry(s); }
+function tooRich(s) { return !!s.maxIn && wallet().chips > s.maxIn; }   // salonun üst sınırını aşan giremez
+function canEnter(s) { return wallet().chips >= salonEntry(s) && !tooRich(s); }
+function enterMsg(s) { return tooRich(s) ? s.name + ' salonuna en fazla ' + chipFmt(s.maxIn) + ' çiple girilebilir. Daha üst bir salonda oyna.' : s.name + ' salonuna girmek için en az ' + chipFmt(salonEntry(s)) + ' çip gerekir.'; }
 function canSit(bet) { return wallet().chips >= bet * ENTRY_MULT; }
 function giftReady() { return wallet().gift !== today(); }
 function rnd(a) { return a[Math.floor(Math.random() * a.length)]; }
@@ -2084,9 +2086,9 @@ function showLobby() {
     return '<button class="lb-salon ' + s.hue + (ok ? '' : ' locked') + '" data-act="lb-salon-' + i + '">' +
       '<span class="lb-sn">' + s.name + '</span><span class="lb-ss">' + s.sub + '</span>' +
       '<span class="lb-row"><small>Bahis</small><b>' + chipShort(s.min) + ' – ' + chipShort(s.max) + '</b></span>' +
-      '<span class="lb-row"><small>En az giriş</small><b>' + chipShort(salonEntry(s)) + '</b></span>' +
+      '<span class="lb-row"><small>Giriş</small><b>' + chipShort(salonEntry(s)) + (s.maxIn ? ' – ' + chipShort(s.maxIn) : ' +') + '</b></span>' +
       '<span class="lb-row"><small>El sayısı</small><b>' + s.hands.join(' · ') + '</b></span>' +
-      (ok ? '<span class="lb-go">Masalara bak</span>' : '<span class="lb-lock">Yetersiz çip</span>') + '</button>';
+      (ok ? '<span class="lb-go">Masalara bak</span>' : '<span class="lb-lock">' + (tooRich(s) ? 'Çipin bu salon için fazla' : 'Yetersiz çip') + '</span>') + '</button>';
   }).join('');
   el.innerHTML = topBar() + '<div class="lb-salons">' + cards + '</div>' +
     '<div class="lb-bottom"><button class="btn pri lb-quick" data-act="lb-quick">Hemen Oyna</button></div>';
@@ -2153,7 +2155,7 @@ function sitAt(t) {
 function quickPlay() {
   let si = -1;
   // Hemen Oyna tüm çipi tek masaya yatırmasın: en az bahsi çipinin 1/5'ini geçmeyen en yüksek salon
-  for (let i = SALONS.length - 1; i >= 0; i--) if (SALONS[i].min * 5 <= wallet().chips) { si = i; break; }
+  for (let i = SALONS.length - 1; i >= 0; i--) if (canEnter(SALONS[i]) && SALONS[i].min * 5 <= wallet().chips) { si = i; break; }
   if (si < 0) for (let i = SALONS.length - 1; i >= 0; i--) if (canEnter(SALONS[i])) { si = i; break; }
   if (si < 0) { warn('Çipin hiçbir salona yetmiyor. Günlük hediyeni al.'); return; }
   const lim = Math.max(SALONS[si].min, wallet().chips / 5);
@@ -2196,14 +2198,14 @@ function lobbyAct(a) {
   }
   if (a.indexOf('lb-salon-') === 0) {
     const i = +a.slice(9);
-    if (!canEnter(SALONS[i])) { warn(SALONS[i].name + ' salonuna girmek için en az ' + chipFmt(salonEntry(SALONS[i])) + ' çip gerekir.'); return; }
+    if (!canEnter(SALONS[i])) { warn(enterMsg(SALONS[i])); return; }
     LB.salon = i; LB.view = 'salon'; renderSalon(); return;
   }
   if (a === 'lb-home') { LB.view = 'home'; showLobby(); return; }
   if (a === 'lb-prev' || a === 'lb-next') {
     const i = LB.salon + (a === 'lb-next' ? 1 : -1);
     if (i < 0 || i >= SALONS.length) return;
-    if (!canEnter(SALONS[i])) { warn(SALONS[i].name + ' salonuna girmek için en az ' + chipFmt(salonEntry(SALONS[i])) + ' çip gerekir.'); return; }
+    if (!canEnter(SALONS[i])) { warn(enterMsg(SALONS[i])); return; }
     LB.salon = i; renderSalon(); return;
   }
   if (a.indexOf('lb-f-') === 0) { const p = a.slice(5).split('-'); LB.filter[p[0]] = p[1]; renderSalon(); return; }
@@ -2220,7 +2222,7 @@ function lobbyAct(a) {
   }
   if (a === 'lb-leave') { toast('Masadan kalktın: ' + chipFmt(UI.table.bet) + ' çip gitti', 'bad'); showLobby(); return; }
   if (a === 'lb-lobby') { showLobby(); return; }
-  if (a === 'lb-again') { const T = UI.table; if (!canSit(T.bet)) { warn('Aynı masa için yeterli çipin kalmadı.'); showLobby(); return; } sitAt(T.t); return; }
+  if (a === 'lb-again') { const T = UI.table; if (!canEnter(SALONS[T.t.salon])) { warn(enterMsg(SALONS[T.t.salon])); showLobby(); return; } if (!canSit(T.bet)) { warn('Aynı masa için yeterli çipin kalmadı.'); showLobby(); return; } sitAt(T.t); return; }
 }
 
 /* =====================================================================
