@@ -205,7 +205,7 @@ function Mat({ u, title, limit, children, style }) {
       <View pointerEvents="none" style={StyleSheet.absoluteFill}>{lines}</View>
       <Text allowFontScaling={false} style={[styles.matTitle, { top: 0.6 * u, right: 1.2 * u, fontSize: 1.7 * u }]}>{title}</Text>
       {limit ? <View style={[styles.lim, { top: 0.5 * u, left: 1 * u, borderRadius: u, paddingHorizontal: 0.8 * u, paddingVertical: 0.15 * u }]}>
-        <Text allowFontScaling={false} style={{ fontSize: 1.9 * u, color: '#cfeee8', fontWeight: '700' }}>Limit <Text style={{ color: C.amber, fontFamily: NUM_FONT, fontSize: 2.2 * u }}>{limit}</Text></Text>
+        <Text allowFontScaling={false} style={{ fontSize: 2.4 * u, color: '#cfeee8', fontWeight: '700' }}>Limit <Text style={{ color: C.amber, fontFamily: NUM_FONT, fontSize: 3.6 * u }}>{limit}</Text></Text>
       </View> : null}
       {children}
     </View>
@@ -645,6 +645,10 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
       <View style={[styles.me, { marginTop: 0.8 * u }]}>
         <View style={{ width: 17.5 * u, alignItems: 'center', marginTop: -7.5 * u }}>
           <Corner u={u} cref={yanRef} tile={lastOf(3)} hot={canSide && !!lastOf(3)} drag={sideDrag} />
+          {disc && P.sideTile && !P.sideUsed ? (
+            <Btn u={u} label="Geri Bırak" onPress={() => feedback(GM.hReturnSide())}
+              style={{ marginTop: 0.8 * u, width: 15.5 * u, paddingHorizontal: 0.6 * u, backgroundColor: 'rgba(255,187,51,0.18)', borderColor: 'rgba(255,187,51,0.7)' }} />
+          ) : null}
         </View>
         <View style={{ width: rackW, gap: 0.5 * u, zIndex: 10 }}>
           <View style={[styles.srow, { gap: 1.2 * u }]}>
