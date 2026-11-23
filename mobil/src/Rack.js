@@ -1,11 +1,8 @@
-// Istaka: 2 sıra x 15 yuva. Taşlar UI thread'inde (Reanimated) sürüklenir,
-// böylece parmak takibi JavaScript'i beklemeden 60/120 fps akar.
-import React, { useEffect, useMemo } from 'react';
-import { View, StyleSheet } from 'react-native';
+// Istaka: 2 sıra x 15 yuva. Dokunmayı telefonun yerel jest sistemi (gesture-handler)
+// yakalar; taşın konumu React'i yeniden çizmeden doğrudan güncellenir.
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { View, StyleSheet, Animated } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Animated, {
-  useSharedValue, useAnimatedStyle, withTiming, withSpring, runOnJS,
-} from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import TileFace from './Tile';
 
@@ -27,74 +24,71 @@ export function rackGeom(width, maxHeight) {
 }
 
 function slotXY(g, slot) {
-  'worklet';
   const r = Math.floor(slot / COLS), c = slot % COLS;
   return { x: g.pad + c * (g.cellW + g.gap), y: g.pad + r * (g.tileH + g.rowGap) };
 }
 
-function hapticLift() { Haptics.selectionAsync().catch(() => {}); }
-
 function DraggableTile({ tile, slot, geom, ver, mark, onDrop }) {
   const p0 = slotXY(geom, slot);
-  const x = useSharedValue(p0.x);
-  const y = useSharedValue(p0.y);
-  const sx = useSharedValue(0);
-  const sy = useSharedValue(0);
-  const lift = useSharedValue(0);
+  const pos = useRef(new Animated.ValueXY(p0)).current;
+  const lift = useRef(new Animated.Value(0)).current;
+  const cur = useRef({ ...p0 });
+  const st = useRef({ x: 0, y: 0 });
+  const [up, setUp] = useState(false);
+
+  useEffect(() => {
+    const id = pos.addListener(v => { cur.current = v; });
+    return () => pos.removeListener(id);
+  }, []);
 
   // yuva değişince (dizme, araya sokma, kayma) yumuşakça yerine git
   useEffect(() => {
-    const p = slotXY(geom, slot);
-    x.value = withTiming(p.x, { duration: 160 });
-    y.value = withTiming(p.y, { duration: 160 });
+    Animated.timing(pos, { toValue: slotXY(geom, slot), duration: 150, useNativeDriver: false }).start();
   }, [slot, geom, ver]);
 
   const pan = useMemo(() => Gesture.Pan()
+    .runOnJS(true)
     .minDistance(0)
     .maxPointers(1)
     .onBegin(() => {
-      sx.value = x.value; sy.value = y.value;
-      lift.value = withTiming(1, { duration: 70 });
-      runOnJS(hapticLift)();
+      pos.stopAnimation();
+      st.current = { ...cur.current };
+      setUp(true);
+      Animated.timing(lift, { toValue: 1, duration: 70, useNativeDriver: false }).start();
+      Haptics.selectionAsync().catch(() => {});
     })
     .onUpdate((e) => {
-      x.value = sx.value + e.translationX;
-      y.value = sy.value + e.translationY;
+      pos.setValue({ x: st.current.x + e.translationX, y: st.current.y + e.translationY });
     })
     .onEnd(() => {
+      const { x, y } = cur.current;
       const step = geom.cellW + geom.gap;
-      const cx = x.value + geom.cellW / 2 - geom.pad;
-      const raw = cx / step;
+      const raw = (x + geom.cellW / 2 - geom.pad) / step;
       let col = Math.floor(raw);
       let after = raw - col > 0.5;
       if (col < 0) { col = 0; after = false; }
       if (col > COLS - 1) { col = COLS - 1; after = true; }
-      const cy = y.value + geom.tileH / 2;
-      const row = cy < geom.pad + geom.tileH + geom.rowGap / 2 ? 0 : 1;
+      const row = y + geom.tileH / 2 < geom.pad + geom.tileH + geom.rowGap / 2 ? 0 : 1;
       const to = row * COLS + col;
       if (to === slot) {
-        const p = slotXY(geom, slot);
-        x.value = withSpring(p.x, { damping: 22, stiffness: 320 });
-        y.value = withSpring(p.y, { damping: 22, stiffness: 320 });
-      } else {
-        runOnJS(onDrop)(slot, to, after);
-      }
+        Animated.spring(pos, { toValue: slotXY(geom, slot), friction: 7, tension: 140, useNativeDriver: false }).start();
+      } else onDrop(slot, to, after);
     })
     .onFinalize(() => {
-      lift.value = withTiming(0, { duration: 120 });
+      Animated.timing(lift, { toValue: 0, duration: 120, useNativeDriver: false }).start(() => setUp(false));
     }), [slot, geom, onDrop]);
 
-  const style = useAnimatedStyle(() => ({
+  const style = {
     transform: [
-      { translateX: x.value },
-      { translateY: y.value - lift.value * geom.tileH * 0.12 },
-      { scale: 1 + lift.value * 0.1 },
+      { translateX: pos.x },
+      { translateY: Animated.add(pos.y, Animated.multiply(lift, -geom.tileH * 0.12)) },
+      { scale: Animated.add(1, Animated.multiply(lift, 0.1)) },
     ],
-    zIndex: lift.value > 0 ? 100 : 1,
-    elevation: lift.value > 0 ? 12 : 2,
-    shadowOpacity: 0.25 + lift.value * 0.35,
-    shadowRadius: 2 + lift.value * 8,
-  }));
+    zIndex: up ? 100 : 1,
+    elevation: up ? 12 : 2,
+    shadowOpacity: up ? 0.55 : 0.25,
+    shadowRadius: up ? 10 : 2,
+  };
 
   return (
     <GestureDetector gesture={pan}>
