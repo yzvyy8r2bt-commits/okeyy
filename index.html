@@ -567,10 +567,23 @@ button { font-family: inherit; }
 .tk-tabs .tk-tab[data-act*="-ozel"] { background: linear-gradient(160deg, #ffd54f, #b8860b); color: #3b2500; opacity: .85; }
 .tk-tabs .tk-tab.on[data-act*="-ozel"] { opacity: 1; box-shadow: 0 0 0 2px #fff; }
 
+/* hediye yerleşimi: isim üstünde durmasın */
+.pg-tmp { left: auto; right: calc(var(--u) * -2); top: auto; bottom: calc(var(--u) * -2.5); transform: none; animation: pgpop2 9s ease-out forwards; }
+.pg-tmp svg { width: calc(var(--u) * 8); height: calc(var(--u) * 8); }
+@keyframes pgpop2 { 0% { transform: scale(.2); opacity: 0; } 6% { transform: scale(1.2); opacity: 1; } 10% { transform: scale(1); } 85% { opacity: 1; } 100% { opacity: 0; } }
+.pg-oz { top: calc(var(--u) * -1.8); left: calc(var(--u) * -1.8); }
+.pg-perm { top: calc(var(--u) * -1.8); right: calc(var(--u) * -1.4); }
+.pg-btn { display: inline-flex; align-items: center; gap: calc(var(--u) * .5); margin-top: calc(var(--u) * .6); padding: calc(var(--u) * .35) calc(var(--u) * 1.1); border-radius: calc(var(--u) * 2);
+  background: rgba(255, 187, 51, .15); border: 1px solid rgba(255, 187, 51, .5); color: #ffd98a; font: 700 calc(var(--u) * 1.8)/1 var(--f-ui); }
+.pg-btn i { font-style: normal; }
+.pg-bi { width: calc(var(--u) * 2.4); height: calc(var(--u) * 2.4); }
+.plate.top .pg-btn { margin-top: 0; }
+.plate.top .pg-tmp { bottom: auto; top: calc(var(--u) * -1); right: calc(var(--u) * -4); }
+
 button { touch-action: manipulation; }
 </style>
 </head>
-<body data-ver="mwtif92x">
+<body data-ver="mwtinnhp">
 <div id="stage" lang="tr">
   <div class="app">
     <header class="top">
@@ -2861,9 +2874,9 @@ const GIFT_CATS = [
   { id: 'yemek', name: 'Yiyecek', items: [['Simit', '🥯', 250], ['Lokum', '🍬', 500], ['Tost', '🥪', 400], ['Kumpir', '🥔', 1000], ['Baklava', '🍯', 1500], ['Dondurma', '🍦', 750]] },
   { id: 'gonul', name: 'Gönül', items: [['Gül', '🌹', 2500], ['Nazar Boncuğu', '🧿', 1500], ['Dört Yapraklı Yonca', '🍀', 2500], ['Kalp', '❤️', 5000], ['Pırlanta', '💎', 25000], ['Yüzük', '💍', 10000]] },
   { id: 'takil', name: 'Takılma', items: [['Terlik', '🩴', 750], ['Domates', '🍅', 300], ['Biberon', '🍼', 1000], ['Kaplumbağa', '🐢', 1500], ['Mendil', '🤧', 500], ['Salyangoz', '🐌', 1000], ['Palyaço', '🤡', 2000], ['Uyku', '😴', 750]] },
-  { id: 'ozel', name: 'Özel', perm: true, forever: true, items: [['Sarı-Kırmızı Forma', '⚽', 1e6], ['Sarı-Lacivert Forma', '⚽', 1e6], ['Siyah-Beyaz Forma', '⚽', 1e6], ['Bordo-Mavi Forma', '⚽', 1e6], ['Kırmızı-Yeşil Forma', '⚽', 1e6], ['Kırmızı-Beyaz Forma', '⚽', 1e6], ['Yeşil-Beyaz Forma', '⚽', 1e6],
-    ['Gelinlik', '👰', 1e6], ['Damatlık', '🤵', 1e6], ['Altın Semaver', '🫖', 1e6], ['Elmas Okey Taşı', '💎', 1e6], ['Kahvehane Tapusu', '📜', 1e6], ['Elmas Bardakta Çay', '🍵', 1e6], ['Lüks Otomobil', '🏎️', 1e6], ['Lüks Yat', '🛥️', 1e6]] },
-  { id: 'kalici', name: 'Kalıcı', perm: true, items: [['Taç', '👑', 25000], ['Fötr Şapka', '🎩', 15000], ['Güneş Gözlüğü', '🕶️', 10000], ['Kupa', '🏆', 50000], ['Madalya', '🥇', 20000], ['Yıldız', '🌟', 30000]] }
+  { id: 'kalici', name: 'Günlük', perm: true, items: [['Taç', '👑', 25000], ['Fötr Şapka', '🎩', 15000], ['Güneş Gözlüğü', '🕶️', 10000], ['Kupa', '🏆', 50000], ['Madalya', '🥇', 20000], ['Yıldız', '🌟', 30000]] },
+  { id: 'ozel', name: 'Kalıcı', perm: true, forever: true, items: [['Sarı-Kırmızı Forma', '⚽', 1e6], ['Sarı-Lacivert Forma', '⚽', 1e6], ['Siyah-Beyaz Forma', '⚽', 1e6], ['Bordo-Mavi Forma', '⚽', 1e6], ['Kırmızı-Yeşil Forma', '⚽', 1e6], ['Kırmızı-Beyaz Forma', '⚽', 1e6], ['Yeşil-Beyaz Forma', '⚽', 1e6],
+    ['Gelinlik', '👰', 1e6], ['Damatlık', '🤵', 1e6], ['Altın Semaver', '🫖', 1e6], ['Elmas Okey Taşı', '💎', 1e6], ['Kahvehane Tapusu', '📜', 1e6], ['Elmas Bardakta Çay', '🍵', 1e6], ['Lüks Otomobil', '🏎️', 1e6], ['Lüks Yat', '🛥️', 1e6]] }
 ];
 // bot seviyesi/çipi: isme göre sabit sanal değerler (taslak)
 function botLv(name) { let h = 0; for (const c of name) h = (h * 31 + c.charCodeAt(0)) % 997; return 3 + h % 58; }
@@ -2880,7 +2893,8 @@ function savePerm(name, em, forever) {
 function giftBadge(i) {
   const g = (UI.gifts && UI.gifts[i]) || {}, now = Date.now(), tmp = g.tmp && g.tmp.until > now ? g.tmp.em : '';
   const perm = G && G.players[i] ? permOf(G.players[i].name) : '', oz = G && G.players[i] ? permOf(G.players[i].name, '#ozel') : '';
-  return (oz ? '<span class="pg-oz" title="Özel hediye (sınırsız)">' + icByName(oz) + '</span>' : '') + (perm ? '<span class="pg-perm" title="Kalıcı hediye (24 saat)">' + icByName(perm) + '</span>' : '') + (tmp ? '<span class="pg-tmp">' + icByName(tmp) + '</span>' : '');
+  const btn = !oz && !perm ? '<span class="pg-btn" title="Hediye yolla">' + giftIcon('Kalp').replace('<svg', '<svg class="pg-bi"') + '<i>Hediye</i></span>' : '';
+  return btn + (oz ? '<span class="pg-oz" title="Kalıcı hediye">' + icByName(oz) + '</span>' : '') + (perm ? '<span class="pg-perm" title="Günlük hediye (24 saat)">' + icByName(perm) + '</span>' : '') + (tmp ? '<span class="pg-tmp">' + icByName(tmp) + '</span>' : '');
 }
 function setGift(i, em, perm, forever) {
   UI.gifts = UI.gifts || {};
@@ -2913,7 +2927,7 @@ function showGiftMenu(i) {
   openModal('<div class="gf"><div class="gf-head"><span class="lb-av gf-av">' + P.name[0] + '</span><div><b>' + P.name + team + '</b><small>Seviye ' + botLv(P.name) + '</small></div>' +
     '<div class="lb-chips sm"><i class="coin"></i>' + chipFmt(wallet().chips) + '</div></div>' +
     '<h3 class="pf-h">Hediye Yolla</h3><div class="tk-tabs">' + tabs + '</div><div class="gf-grid">' + items + '</div>' +
-    (cat.forever ? '<p class="st-note">Özel hediyeler süresiz: oyuncunun kutusunda hep kalır. Her biri 1 milyon çip.</p>' : cat.perm ? '<p class="st-note">Kalıcı hediyeler 24 saat boyunca oyuncunun kutusunda durur; aynı oyuncuyla başka masada karşılaşırsan da görünür.</p>' : '<p class="st-note">Hediye birkaç saniye oyuncunun kutusunda görünür. Takılmalık hediyelerle dalga geçmek serbest!</p>') +
+    (cat.forever ? '<p class="st-note">Kalıcı hediyeler süresizdir: başka biri farklı bir kalıcı hediye gönderene kadar oyuncunun kutusunda kalır. Her biri 1 milyon çip.</p>' : cat.perm ? '<p class="st-note">Günlük hediyeler 24 saat boyunca oyuncunun kutusunda durur; aynı oyuncuyla başka masada karşılaşırsan da görünür.</p>' : '<p class="st-note">Hediye birkaç saniye oyuncunun kutusunda görünür. Takılmalık hediyelerle dalga geçmek serbest!</p>') +
     '<div class="mrow"><button class="btn pri" data-act="close">Kapat</button></div></div>');
 }
 function sendGift(i, catId, k) {
