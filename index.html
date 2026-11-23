@@ -648,10 +648,17 @@ button { font-family: inherit; }
 .ad-row { display: flex; justify-content: space-between; align-items: center; margin-top: calc(var(--u) * 1.2); font-weight: 700; }
 .ad-offer { display: flex; align-items: center; justify-content: center; gap: calc(var(--u) * 1.4); margin: 0 0 calc(var(--u) * 1.2); padding: calc(var(--u) * 1) calc(var(--u) * 1.4); border-radius: calc(var(--u) * 1.4); background: rgba(79, 224, 163, .12); border: 1px solid rgba(79, 224, 163, .4); }
 
+.po { display: grid; grid-template-columns: repeat(4, 1fr); gap: calc(var(--u) * .8); margin: 0 0 calc(var(--u) * 1.4); }
+.po-row { display: flex; flex-direction: column; align-items: center; padding: calc(var(--u) * .8); border-radius: calc(var(--u) * 1.2); background: rgba(0,0,0,.3); }
+.po-row.me { box-shadow: inset 0 0 0 2px var(--amber); }
+.po-row span { font-weight: 700; font-size: calc(var(--u) * 2); }
+.po-row b { font: 800 calc(var(--u) * 2.8)/1.1 var(--f-num); color: #ffe39a; }
+.po-row small { font-size: calc(var(--u) * 1.5); color: var(--muted); min-height: 1.2em; }
+
 button { touch-action: manipulation; }
 </style>
 </head>
-<body data-ver="mwtk0dco">
+<body data-ver="mwtl51b2">
 <div id="stage" lang="tr">
   <div class="app">
     <header class="top">
@@ -2456,22 +2463,38 @@ function quickPlay() {
 }
 
 /* ---------- Çip hesabı ---------- */
+// Ödül dağıtımı: 1. ortadakinden (2.'nin iadesi düşüldükten sonra) kalanı alır, 2. kendi bahsini geri alır.
+// Kazanandan masa ücreti (%5) kesilir. Eşlide kazanan takım ortadakini paylaşır, ücret yine kesilir.
+const TABLE_FEE = 0.05;
+function payouts(totals, bet, team) {
+  const pot = bet * 4, pay = [0, 0, 0, 0], fee = [0, 0, 0, 0];
+  const cut = (i, amt) => { const f = Math.round(amt * TABLE_FEE); fee[i] = f; pay[i] = amt - f; };
+  if (team) {
+    const A = totals[0] + totals[2], B = totals[1] + totals[3];
+    if (A === B) return { pay: [bet, bet, bet, bet], fee };
+    const w = A < B ? [0, 2] : [1, 3];
+    w.forEach(i => cut(i, pot / 2));
+    return { pay, fee };
+  }
+  const order = [0, 1, 2, 3].sort((a, b) => totals[a] - totals[b]);
+  const best = totals[order[0]], firsts = order.filter(i => totals[i] === best);
+  if (firsts.length > 1) { firsts.forEach(i => cut(i, Math.round(pot / firsts.length))); return { pay, fee }; }   // birincilikte beraberlik: paylaşırlar
+  const rest = order.filter(i => totals[i] !== best), second = totals[rest[0]], seconds = rest.filter(i => totals[i] === second);
+  seconds.forEach(i => { pay[i] = Math.round(bet / seconds.length); });   // ikinci(ler) bahsini geri alır
+  cut(order[0], pot - bet);
+  return { pay, fee };
+}
 function lobbySettle() {
   const T = UI.table; if (!T || T.settled) return T && T.resHTML || '';
   T.settled = true;
-  let win = 0;
-  if (G.cfg.team) {
-    const A = G.totals[0] + G.totals[2], B = G.totals[1] + G.totals[3];
-    win = A < B ? T.pot / 2 : A === B ? T.bet : 0;
-  } else {
-    const best = Math.min.apply(null, G.totals), k = G.totals.filter(x => x === best).length;
-    win = G.totals[0] === best ? T.pot / k : 0;
-  }
-  win = Math.round(win);
+  const r = payouts(G.totals, T.bet, !!G.cfg.team), win = r.pay[0];
   addChips(win);
   const net = win - T.bet;
   recordGame(net > 0, net);
-  T.resHTML = '<div class="lb-res ' + (net > 0 ? 'good' : net < 0 ? 'bad' : '') + '"><i class="coin"></i>' + (net > 0 ? '+' + chipFmt(net) : net < 0 ? '−' + chipFmt(-net) : '±0') + ' çip <small>Bakiye: ' + chipFmt(wallet().chips) + '</small></div>';
+  const order = [0, 1, 2, 3].sort((a, b) => r.pay[b] - r.pay[a]);
+  const rows = order.map(i => '<div class="po-row' + (i === 0 ? ' me' : '') + '"><span>' + G.players[i].name + '</span><b>' + (r.pay[i] ? '+' + chipFmt(r.pay[i]) : '0') + '</b>' + (r.fee[i] ? '<small>masa ücreti −' + chipFmt(r.fee[i]) + '</small>' : r.pay[i] && r.pay[i] <= T.bet ? '<small>bahis iadesi</small>' : '<small></small>') + '</div>').join('');
+  T.resHTML = '<div class="lb-res ' + (net > 0 ? 'good' : net < 0 ? 'bad' : '') + '"><i class="coin"></i>' + (net > 0 ? '+' + chipFmt(net) : net < 0 ? '−' + chipFmt(-net) : '±0') + ' çip <small>Bakiye: ' + chipFmt(wallet().chips) + '</small></div>' +
+    '<div class="po">' + rows + '</div>';
   return T.resHTML;
 }
 function showTableMenu() {
