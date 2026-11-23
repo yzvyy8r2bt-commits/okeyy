@@ -711,7 +711,7 @@ button { font-family: inherit; }
 button { touch-action: manipulation; }
 </style>
 </head>
-<body data-ver="mwto1o7p">
+<body data-ver="mwto5yzf">
 <div id="stage" lang="tr">
   <div class="app">
     <header class="top">
@@ -2059,8 +2059,9 @@ function hArrange(kind) {
   P.slots = arrangeSlots(groups);
 }
 // Taşı bir yuvaya araya sokarak bırak: komşular boşluğa doğru kayar (değiş-tokuş yok)
-function hInsert(from, s, after) {
-  const P = G.players[0], S = P.slots;
+function hInsert(from, s, after) { insertSlots(G.players[0].slots, from, s, after); }
+// taşı s yuvasının soluna/sağına yerleştir (dolu ise komşuları en yakın boşluğa kaydırır); saf dizi işlemi
+function insertSlots(S, from, s, after) {
   const a = S[from];
   if (!a || from === s) return;
   S[from] = null;
@@ -4023,10 +4024,38 @@ function showInsert(x, y) {
   if (UI.insKey === key) return h;           // değişiklik yoksa DOM'a dokunma
   UI.insKey = key;
   if (UI.insEl) { UI.insEl.classList.remove('ins-l', 'ins-r'); UI.insEl = null; }
-  if (!h) return null;
-  const el = document.querySelector('#rack .slot[data-slot="' + h.s + '"]');
-  if (el && el.querySelector('.tile')) { el.classList.add(h.after ? 'ins-r' : 'ins-l'); UI.insEl = el; }
+  previewRack(h);
   return h;
+}
+// sürüklerken ıstakadaki taşlar canlı olarak kenara kayar, bırakılacak yer boş görünür
+function slotCenters() {
+  const sc = slotCache(), m = {};
+  Object.keys(sc.rows).forEach(k => sc.rows[k].forEach(o => { m[o.i] = o; }));
+  return m;
+}
+function previewRack(h) {
+  const d = drag, P = G && G.players[0];
+  if (!d || !P) return;
+  const from = d.src ? -1 : P.slots.findIndex(t => t && t.id === d.id);
+  let target = {};
+  if (h && (from >= 0 || d.src)) {
+    const S = P.slots.slice(), ghost = { id: -999 };
+    let f = from;
+    if (f < 0) {                               // desteden/yandan çekerken: geçici taş, satırdaki ilk boşluktan gelir
+      const row = Math.floor(h.s / COLS); f = -1;
+      for (let k = row * COLS; k < row * COLS + COLS; k++) if (!S[k]) { f = k; break; }
+      if (f < 0) { h = null; } else S[f] = ghost;
+    }
+    if (h) { insertSlots(S, f, h.s, h.after); S.forEach((t, i) => { if (t) target[t.id] = i; }); }
+  }
+  const C = slotCenters(), sc = UI.port ? 1 : 1;
+  document.querySelectorAll('#rack .tile[data-id]').forEach(el => {
+    const id = +el.dataset.id; if (!d.src && id === d.id) return;
+    const cur = P.slots.findIndex(t => t && t.id === id), to = target[id];
+    let tf = '';
+    if (to !== undefined && to !== cur && C[to] && C[cur]) tf = 'translate(' + (C[to].cx - C[cur].cx) * sc + 'px,' + (C[to].cy - C[cur].cy) * sc + 'px)';
+    if (el.style.transform !== tf) { el.style.transition = 'transform .14s cubic-bezier(.2,.8,.3,1)'; el.style.transform = tf; }
+  });
 }
 function handleDrop(id, el, x, y) {
   if (!el) return;
