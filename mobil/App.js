@@ -4,7 +4,9 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { View, Text, Pressable, StyleSheet, ScrollView, useWindowDimensions, Modal, Animated } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import * as ScreenOrientation from 'expo-screen-orientation';
-import * as Haptics from 'expo-haptics';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { FEEL, tick, bump, warn, err } from './src/feel';
+import { HOWTO, RULES } from './src/content';
 import { GestureHandlerRootView, Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Rack, { rackGeom, slotAt } from './src/Rack';
@@ -20,6 +22,78 @@ const C = {
 };
 const AV = ['#f29a32', '#c4366f', '#2389bd', '#e07d1d'];
 const fmt = n => (n < 0 ? '−' + Math.abs(n) : String(n));
+
+// ---------- ayarlar (cihazda saklanır) ----------
+const PEN_DEFS = [
+  ['gosterge', 'Gösterge', 'Göstergenin eşi elinde olan elin başında söyleyip çiftte joker gibi kullanır'],
+  ['rekor', 'Rekorlu', '150+ puanla ya da 7+ çiftle açana −101 rekor ödülü'],
+  ['okeyCal', 'Okey çalma', 'Perdeki okeyi çalınan oyuncuya 101 ceza'],
+  ['yanAc', 'Yandan taş alıp açma', 'Yandan alınan taşla açılırsa taşı atana taş×10 (çiftte ×20) ceza'],
+  ['herTas', 'Her taş ceza', 'Elini açtıktan sonra yandan alıp per veya çift indirdiğin taşın sahibine taş×10 (çiftte ×20) ceza'],
+];
+const DEF_SET = { sound: true, vibrate: true, hands: 4, team: false, mode: 'katlamali', hard: false, pen: {} };
+const SET_KEY = 'okey101.settings';
+const gameCfg = st => ({ hands: st.hands, team: st.team, mode: st.mode, hard: st.hard, pen: { ...st.pen }, speed: 'normal' });
+
+// ---------- tur süresi (web ile aynı: 60 sn, üst üste 2 kez dolarsa 5 sn) ----------
+const TURN_SEC = 60, SLOW_SEC = 5;
+const CLK = { cKey: null, cEnd: 0, bKey: null, bEnd: 0, tOut: 0, paused: false, last: 0, busy: false };
+const turnSec = () => (CLK.tOut >= 2 ? SLOW_SEC : TURN_SEC);
+function clockKey() {
+  const g = G();
+  return g && g.turn === 0 && (g.phase === 'draw' || g.phase === 'discard') ? g.handNo + ':' + g.turnNo + ':' + (g.clk || 0) : null;
+}
+// sırası gelenin kalan süresi (sn ve oran); bot ise bot süresi
+function clockState(who) {
+  const g = G(); if (!g || g.phase === 'over') return null;
+  const now = Date.now();
+  if (who === 'me') {
+    const key = clockKey(); if (!key) return null;
+    if (key !== CLK.cKey) { CLK.cKey = key; CLK.cEnd = now + turnSec() * 1000; }
+    const left = Math.max(0, CLK.cEnd - now);
+    return { s: Math.ceil(left / 1000), p: Math.min(1, left / (turnSec() * 1000)), left };
+  }
+  if (g.turn === 0) return null;
+  const key = g.handNo + ':' + g.turnNo;
+  if (key !== CLK.bKey) { CLK.bKey = key; CLK.bEnd = now + TURN_SEC * 1000; }
+  const left = Math.max(0, CLK.bEnd - now);
+  return { s: Math.ceil(left / 1000), p: Math.min(1, left / (TURN_SEC * 1000)), left };
+}
+// süre dolunca: desteden çek, okey ve işlek olmayan bir taş at (web'deki autoPlay)
+function autoPlay(say) {
+  const g = G(), P = g.players[0];
+  CLK.busy = true;
+  try {
+    if (g.phase === 'discard' && P.sideTile && !P.sideUsed) GM.hReturnSide();
+    if (g.phase === 'draw') { const r = GM.hDraw('deck'); if (!r || !r.ok) return; }
+    if (g.phase === 'discard' && g.turn === 0) {
+      const tiles = P.slots.filter(Boolean);
+      const score = t => (t.wild ? 1000 : 0) + (g.table.length && E.isWrongDiscard(t, g.table) ? 500 : 0) + (t.id === g.freshId ? -50 : 0) - t.n;
+      for (const t of tiles.slice().sort((a, b) => score(a) - score(b))) { const r = GM.hDiscard(t.id); if (r && r.ok) break; }
+    }
+    CLK.tOut += 1;
+    say(CLK.tOut >= 2 ? 'Süren üst üste ' + CLK.tOut + ' kez doldu: artık her turda ' + SLOW_SEC + ' saniyen var. Kendin oynayınca süren 60 saniyeye döner.' : 'Süren doldu: senin yerine taş çekilip atıldı.', 'bad');
+  } finally { CLK.busy = false; CLK.cKey = null; }
+}
+// saat çipi: kendi zamanlayıcısıyla yenilenir, masayı yeniden çizdirmez
+function ClockPill({ u, who, style }) {
+  const [st, setSt] = useState(() => clockState(who));
+  useEffect(() => {
+    const id = setInterval(() => {
+      const n = clockState(who);
+      setSt(o => (o && n && o.s === n.s ? o : n));
+    }, 250);
+    return () => clearInterval(id);
+  }, [who]);
+  if (!st) return null;
+  const warnOn = st.s <= 10;
+  return (
+    <View style={[{ minWidth: 7.5 * u, borderRadius: 1.2 * u, overflow: 'hidden', backgroundColor: warnOn ? 'rgba(255,107,90,0.35)' : 'rgba(255,187,51,0.35)' }, style]}>
+      <View style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: (st.p * 100) + '%', backgroundColor: warnOn ? '#ff6b5a' : C.amber }} />
+      <Text allowFontScaling={false} style={{ textAlign: 'center', fontFamily: NUM_FONT, fontWeight: '800', fontSize: 2.6 * u, color: warnOn ? '#2a0600' : C.amberInk, paddingVertical: 0.55 * u, paddingHorizontal: u }}>0:{String(st.s).padStart(2, '0')}</Text>
+    </View>
+  );
+}
 
 // ---------- küçük parçalar ----------
 function Btn({ u, label, onPress, pri, sm, disabled, style }) {
@@ -58,11 +132,14 @@ function stateChips(u, P) {
 function SidePlate({ u, i, g }) {
   const P = g.players[i], active = g.turn === i && g.phase !== 'over';
   return (
+    <View style={{ flex: 1 }}>
+    {active ? <ClockPill u={u} who="bot" style={{ position: 'absolute', top: -1.3 * u, right: -u, zIndex: 4, minWidth: 6.4 * u }} /> : null}
     <View style={[styles.plate, { borderRadius: 2 * u, padding: 1.1 * u, gap: 0.8 * u }, active && styles.plateOn]}>
       <Avatar u={u} i={i} name={P.name} size={6.4} />
       <Text allowFontScaling={false} numberOfLines={1} style={[styles.nm, { fontSize: 3 * u }]}>{P.name}{g.cfg.team ? ' · Rakip' : ''}</Text>
       <View style={[styles.chips, { gap: 0.5 * u }]}>{stateChips(u, P)}</View>
       <View style={[styles.shelf, { marginHorizontal: -1.1 * u }]} />
+    </View>
     </View>
   );
 }
@@ -74,6 +151,7 @@ function TopPlate({ u, g }) {
       <Avatar u={u} i={2} name={P.name} size={6.4} />
       <Text allowFontScaling={false} numberOfLines={1} style={[styles.nm, { fontSize: 3 * u }]}>{P.name}{g.cfg.team ? ' · Eşin' : ''}</Text>
       <View style={{ flexDirection: 'row', gap: 0.5 * u }}>{stateChips(u, P)}</View>
+      {active ? <ClockPill u={u} who="bot" /> : null}
     </View>
   );
 }
@@ -145,6 +223,31 @@ function CenterBox({ u, label, children, drag }) {
   );
 }
 
+const cyc = (arr, v, d) => { const i = arr.indexOf(v); return arr[(i + d + arr.length) % arr.length]; };
+function Toggle({ u, label, desc, on, onPress }) {
+  return (
+    <Pressable onPress={onPress} style={[styles.mchip, { borderRadius: 1.2 * u, paddingHorizontal: 1.3 * u, minHeight: 5.6 * u, gap: 1.1 * u, marginBottom: 0.55 * u }, on && styles.mchipOn]}>
+      <View style={[styles.box2, { width: 2.6 * u, height: 2.6 * u, borderRadius: 0.6 * u }, on && { backgroundColor: C.amber, borderColor: C.amber }]}>
+        {on ? <Text allowFontScaling={false} style={{ color: C.amberInk, fontWeight: '900', fontSize: 1.9 * u }}>✓</Text> : null}
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text allowFontScaling={false} style={{ color: C.ink, fontWeight: '700', fontSize: 2.4 * u }}>{label}</Text>
+        {desc ? <Text allowFontScaling={false} numberOfLines={2} style={{ color: C.muted, fontSize: 1.75 * u }}>{desc}</Text> : null}
+      </View>
+    </Pressable>
+  );
+}
+function Pick({ u, title, val, onPrev, onNext }) {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 0.8 * u }}>
+      <Text allowFontScaling={false} style={{ color: C.muted, fontSize: 2.1 * u, flex: 1 }}>{title}</Text>
+      <Btn u={u} sm label="‹" onPress={onPrev} />
+      <Text allowFontScaling={false} style={{ color: C.ink, fontWeight: '800', fontSize: 2.4 * u, minWidth: 14 * u, textAlign: 'center' }}>{val}</Text>
+      <Btn u={u} sm label="›" onPress={onNext} />
+    </View>
+  );
+}
+
 // ---------- oyun ekranı ----------
 function Game() {
   const ins = useSafeAreaInsets();
@@ -155,7 +258,10 @@ function Game() {
   const [statusMsg, setStatusMsg] = useState(null);
   const [handEnd, setHandEnd] = useState(null);
   const [scoreOpen, setScoreOpen] = useState(false);
-  const [sound, setSound] = useState(true);
+  const [set, setSet] = useState(DEF_SET);
+  const [setOpen, setSetOpen] = useState(false);
+  const [rulesOpen, setRulesOpen] = useState(false);
+  const setRef = useRef(DEF_SET); setRef.current = set;
   const rackRef = useRef(null), atRef = useRef(null), yanRef = useRef(null);
   const [ghost, setGhost] = useState(null);                 // sürüklenen deste/yan taşı
   const ghostPos = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
@@ -175,7 +281,7 @@ function Game() {
     if (!r.ok) {
       clearTimeout(stT.current); setStatusMsg(r.msg);
       stT.current = setTimeout(() => setStatusMsg(null), 4500);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
+      err();
     } else if (r.msg) toast(r.msg, 'good');
     bumpRack();
   }, [toast, bumpRack]);
@@ -186,13 +292,32 @@ function Game() {
       render: rerender,
       toast: (m, k) => toast(m, k),
       banner: (title, sub, kind) => toast(title + (sub ? ' · ' + sub : ''), kind === 'gold' ? 'good' : kind),
-      sfx: (k) => { if (k === 'penalty') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {}); },
+      sfx: (k) => { if (k === 'penalty') warn(); },
       wait: (ms) => sleep(ms),
       handEnd: (rec, last) => { setTimeout(() => setHandEnd({ rec, last }), 900); },
-      turn: () => { if (G() && G().turn === 0) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {}); },
+      turn: () => { if (G() && G().turn === 0) bump(); },
     });
-    if (!G()) GM.newGame({ hands: 4, mode: 'katlamali' });
-    bumpRack();
+    AsyncStorage.getItem(SET_KEY).then(v => {
+      let st = DEF_SET;
+      try { if (v) st = { ...DEF_SET, ...JSON.parse(v) }; } catch (e) { /* bozuk kayıt */ }
+      FEEL.vibrate = st.vibrate !== false;
+      setSet(st);
+      if (!G()) GM.newGame(gameCfg(st));
+      bumpRack();
+    }).catch(() => { if (!G()) GM.newGame(gameCfg(DEF_SET)); bumpRack(); });
+  }, []);
+  const saveSet = (st) => { setSet(st); FEEL.vibrate = st.vibrate !== false; AsyncStorage.setItem(SET_KEY, JSON.stringify(st)).catch(() => {}); };
+
+  // pencere açıkken süre durur; süre dolunca otomatik oyna
+  useEffect(() => { CLK.paused = !!(handEnd || scoreOpen || setOpen || rulesOpen); }, [handEnd, scoreOpen, setOpen, rulesOpen]);
+  useEffect(() => {
+    const id = setInterval(() => {
+      const now = Date.now(), dt = now - (CLK.last || now); CLK.last = now;
+      if (CLK.paused) { CLK.cEnd += dt; CLK.bEnd += dt; return; }
+      const n = clockState('me');
+      if (n && n.left <= 0 && !CLK.busy && !ghostRef.current) { autoPlay(toast); bumpRack(); }
+    }, 250);
+    return () => clearInterval(id);
   }, []);
 
   const W = Math.max(win.width, win.height), Hh = Math.min(win.width, win.height);
@@ -216,7 +341,7 @@ function Game() {
     const x = rr.x + lx, y = rr.y + ly;
     const grow = r => r && { x: r.x - 2 * u, y: r.y - 2 * u, w: r.w + 4 * u, h: r.h + 4 * u };
     const [at, yan] = await Promise.all([measure(atRef), measure(yanRef)]);
-    if (inRect(grow(at), x, y)) { feedback(GM.hDiscard(tile.id)); return; }
+    if (inRect(grow(at), x, y)) { const r = GM.hDiscard(tile.id); if (r && r.ok) CLK.tOut = 0; feedback(r); return; }
     if (inRect(grow(yan), x, y)) { if (P.sideTile && P.sideTile.id === tile.id) feedback(GM.hReturnSide()); return; }
     const ids = Object.keys(meldRefs.current);
     const rects = await Promise.all(ids.map(id => measure(meldRefs.current[id])));
@@ -224,6 +349,11 @@ function Game() {
       if (inRect(grow(rects[k]), x, y)) {
         const m = g.table.find(mm => String(mm.id) === ids[k]);
         if (!m) return;
+        // okeyin (ya da göstergenin) üstüne bırakıldıysa: okeyi çal
+        const ms = 0.74, step = (4.7 + 0.15) * u * ms, r = rects[k];
+        const idx = Math.max(0, Math.min(m.items.length - 1, Math.floor((x - r.x - 0.35 * u * ms) / step)));
+        const it = m.items[idx];
+        if (it && (it.t.wild || it.t.gost)) { const sr = GM.hSwap(tile.id, m.id, idx); if (sr && sr.ok) { feedback(sr); return; } }
         if (P.opened && P.openKind === 'cift' && m.kind === 'pair') feedback(GM.hProcessPairs([tile.id]));
         else feedback(GM.hProcess([tile.id], m.id));
         return;
@@ -242,7 +372,7 @@ function Game() {
       ghostPos.setValue({ x: x - geom.cellW / 2, y: y - geom.tileH * 0.8 });
       ghostRef.current = { src, tile: t };
       setGhost(ghostRef.current);
-      Haptics.selectionAsync().catch(() => {});
+      tick();
     },
     move: (x, y) => { if (ghostRef.current) ghostPos.setValue({ x: x - geom.cellW / 2, y: y - geom.tileH * 0.8 }); },
     end: async (x, y) => {
@@ -275,7 +405,8 @@ function Game() {
   const canSide = canDraw && !P.sideReturned;
   const lastOf = i => { const d = g.players[i].discards; return d[d.length - 1]; };
   const an = E.rackAnalysis(P.slots);
-  const marks = { meld: an.meldIds, pair: an.pairIds };
+  const hard = !!g.cfg.hard;
+  const marks = hard ? { meld: new Set(), pair: new Set() } : { meld: an.meldIds, pair: an.pairIds };
   const pd = P.pend;
   const kat = g.cfg.mode === 'katlamali';
   const gbId = GM.canAnnounce(P) ? (GM.handOf(P).find(GM.isGostTwin) || {}).id : null;
@@ -292,7 +423,7 @@ function Game() {
   const nextHand = () => {
     const last = handEnd && handEnd.last;
     setHandEnd(null);
-    if (last) GM.newGame({ hands: 4, mode: 'katlamali' }); else GM.nextHand();
+    if (last) { CLK.tOut = 0; GM.newGame(gameCfg(setRef.current)); } else GM.nextHand();
     bumpRack();
   };
   const ms = 0.74;
@@ -314,9 +445,9 @@ function Game() {
         <TopPlate u={u} g={g} />
         <View style={[styles.topActions, { gap: 0.8 * u }]}>
           <Btn u={u} sm label="Yazboz" onPress={() => setScoreOpen(true)} />
-          <Btn u={u} sm label="Kurallar" onPress={() => toast('Kurallar yakında bu sürüme gelecek', 'info')} />
-          <Btn u={u} sm label="Ayarlar" onPress={() => toast('Ayarlar yakında bu sürüme gelecek', 'info')} />
-          <Btn u={u} sm label={sound ? 'Ses: Açık' : 'Ses: Kapalı'} onPress={() => setSound(s => !s)} />
+          <Btn u={u} sm label="Kurallar" onPress={() => setRulesOpen(true)} />
+          <Btn u={u} sm label="Ayarlar" onPress={() => setSetOpen(true)} />
+          <Btn u={u} sm label={set.sound ? 'Ses: Açık' : 'Ses: Kapalı'} onPress={() => saveSet({ ...set, sound: !set.sound })} />
         </View>
       </View>
 
@@ -370,6 +501,7 @@ function Game() {
               <Text allowFontScaling={false} numberOfLines={1} style={[styles.nm, { fontSize: 2.4 * u }]}>{P.name === 'Sen' ? 'Oyuncu' : P.name}</Text>
               {stateChips(u, P)}
             </View>
+            <ClockPill u={u} who="me" style={{ alignSelf: 'center' }} />
             {gbId ? <Btn u={u} label="Gösterge Bende" pri onPress={() => feedback(GM.announceGost(0))} /> : null}
             <View style={{ flex: 1, alignItems: statusMsg ? 'flex-start' : 'flex-end' }}>
               {statusMsg ? <Text allowFontScaling={false} numberOfLines={2} style={{ color: '#ffc0b9', fontWeight: '700', fontSize: 2.3 * u }}>{statusMsg}</Text>
@@ -378,7 +510,7 @@ function Game() {
             <View style={{ flexDirection: 'row', gap: 0.7 * u }}>
               <Btn u={u} pri label={seriLbl} disabled={!(seriOn && !(pd && pd.kind !== 'seri'))} onPress={() => feedback(!P.opened ? GM.hOpen('seri', true) : GM.hLay())} />
               <Btn u={u} pri label={ciftLbl} disabled={!(ciftOn && !(pd && pd.kind !== 'cift'))} onPress={() => feedback(!P.opened ? GM.hOpen('cift', true) : GM.hProcessPairs([]))} />
-              {P.opened ? <Btn u={u} label="Tümünü İşle" disabled={!disc} onPress={() => feedback(GM.hProcessAll())} /> : null}
+              {P.opened && !hard ? <Btn u={u} label="Tümünü İşle" disabled={!disc} onPress={() => feedback(GM.hProcessAll())} /> : null}
               {showRegather ? <Btn u={u} label="Geri Topla" disabled={!disc} onPress={() => feedback(GM.hRegather())} /> : null}
             </View>
           </View>
@@ -423,6 +555,63 @@ function Game() {
               </View>
             </View>
           ) : null}
+        </View>
+      </Modal>
+
+      {/* ayarlar */}
+      <Modal visible={setOpen} transparent animationType="fade" supportedOrientations={['landscape']}>
+        <View style={styles.modalBg}>
+          <View style={[styles.modal, { width: '86%', maxHeight: '92%', borderRadius: 2.4 * u, padding: 2.4 * u }]}>
+            <Text allowFontScaling={false} style={[styles.modalT, { fontSize: 4.2 * u }]}>Ayarlar</Text>
+            <ScrollView>
+              <View style={{ flexDirection: 'row', gap: 2.4 * u }}>
+                <View style={{ flex: 1 }}>
+                  <Text allowFontScaling={false} style={[styles.stH, { fontSize: 2.6 * u, marginBottom: u }]}>Genel Ayarlar</Text>
+                  <Toggle u={u} label="Ses efektleri" on={set.sound} onPress={() => saveSet({ ...set, sound: !set.sound })} />
+                  <Toggle u={u} label="Titreşim" on={set.vibrate} onPress={() => saveSet({ ...set, vibrate: !set.vibrate })} />
+                  <Text allowFontScaling={false} style={[styles.stH, { fontSize: 2.6 * u, marginVertical: u }]}>Oyun</Text>
+                  <Pick u={u} title="El sayısı" val={set.hands + ' El'} onPrev={() => saveSet({ ...set, hands: cyc([1, 2, 4, 8], set.hands, -1) })} onNext={() => saveSet({ ...set, hands: cyc([1, 2, 4, 8], set.hands, 1) })} />
+                  <Pick u={u} title="Tek / Eşli" val={set.team ? 'Eşli' : 'Tek'} onPrev={() => saveSet({ ...set, team: !set.team })} onNext={() => saveSet({ ...set, team: !set.team })} />
+                  <Pick u={u} title="Katlamalı / Klasik" val={set.mode === 'katlamali' ? 'Katlamalı' : 'Klasik'} onPrev={() => saveSet({ ...set, mode: set.mode === 'katlamali' ? 'klasik' : 'katlamali' })} onNext={() => saveSet({ ...set, mode: set.mode === 'katlamali' ? 'klasik' : 'katlamali' })} />
+                  <Pick u={u} title="Yardımlı / Yardımsız" val={set.hard ? 'Yardımsız' : 'Yardımlı'} onPrev={() => saveSet({ ...set, hard: !set.hard })} onNext={() => saveSet({ ...set, hard: !set.hard })} />
+                </View>
+                <View style={{ flex: 1.3 }}>
+                  <Text allowFontScaling={false} style={[styles.stH, { fontSize: 2.6 * u, marginBottom: u }]}>Cezalar</Text>
+                  {PEN_DEFS.map(([k, label, desc]) => (
+                    <Toggle key={k} u={u} label={label} desc={desc} on={set.pen[k] !== false} onPress={() => saveSet({ ...set, pen: { ...set.pen, [k]: set.pen[k] === false } })} />
+                  ))}
+                  <Text allowFontScaling={false} style={{ color: C.muted, fontSize: 1.9 * u, marginTop: u }}>Oyun ve ceza ayarları yeni oyunda geçerli olur.</Text>
+                </View>
+              </View>
+            </ScrollView>
+            <View style={{ flexDirection: 'row', justifyContent: 'center', gap: u, marginTop: 1.6 * u }}>
+              <Btn u={u} pri label="Tamam" onPress={() => setSetOpen(false)} />
+              <Btn u={u} label="Yeni Oyunu Başlat" onPress={() => { setSetOpen(false); CLK.tOut = 0; GM.newGame(gameCfg(setRef.current)); bumpRack(); }} />
+              <Btn u={u} label="Kurallar" onPress={() => { setSetOpen(false); setRulesOpen(true); }} />
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* kurallar */}
+      <Modal visible={rulesOpen} transparent animationType="fade" supportedOrientations={['landscape']}>
+        <View style={styles.modalBg}>
+          <View style={[styles.modal, { width: '86%', maxHeight: '92%', borderRadius: 2.4 * u, padding: 2.4 * u }]}>
+            <Text allowFontScaling={false} style={[styles.modalT, { fontSize: 4.2 * u }]}>Kurallar</Text>
+            <ScrollView>
+              <Text allowFontScaling={false} style={[styles.stH, { fontSize: 2.6 * u, marginTop: u }]}>Nasıl Oynanır?</Text>
+              {HOWTO.map((t, k) => <Text key={'h' + k} allowFontScaling={false} style={[styles.ruleLi, { fontSize: 2.2 * u, marginTop: 0.6 * u }]}>• {t}</Text>)}
+              {RULES.map((sec, k) => (
+                <View key={k}>
+                  <Text allowFontScaling={false} style={[styles.stH, { fontSize: 2.6 * u, marginTop: 1.6 * u }]}>{sec.t}</Text>
+                  {sec.i.map((t, j) => <Text key={j} allowFontScaling={false} style={[styles.ruleLi, { fontSize: 2.2 * u, marginTop: 0.6 * u }]}>• {t}</Text>)}
+                </View>
+              ))}
+            </ScrollView>
+            <View style={{ alignItems: 'center', marginTop: 1.6 * u }}>
+              <Btn u={u} pri label="Kapat" onPress={() => setRulesOpen(false)} />
+            </View>
+          </View>
         </View>
       </Modal>
 
@@ -508,4 +697,9 @@ const styles = StyleSheet.create({
   modalT: { color: C.amber, fontWeight: '900', textAlign: 'center', marginBottom: 6 },
   resRow: { flexDirection: 'row', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.08)' },
   resName: { color: '#fff', fontWeight: '800' },
+  stH: { color: C.amber, fontWeight: '800' },
+  ruleLi: { color: C.ink, lineHeight: undefined },
+  mchip: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', backgroundColor: 'rgba(0,0,0,0.35)' },
+  mchipOn: { borderColor: 'rgba(255,187,51,0.7)', backgroundColor: 'rgba(255,187,51,0.12)' },
+  box2: { borderWidth: 2, borderColor: 'rgba(255,255,255,0.35)', alignItems: 'center', justifyContent: 'center' },
 });

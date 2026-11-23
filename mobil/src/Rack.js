@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, StyleSheet, Animated } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import * as Haptics from 'expo-haptics';
+import { tick } from './feel';
 import TileFace from './Tile';
 
 export const COLS = 15;
@@ -72,7 +72,7 @@ function DraggableTileBase({ tile, slot, geom, ver, mark, fresh, gb, onDrop, onD
       st.current = { ...cur.current };
       setUp(true);
       Animated.timing(lift, { toValue: 1, duration: 60, useNativeDriver: ND }).start();
-      Haptics.selectionAsync().catch(() => {});
+      tick();
     })
     .onUpdate((e) => {
       const x = st.current.x + e.translationX, y = st.current.y + e.translationY;
