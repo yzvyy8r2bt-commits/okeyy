@@ -478,7 +478,8 @@ button { font-family: inherit; }
 .pf-bar { flex: 1; height: calc(var(--u) * 1.2); border-radius: 9px; background: rgba(255, 255, 255, .12); overflow: hidden; }
 .pf-bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--amber2), var(--amber)); }
 .pf-row em { font-style: normal; font-size: calc(var(--u) * 1.7); color: var(--muted); }
-.pf-soonbox { display: grid; grid-template-columns: 1fr 1fr; gap: calc(var(--u) * 1); }
+.pf-tabs { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: calc(var(--u) * .8); align-content: start; }
+.pf-tabs .btn { font-size: calc(var(--u) * 2.1); min-height: calc(var(--u) * 6); padding: 0 calc(var(--u) * .6); }
 .pf-soon { display: flex; flex-direction: column; justify-content: center; font-size: calc(var(--u) * 2.3); opacity: .55; }
 .pf-soon small { font-size: calc(var(--u) * 1.5); font-weight: 600; color: var(--muted); }
 .pf-h { margin: calc(var(--u) * 1.6) 0 calc(var(--u) * .8); font: 800 calc(var(--u) * 2.8)/1 var(--f-num); letter-spacing: .06em; text-transform: uppercase; color: var(--amber); }
@@ -487,6 +488,38 @@ button { font-family: inherit; }
 .pf-stat small { display: block; font-size: calc(var(--u) * 1.8); color: #b9a6ff; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
 .pf-stat b { font: 800 calc(var(--u) * 5)/1.1 var(--f-num); }
 .pf-in { width: 100%; box-sizing: border-box; font: 700 calc(var(--u) * 3)/1 var(--f-ui); padding: calc(var(--u) * 1.2); border-radius: calc(var(--u) * 1.2); border: 1px solid rgba(255, 255, 255, .2); background: rgba(0, 0, 0, .4); color: var(--ink); -webkit-user-select: text; user-select: text; }
+
+.pf-body { margin-top: calc(var(--u) * 1.4); }
+.tk-tabs { display: flex; gap: calc(var(--u) * .8); margin-bottom: calc(var(--u) * 1); }
+.tk-tab { flex: 1; border: 0; border-radius: calc(var(--u) * 1.2) calc(var(--u) * 1.2) 0 0; padding: calc(var(--u) * 1) 0; font: 800 calc(var(--u) * 2.6)/1 var(--f-num); letter-spacing: .06em; text-transform: uppercase; cursor: pointer; opacity: .55; color: #fff; }
+.tk-tab small { font-size: .75em; opacity: .85; }
+.tk-tab.on { opacity: 1; }
+.tk-tab.br, .tk.br { background: linear-gradient(160deg, #a0612b, #4a2a10); }
+.tk-tab.ag, .tk.ag { background: linear-gradient(160deg, #8c9aae, #3a4250); }
+.tk-tab.au, .tk.au { background: linear-gradient(160deg, #d9a521, #6a4a00); }
+.tk-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: calc(var(--u) * 1); }
+.tk { position: relative; display: flex; flex-direction: column; align-items: center; gap: calc(var(--u) * .4); border-radius: calc(var(--u) * 1.4); padding: calc(var(--u) * 1) calc(var(--u) * .8); text-align: center; color: #fff; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .15); }
+.tk.done { box-shadow: inset 0 0 0 2px var(--good); }
+.tk-t { font: 800 calc(var(--u) * 2.2)/1.05 var(--f-num); letter-spacing: .02em; }
+.tk-ic { font-size: calc(var(--u) * 4.2); line-height: 1; }
+.tk p { margin: 0; font-size: calc(var(--u) * 1.55); line-height: 1.2; opacity: .85; min-height: 2.4em; }
+.tk-bar { width: 100%; height: calc(var(--u) * .9); border-radius: 9px; background: rgba(0, 0, 0, .35); overflow: hidden; }
+.tk-bar i { display: block; height: 100%; background: var(--good); }
+.tk-n { font-size: calc(var(--u) * 1.6); font-weight: 700; }
+.tk-r { display: flex; align-items: center; font: 800 calc(var(--u) * 1.9)/1 var(--f-num); background: rgba(0, 0, 0, .35); padding: calc(var(--u) * .4) calc(var(--u) * .9); border-radius: calc(var(--u) * 1); }
+.lv { display: flex; align-items: center; gap: calc(var(--u) * 2.4); background: rgba(0, 0, 0, .28); border-radius: calc(var(--u) * 2); padding: calc(var(--u) * 2); }
+.lv-star { position: relative; font-size: calc(var(--u) * 16); line-height: 1; color: var(--amber); text-shadow: 0 0 calc(var(--u) * 3) rgba(255, 187, 51, .6); }
+.lv-star b { position: absolute; inset: 0; display: grid; place-items: center; padding-top: 12%; font: 800 calc(var(--u) * 5)/1 var(--f-num); color: var(--amber-ink); text-shadow: none; }
+.lv-main { flex: 1; min-width: 0; }
+.lv-main p { margin: 0 0 calc(var(--u) * 1); font-size: calc(var(--u) * 2.4); }
+.lv-main p b { color: var(--good); }
+.lv-bar { height: calc(var(--u) * 2.2); border-radius: 99px; background: rgba(255, 255, 255, .12); overflow: hidden; }
+.lv-bar i { display: block; height: 100%; background: linear-gradient(90deg, #3d7bff, #6fb6ff); }
+.lv-row { display: flex; justify-content: space-between; font-weight: 700; font-size: calc(var(--u) * 2); margin-top: calc(var(--u) * .6); }
+.lv-rew { display: flex; flex-direction: column; align-items: center; gap: calc(var(--u) * .6); background: rgba(0, 0, 0, .35); border-radius: calc(var(--u) * 1.6); padding: calc(var(--u) * 1.4) calc(var(--u) * 2); }
+.lv-rew small { color: var(--amber); font-weight: 800; text-transform: uppercase; letter-spacing: .06em; font-size: calc(var(--u) * 1.8); }
+.coin.big { width: calc(var(--u) * 6); height: calc(var(--u) * 6); margin: 0; }
+.lv-rew b { font: 800 calc(var(--u) * 3.2)/1 var(--f-num); color: #ffe39a; }
 
 button { touch-action: manipulation; }
 </style>
@@ -1026,7 +1059,7 @@ if (typeof module !== 'undefined' && module.exports) { Object.assign(globalThis,
 const SEATS = ['Sen', 'Ahmet', 'Mehmet', 'Ayşe'];
 const H = {
   render() {}, log() {}, toast() {}, banner() {}, sfx() {},
-  handEnd() {}, gameEnd() {}, handStart() {}, discarded() {},
+  handEnd() {}, gameEnd() {}, handStart() {}, discarded() {}, ev() {},
   wait() { return Promise.resolve(); }
 };
 let G = null;
@@ -1114,7 +1147,7 @@ function announceGost(i) {
   const P = G.players[i];
   if (!canAnnounce(P)) return fail('Gösterge ancak elin başında, ilk taşını çekmeden söylenebilir.');
   const t = handOf(P).find(isGostTwin);
-  t.gost = true; P.gostSaid = true;
+  t.gost = true; P.gostSaid = true; H.ev('gost', { i });
   logEv(i, 'Gösterge bende');
   H.toast((P.human ? 'Gösterge bende! ' + tileName(t) + ' çiftte her taşla eşleşir.' : P.name + ': Gösterge bende'), 'info');
   H.render();
@@ -1156,6 +1189,7 @@ function awardRecord(P, kind, val) {
   const label = kind === 'seri' ? 'Rekor ödülü (' + val + ' puan)' : 'Rekor ödülü (' + val + ' çift)';
   addPenalty(P, 'record', label, -101);
   G.rec[kind] = { by: P.i, val, entry: P.penLog[P.penLog.length - 1] };
+  H.ev('record', { i: P.i, kind });
   logEv(P.i, 'REKOR: ' + val + (kind === 'seri' ? ' puan' : ' çift') + ' (−101)');
   H.toast((P.human ? 'Rekor ödülü senin: ' : P.name + ' rekor ödülünü aldı: ') + val + (kind === 'seri' ? ' puan' : ' çift') + ' (−101)' + (cur ? ' · ' + G.players[cur.by].name + ' ödülü kaybetti' : ''), 'good');
   H.sfx('okey');
@@ -1295,7 +1329,7 @@ function openSeries(i, melds) {
     for (const it of a.items) { removeFromHand(P, it.t); noteUse(P, it.t); }
     G.table.push({ id: G.meldSeq++, owner: i, kind: 'series', type: a.type, items: a.items.map(x => Object.assign({ by: i }, x)) });
   }
-  P.opened = true; P.openKind = 'seri'; P.openVal = pts; P.openedThisTurn = true; bumpClock();
+  P.opened = true; P.openKind = 'seri'; P.openVal = pts; P.openedThisTurn = true; bumpClock(); H.ev('open', { i, kind: 'seri', val: pts });
   if (pts > G.maxSeries) { G.maxSeries = pts; G.maxSeriesBy = P.name; }
   awardRecord(P, 'seri', pts);
   logEv(i, 'El açtı: ' + melds.length + ' per, ' + pts + ' puan');
@@ -1308,7 +1342,7 @@ function openPairs(i, pairs) {
     for (const t of pr) { removeFromHand(P, t); noteUse(P, t); }
     G.table.push({ id: G.meldSeq++, owner: i, kind: 'pair', type: 'pair', items: pr.map(t => ({ t, c: t.c, n: t.n })) });
   }
-  P.opened = true; P.openKind = 'cift'; P.openedThisTurn = true; bumpClock();
+  P.opened = true; P.openKind = 'cift'; P.openedThisTurn = true; bumpClock(); H.ev('open', { i, kind: 'cift', val: pairs.length });
   P.openVal = pairs.length;
   if (pairs.length > G.maxPairs) { G.maxPairs = pairs.length; G.maxPairsBy = P.name; }
   awardRecord(P, 'cift', pairs.length);
@@ -1340,7 +1374,7 @@ function extOpts(P, m, t) {
 }
 const LIMIT_MSG = 'Çift açtığın için bir turda bir perin her ucuna en fazla 2 taş işleyebilirsin. Kalanı sonraki turda işlersin.';
 function processTile(i, t, m, opt) {
-  const P = G.players[i]; bumpClock();
+  const P = G.players[i]; bumpClock(); H.ev('process', { i });
   removeFromHand(P, t);
   applyExtend(m, t, opt);
   const added = m.items.find(x => x.t === t); if (added) added.by = i;
@@ -1405,6 +1439,7 @@ function finishHand(winner, info) {
   const elden = !!info.elden && G.players.every((p, k) => k === winner || !p.opened), okey = !!info.okey; // elden = kafa: kimse açmadan, açtığı turda bitirmek
   const mult = (elden ? 2 : 1) * (okey ? 2 : 1);
   const cift = G.players[winner].openKind === 'cift';
+  H.ev('finish', { i: winner, elden, okey, cift });
   const res = scoreHand(G.players.map(p => ({ opened: p.opened, cift: p.openKind === 'cift', hand: handOf(p), penLog: p.penLog })), winner, { elden, okey, cift, team: !!G.cfg.team });
   const W = G.players[winner];
   const tags = [];
@@ -1525,7 +1560,7 @@ function hOpen(prefer, strict) {
     const finishOpen = want === 'seri' && G.cfg.mode === 'katlamali' && pd.val >= 101 && handOf(P).length === 1;
     if (pd.val >= need || finishOpen) {
       // açılış tamam
-      P.opened = true; P.openKind = want; P.openVal = pd.val; P.openedThisTurn = true;
+      P.opened = true; P.openKind = want; P.openVal = pd.val; P.openedThisTurn = true; H.ev('open', { i: 0, kind: want, val: pd.val });
       if (want === 'seri') {
         openCharge(P, pd.tiles, 'seri');
         if (pd.val > G.maxSeries) { G.maxSeries = pd.val; G.maxSeriesBy = P.name; }
@@ -1635,7 +1670,7 @@ function hLay() {
 }
 // Perdeki okeyi gerçek taşla değiş: okeyi perde bırakan oyuncuya 101 ceza yazılır
 function swapOkey(i, m, idx, t) {
-  G.players[i].swapThisTurn = true; bumpClock();
+  G.players[i].swapThisTurn = true; bumpClock(); H.ev('swap', { i, gost: !!m.items[idx].t.gost });
   const it = m.items[idx];
   const by = it.by !== undefined ? it.by : m.owner;
   const joker = doSwap(m, idx, t);
@@ -2098,13 +2133,25 @@ function saveWallet() { try { localStorage.setItem('okey101.wallet', JSON.string
 function addChips(n) { const w = wallet(); w.chips = Math.max(0, Math.round(w.chips + n)); saveWallet(); }
 // Seviye: her oyun +10, kazanılan oyun +25 puan; seviye n'den n+1'e geçmek için n×100 puan
 function levelInfo(xp) { let lv = 1, need = 100, rest = xp; while (rest >= need) { rest -= need; lv++; need = lv * 100; } return { lv, rest, need }; }
-function recordGame(win, gain) {
-  const s = wallet().st; s.games++; s.xp += 10;
-  if (win) { s.wins++; s.xp += 25; }
-  if (gain > 0) { s.won += gain; s.best = Math.max(s.best, gain); }
-  const before = levelInfo(s.xp - 10 - (win ? 25 : 0)).lv, after = levelInfo(s.xp).lv;
+function lvReward(lv) { return lv * 1000; }   // seviye atlayınca verilen çip
+function addXP(n) {
+  const s = wallet().st, before = levelInfo(s.xp).lv;
+  s.xp += n; const after = levelInfo(s.xp).lv;
   saveWallet();
-  if (after > before) setTimeout(() => banner('SEVİYE ' + after, 'Tebrikler, seviye atladın!', 'good'), 600);
+  if (after > before) {
+    let r = 0; for (let v = before + 1; v <= after; v++) r += lvReward(v);
+    addChips(r);
+    setTimeout(() => banner('SEVİYE ' + after, 'Seviye ödülü: +' + chipFmt(r) + ' çip', 'good'), 700);
+  }
+}
+// Oyun sonu: her oyun +5 DP, kazanılan oyun +10 DP (asıl DP görevlerden gelir)
+function recordGame(win, gain) {
+  const s = wallet().st; s.games++;
+  if (win) s.wins++;
+  if (gain > 0) { s.won += gain; s.best = Math.max(s.best, gain); }
+  saveWallet();
+  addXP(5 + (win ? 10 : 0));
+  if (UI.table) taskGame(SALONS[UI.table.t.salon].id, win, !!UI.table.cfg.team);
 }
 function salonEntry(s) { return s.min * ENTRY_MULT; }
 function tooRich(s) { return !!s.maxIn && wallet().chips > s.maxIn; }   // salonun üst sınırını aşan giremez
@@ -2294,8 +2341,18 @@ function showTableMenu() {
 
 /* ---------- Profil (sınırlı; online sürümde genişleyecek) ---------- */
 function showProfile() {
-  const w = wallet(), s = w.st, lv = levelInfo(s.xp), pct = s.games ? Math.round(s.wins * 100 / s.games) : 0;
+  const w = wallet(), s = w.st, lv = levelInfo(s.xp), pct = s.games ? Math.round(s.wins * 100 / s.games) : 0, tab = LB.ptab || 'stat';
   const stat = (t, v) => '<div class="pf-stat"><small>' + t + '</small><b>' + v + '</b></div>';
+  const tb = (id, t) => '<button class="btn' + (tab === id ? ' pri' : '') + '" data-act="lb-ptab-' + id + '">' + t + '</button>';
+  let body;
+  if (tab === 'tasks') body = tasksHTML();
+  else if (tab === 'level') body = '<div class="lv"><div class="lv-star">★<b>' + lv.lv + '</b></div><div class="lv-main">' +
+      '<p>Seviye atlamak için <b>' + (lv.need - lv.rest) + ' deneyim puanına (DP)</b> daha ihtiyacın var.</p>' +
+      '<div class="lv-bar"><i style="width:' + Math.round(lv.rest * 100 / lv.need) + '%"></i></div>' +
+      '<div class="lv-row"><span>Seviye ' + lv.lv + '</span><span>' + lv.rest + ' / ' + lv.need + ' DP</span><span>Seviye ' + (lv.lv + 1) + '</span></div>' +
+      '<p class="st-note">DP görevlerden gelir (kolay ' + TIERS[0].xp + ', orta ' + TIERS[1].xp + ', zor ' + TIERS[2].xp + '). Her oyun +5, kazanılan oyun +10 DP. Her seviye bir öncekinden 100 DP daha zordur.</p></div>' +
+      '<div class="lv-rew"><small>Seviye ödülü</small><i class="coin big"></i><b>' + chipFmt(lvReward(lv.lv + 1)) + '</b></div></div>';
+  else body = '<div class="pf-stats">' + stat('Oynadığı oyun', s.games) + stat('Kazandığı oyun', s.wins) + stat('Galibiyet yüzdesi', '%' + pct) + stat('En büyük kazanç', chipShort(s.best)) + '</div>';
   const soon = t => '<button class="btn pf-soon" disabled>' + t + '<small>Online sürümde</small></button>';
   openModal('<div class="pf"><div class="pf-top">' +
     '<div class="pf-card"><div class="pf-av">' + w.name[0].toLocaleUpperCase('tr-TR') + '</div><div class="pf-rows">' +
@@ -2304,10 +2361,8 @@ function showProfile() {
       '<div class="pf-row"><small>Seviye</small><b>' + lv.lv + '</b><span class="pf-bar"><i style="width:' + Math.round(lv.rest * 100 / lv.need) + '%"></i></span><em>' + lv.rest + '/' + lv.need + '</em></div>' +
       '<div class="pf-row"><small>Başlangıç</small><b>' + w.since + '</b></div>' +
     '</div></div>' +
-    '<div class="pf-soonbox">' + soon('Sıralamalar') + soon('Görevler') + soon('Hediye Yolla') + soon('Arkadaşlar') + '</div></div>' +
-    '<h3 class="pf-h">İstatistikler</h3><div class="pf-stats">' +
-      stat('Oynadığı oyun', s.games) + stat('Kazandığı oyun', s.wins) + stat('Galibiyet yüzdesi', '%' + pct) + stat('En büyük kazanç', chipShort(s.best)) +
-    '</div><p class="st-note">Seviye puanı: her oyun +10, kazanılan oyun +25.</p>' +
+    '<div class="pf-tabs">' + tb('stat', 'İstatistikler') + tb('tasks', 'Görevler') + tb('level', 'Seviye') + soon('Sıralamalar') + soon('Hediye Yolla') + soon('Arkadaşlar') + '</div></div>' +
+    '<div class="pf-body">' + body + '</div>' +
     '<div class="mrow"><button class="btn pri" data-act="close">Kapat</button></div></div>');
 }
 function showRename() {
@@ -2355,6 +2410,8 @@ function cyc(arr, v, d) { const i = arr.indexOf(v); return arr[(i + d + arr.leng
 function lobbyAct(a) {
   if (a === 'lb-settings') { showSettings(); return; }
   if (a === 'lb-profile') { showProfile(); return; }
+  if (a.indexOf('lb-ptab-') === 0) { LB.ptab = a.slice(8); showProfile(); return; }
+  if (a.indexOf('lb-tier-') === 0) { LB.tier = a.slice(8); showProfile(); return; }
   if (a === 'lb-rename') { showRename(); return; }
   if (a === 'lb-rename-ok') {
     const v = (document.getElementById('pfName').value || '').replace(/[<>"&]/g, '').trim().slice(0, 14);
@@ -2412,6 +2469,96 @@ function lobbyAct(a) {
   if (a === 'lb-wait-go') { startSeat(); return; }
   if (a === 'lb-wait-leave') { clearInterval(LB.waitT); LB.wait = null; closeModal(); toast('Masadan kalktın, çipin gitmedi', 'info'); if (G && G.phase !== 'over') showLobby(); else { const el = document.getElementById('lobby'); if (el) el.hidden = false; showLobby(); } return; }
   if (a === 'lb-again') { const T = UI.table; if (!canEnter(SALONS[T.t.salon])) { warn(enterMsg(SALONS[T.t.salon])); showLobby(); return; } if (!canSit(T.bet)) { warn('Aynı masa için yeterli çipin kalmadı.'); showLobby(); return; } sitAt(T.t); return; }
+}
+
+/* ---------- Görevler: Bronz (kolay) · Gümüş (orta) · Altın (zor). Zor görev daha çok deneyim puanı (DP) ve çip verir. ---------- */
+const TIERS = [
+  { id: 'bronz', name: 'Bronz', xp: 30, cls: 'br' },
+  { id: 'gumus', name: 'Gümüş', xp: 90, cls: 'ag' },
+  { id: 'altin', name: 'Altın', xp: 250, cls: 'au' }
+];
+// [anahtar, sayaç, hedef, başlık, açıklama, çip ödülü, simge]
+const TASKS = {
+  bronz: [
+    ['ilk', 'games', 1, 'İlk Adım', 'Bir masaya oturup 1 oyun bitir.', 1000, '☕'],
+    ['cayci10', 'g_cayci', 10, 'Çaycı Müdavimi', 'Çaycı salonunda 10 oyun oyna.', 1500, '🫖'],
+    ['acan10', 'open_seri', 10, 'El Açıcı', '10 kez seri el aç.', 1500, '🃏'],
+    ['cift5', 'open_cift', 5, 'Çift Sever', '5 kez çift aç.', 1500, '👯'],
+    ['okey3', 'swap', 3, 'Okey Avcısı', 'Masadan 3 kez okey çal.', 2000, '🎯'],
+    ['kaz3', 'wins', 3, 'Kazanmaya Başla', '3 oyun kazan.', 2500, '🏅'],
+    ['bit5', 'finish', 5, 'Bitirici', '5 el bitir (son taşı atan sen ol).', 2000, '✋'],
+    ['gost3', 'gost', 3, 'Gösterge Bende', '3 kez "Gösterge bende" de.', 1500, '👁']
+  ],
+  gumus: [
+    ['kahve25', 'g_kahveci', 25, 'Kahveci Müdavimi', 'Kahveci salonunda 25 oyun oyna.', 7500, '☕'],
+    ['ac150', 'open150', 5, '150\'lik', '150 ve üzeri puanla 5 kez el aç.', 7500, '💯'],
+    ['ciftbit10', 'finish_cift', 10, 'Çifte Düğün', '10 kez çiftle bitir.', 10000, '💍'],
+    ['okey15', 'swap', 15, 'Okey Ustası', 'Masadan 15 kez okey çal.', 7500, '🎯'],
+    ['kaz15', 'wins', 15, 'Galip', '15 oyun kazan.', 10000, '🏆'],
+    ['okeybit5', 'finish_okey', 5, 'Okey Atıp Bitir', '5 kez okey atarak bitir.', 10000, '🌟'],
+    ['rekor5', 'record', 5, 'Rekortmen', '5 kez rekor ödülü al.', 7500, '📈'],
+    ['esli10', 'wins_esli', 10, 'Takım Oyuncusu', 'Eşli oyunda 10 kez kazan.', 10000, '🤝']
+  ],
+  altin: [
+    ['usta50', 'g_usta', 50, 'Usta Müdavimi', 'Usta salonunda 50 oyun oyna.', 25000, '🎩'],
+    ['kafa3', 'finish_kafa', 3, 'Kafa Atan', '3 kez kafa at (kimse açmadan bitir).', 30000, '💥'],
+    ['efsane25', 'w_efsane', 25, 'Efsane', 'Efsane salonunda 25 oyun kazan.', 50000, '🔥'],
+    ['kaz100', 'wins', 100, 'Yüzlük', '100 oyun kazan.', 50000, '👑'],
+    ['okeykafa', 'finish_okeykafa', 1, 'Okey Kafa', 'Kafa atarken okeyle bitir.', 50000, '⚡'],
+    ['isle1000', 'process', 1000, 'Bin Taş', 'Perlere toplam 1000 taş işle.', 30000, '🧱'],
+    ['kral1', 'w_kral', 1, 'Kral Masası', 'Kral salonunda 1 oyun kazan.', 100000, '🦁'],
+    ['acan250', 'open_seri', 250, 'Seri Ustası', '250 kez seri el aç.', 40000, '🃏']
+  ]
+};
+function tstate() { const st = wallet().st; if (!st.c) st.c = {}; if (!st.done) st.done = {}; return st; }
+function bump(key, n) { const st = tstate(); st.c[key] = (st.c[key] || 0) + (n || 1); }
+function checkTasks() {
+  const st = tstate();
+  TIERS.forEach(tr => TASKS[tr.id].forEach(t => {
+    if (st.done[t[0]] || (st.c[t[1]] || 0) < t[2]) return;
+    st.done[t[0]] = 1;
+    addXP(tr.xp); addChips(t[5]);
+    toast('Görev tamamlandı: ' + t[3] + ' · +' + tr.xp + ' DP · +' + chipFmt(t[5]) + ' çip', 'good');
+  }));
+  saveWallet();
+}
+// oyun içi olaylar (sadece masadaki sen)
+H.ev = (name, d) => {
+  if (!UI.table || !d || d.i !== 0) return;
+  if (name === 'open') { bump(d.kind === 'cift' ? 'open_cift' : 'open_seri'); if (d.kind === 'seri' && d.val >= 150) bump('open150'); }
+  else if (name === 'swap' && !d.gost) bump('swap');
+  else if (name === 'gost') bump('gost');
+  else if (name === 'record') bump('record');
+  else if (name === 'process') bump('process');
+  else if (name === 'finish') {
+    bump('finish');
+    if (d.cift) bump('finish_cift');
+    if (d.okey) bump('finish_okey');
+    if (d.elden) bump('finish_kafa');
+    if (d.elden && d.okey) bump('finish_okeykafa');
+  }
+  checkTasks();
+};
+// oyun sonu (lobbySettle'dan)
+function taskGame(salonId, win, team) {
+  bump('games'); bump('g_' + salonId);
+  if (win) { bump('wins'); bump('w_' + salonId); if (team) bump('wins_esli'); }
+  checkTasks();
+}
+function tasksHTML() {
+  const st = tstate(), tier = LB.tier || 'bronz';
+  const tabs = TIERS.map(tr => {
+    const n = TASKS[tr.id].filter(t => st.done[t[0]]).length;
+    return '<button class="tk-tab ' + tr.cls + (tier === tr.id ? ' on' : '') + '" data-act="lb-tier-' + tr.id + '">' + tr.name + ' <small>' + n + '/' + TASKS[tr.id].length + '</small></button>';
+  }).join('');
+  const tr = TIERS.find(x => x.id === tier);
+  const cards = TASKS[tier].map(t => {
+    const v = Math.min(st.c[t[1]] || 0, t[2]), done = !!st.done[t[0]];
+    return '<div class="tk ' + tr.cls + (done ? ' done' : '') + '"><b class="tk-t">' + t[3] + '</b><span class="tk-ic">' + t[6] + '</span><p>' + t[4] + '</p>' +
+      '<span class="tk-bar"><i style="width:' + Math.round(v * 100 / t[2]) + '%"></i></span><span class="tk-n">' + (done ? 'Tamamlandı ✓' : v + '/' + t[2]) + '</span>' +
+      '<span class="tk-r"><i class="coin"></i>' + chipShort(t[5]) + ' · +' + tr.xp + ' DP</span></div>';
+  }).join('');
+  return '<div class="tk-tabs">' + tabs + '</div><div class="tk-grid">' + cards + '</div><p class="st-note">Kolay görevler ' + TIERS[0].xp + ', orta görevler ' + TIERS[1].xp + ', zor görevler ' + TIERS[2].xp + ' deneyim puanı (DP) verir.</p>';
 }
 
 /* ---------- Arka plan müziği: cihazda üretilen sakin, klasik bir döngü (dosya indirmeden) ---------- */
