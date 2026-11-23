@@ -32,7 +32,7 @@ body { margin: 0; }
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg0); }
-body { background: var(--bg0); color: var(--ink); font-family: var(--f-ui); -webkit-user-select: none; user-select: none; overscroll-behavior: none; }
+body { background: var(--bg0); color: var(--ink); font-family: var(--f-ui); -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; overscroll-behavior: none; }
 button { font-family: inherit; }
 
 #stage {
@@ -2334,7 +2334,8 @@ function onDown(e) {
   const pt = G.players[0].slots.find(x => x && x.id === drag.id);
   if (pt && isGostTwin(pt) && canAnnounce(G.players[0])) {   // göstergeyi basılı tutarak "Gösterge bende"
     const d = drag;
-    d.timer = setTimeout(() => { if (drag === d && !d.moved) { d.peeked = true; feedback(announceGost(0)); render(); } }, 450);
+    d.gostT = Date.now();
+    d.timer = setTimeout(() => { if (drag === d && !d.moved && !d.peeked) { d.peeked = true; feedback(announceGost(0)); render(); } }, 350);
   } else if (pt && pt.wild) {
     const d = drag;
     d.timer = setTimeout(() => { if (drag === d && !d.moved) { d.peeked = true; UI.peekId = d.id; d.el.classList.add('peek'); } }, 320);
@@ -2426,6 +2427,7 @@ function endDrag(e, cancel) {
   }
   document.querySelectorAll('.droptarget').forEach(x => x.classList.remove('droptarget'));
   document.querySelectorAll('.ins-l, .ins-r').forEach(x => x.classList.remove('ins-l', 'ins-r'));
+  if (d.gostT && !d.peeked && !d.moved && Date.now() - d.gostT >= 300 && canAnnounce(G.players[0])) { feedback(announceGost(0)); render(); return; }
   if (!d.moved) { if (!cancel) handleTap(d.id); return; }
   if (d.ghost && d.gx !== undefined) UI.dropFrom = { id: d.id, x: d.gx, y: d.gy };
   if (UI.insEl) { UI.insEl.classList.remove('ins-l', 'ins-r'); UI.insEl = null; } UI.insKey = null;
