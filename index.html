@@ -2110,7 +2110,7 @@ function renderMelds() {
 // Masadaki taşlar kaydırma gerektirmesin: sığana kadar küçült
 function fitMat(el) {
   if (!el) return;
-  let s = 1.0;
+  let s = 0.82;
   el.style.setProperty('--ms', s);
   while (el.scrollHeight > el.clientHeight + 1 && s > 0.5) { s -= 0.05; el.style.setProperty('--ms', s.toFixed(2)); }
 }
