@@ -590,10 +590,26 @@ button { font-family: inherit; }
 .gf-em svg { width: calc(var(--u) * 9.5); height: calc(var(--u) * 9.5); }
 .gift-fly svg { width: calc(var(--u) * 12); height: calc(var(--u) * 12); }
 
+.gf-it.low { opacity: .35; }
+.gf-lk { font-style: normal; font-size: calc(var(--u) * 1.4); color: #ffb3a8; }
+.gf-mp { margin: calc(var(--u) * .8) 0 0; font-size: calc(var(--u) * 1.9); color: #ffd98a; background: rgba(255, 187, 51, .1); border: 1px solid rgba(255, 187, 51, .35); border-radius: calc(var(--u) * 1); padding: calc(var(--u) * .6) calc(var(--u) * 1); }
+.pc-head { display: flex; align-items: center; gap: calc(var(--u) * 2); margin-bottom: calc(var(--u) * 1.6); }
+.pc-av { width: calc(var(--u) * 13); height: calc(var(--u) * 13); font-size: calc(var(--u) * 7); }
+.pc-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: calc(var(--u) * .5); }
+.pc-info b { font: 800 calc(var(--u) * 4)/1 var(--f-num); }
+.pc-info span { font-size: calc(var(--u) * 2.1); color: var(--muted); }
+.pc-info em { font-style: normal; color: var(--amber); font-weight: 800; }
+.pc-gifts { display: flex; align-items: center; gap: calc(var(--u) * .8); }
+.pc-gifts i svg { width: calc(var(--u) * 6); height: calc(var(--u) * 6); display: block; }
+.pc-gift { min-width: calc(var(--u) * 22); }
+.pc-acts { margin-top: calc(var(--u) * 1.6); }
+.pc-why { display: grid; grid-template-columns: 1fr 1fr; gap: calc(var(--u) * 1); margin: calc(var(--u) * 1.4) 0; }
+.pg-tmp, .pg-perm, .pg-oz, .pg-btn { pointer-events: auto; cursor: pointer; z-index: 3; }
+
 button { touch-action: manipulation; }
 </style>
 </head>
-<body data-ver="mwtiu785">
+<body data-ver="mwtj2pmp">
 <div id="stage" lang="tr">
   <div class="app">
     <header class="top">
@@ -2877,14 +2893,60 @@ function giftIcon(name, fallback) { return GI[name] || '<span>' + (fallback || '
       '<path d="M52 6l1.5 3.5L57 11l-3.5 1.5L52 16l-1.5-3.5L47 11l3.5-1.5zM12 26l1 2.5 2.5 1-2.5 1-1 2.5-1-2.5L8 29.5l2.5-1zM50 36l1 2 2 1-2 1-1 2-1-2-2-1 2-1z" fill="#fff"/>')
   });
 })();
+/* ---------- Yeni Kahvehane ve Günlük çizimleri ---------- */
+(() => {
+  const S = (b) => '<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">' + b + '</svg>';
+  const O = 'stroke="#2a1a10" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"';
+  const glass = (fill, top, extra) => S('<path d="M18 12h28l-4 44c-.3 3-3 4-10 4s-9.7-1-10-4z" fill="#fff" fill-opacity=".45" ' + O + '/>' +
+    '<path d="M19.6 ' + top + 'h24.8l-3.3 37c-.3 2-2.5 3-9.1 3s-8.8-1-9.1-3z" fill="' + fill + '"/>' + (extra || '') + '<path d="M18 12h28" ' + O + '/>');
+  Object.assign(GI, {
+    'Maden Suyu': S('<path d="M26 4h12v5c0 3 6 6 6 13v32c0 3-2 6-6 6H26c-4 0-6-3-6-6V22c0-7 6-10 6-13z" fill="#a5d6a7" fill-opacity=".85" ' + O + '/>' +
+      '<rect x="25" y="2" width="14" height="5" rx="1.5" fill="#1e88e5" ' + O + '/><rect x="21" y="28" width="22" height="14" rx="2" fill="#1e88e5" ' + O + '/>' +
+      '<path d="M26 35c2-3 4 3 6 0s4 3 6 0" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/>' +
+      '<circle cx="28" cy="50" r="1.6" fill="#fff"/><circle cx="35" cy="47" r="1.2" fill="#fff"/><circle cx="31" cy="22" r="1.4" fill="#fff"/><circle cx="36" cy="18" r="1" fill="#fff"/>'),
+    'Boza': glass('#f0d9a6', 22, '<path d="M20 22c3-3 6 1 9-1s6 1 9-1 4 1 6 0" stroke="#e8c886" stroke-width="3" fill="none" stroke-linecap="round"/>' +
+      [[26, 21], [31, 19.5], [36, 21], [33, 22.5], [28, 23]].map(p => '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="1.4" fill="#a0522d"/>').join('') +
+      '<path d="M44 8l6-4" stroke="#2a1a10" stroke-width="2"/><ellipse cx="51" cy="4" rx="3.5" ry="2.5" fill="#c98a4b" ' + O + '/>'),
+    'Şalgam': glass('#8e1b3c', 18, '<path d="M24 26v24" stroke="#fff" stroke-width="2.5" stroke-linecap="round" opacity=".35"/>' +
+      '<path d="M44 6c4-2 8 0 8 5s-5 8-8 6" fill="#7b1fa2" ' + O + '/><path d="M46 6c1-3 3-4 5-4" stroke="#43a047" stroke-width="2.5" fill="none" stroke-linecap="round"/>' +
+      '<path d="M40 8l-8 34" stroke="#ff7043" stroke-width="3" stroke-linecap="round"/>'),
+    'Ihlamur': S('<path d="M16 22h30v20c0 8-7 14-15 14s-15-6-15-14z" fill="#fff" ' + O + '/><path d="M46 27c8 0 8 12 0 12" fill="none" ' + O + ' stroke-width="3"/>' +
+      '<ellipse cx="31" cy="22" rx="15" ry="3.6" fill="#d4a62a" ' + O + '/><path d="M18 34h26" stroke="#c8e6c9" stroke-width="3"/>' +
+      '<path d="M42 8c4 0 8 3 8 8-5 0-8-3-8-8z" fill="#7cb342" ' + O + '/><path d="M42 8l8 8" stroke="#33691e" stroke-width="1.2"/>' +
+      '<circle cx="34" cy="10" r="2" fill="#fff59d" ' + O + '/><circle cx="30" cy="14" r="1.6" fill="#fff59d" ' + O + '/>' +
+      '<path d="M24 16c0-3 3-3 3-6" stroke="#bbb" stroke-width="2" fill="none" stroke-linecap="round"/>'),
+    'Menengiç Kahvesi': S('<ellipse cx="32" cy="54" rx="22" ry="5" fill="#2e7d32" ' + O + '/><ellipse cx="32" cy="52.5" rx="14" ry="2.6" fill="#43a047"/>' +
+      '<path d="M18 26h28l-3 18c-.6 4-5 6-11 6s-10.4-2-11-6z" fill="#e8f5e9" ' + O + '/><path d="M20 32h24" stroke="#2e7d32" stroke-width="3"/>' +
+      '<path d="M46 30c6 0 7 8 0 9" fill="none" ' + O + '/><ellipse cx="32" cy="26" rx="14" ry="3.2" fill="#a1887f" ' + O + '/><ellipse cx="30" cy="25.6" rx="6" ry="1.3" fill="#d7ccc8"/>' +
+      '<circle cx="48" cy="12" r="5" fill="#7cb342" ' + O + '/><circle cx="54" cy="18" r="4" fill="#8bc34a" ' + O + '/><path d="M26 18c0-3 3-3 3-6M34 18c0-3 3-3 3-6" stroke="#bbb" stroke-width="2" fill="none" stroke-linecap="round"/>'),
+    'Tespih': S('<path d="M32 10c-14 0-20 10-20 20s6 18 20 18 20-8 20-18-6-20-20-20z" fill="none" stroke="#5d4037" stroke-width="1.5"/>' +
+      Array.from({ length: 22 }, (_, k) => { const a = k / 22 * Math.PI * 2; return '<circle cx="' + (32 + Math.cos(a) * 19).toFixed(1) + '" cy="' + (29 + Math.sin(a) * 18).toFixed(1) + '" r="3" fill="#8e24aa" stroke="#2a1a10" stroke-width="1"/>'; }).join('') +
+      '<path d="M32 47v6" stroke="#2a1a10" stroke-width="2"/><path d="M29 53h6l-1 8h-4z" fill="#d4af37" ' + O + '/><path d="M30 61l-2 2M34 61l2 2M32 61v2" stroke="#d4af37" stroke-width="1.5"/>'),
+    'Kol Saati': S('<rect x="24" y="2" width="16" height="16" rx="3" fill="#6d4c41" ' + O + '/><rect x="24" y="46" width="16" height="16" rx="3" fill="#6d4c41" ' + O + '/>' +
+      '<circle cx="32" cy="32" r="16" fill="#d4af37" ' + O + '/><circle cx="32" cy="32" r="12.5" fill="#fffde7" stroke="#b8860b" stroke-width="1.5"/>' +
+      [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map(k => { const a = k / 12 * Math.PI * 2; return '<circle cx="' + (32 + Math.cos(a) * 10).toFixed(1) + '" cy="' + (32 + Math.sin(a) * 10).toFixed(1) + '" r="' + (k % 3 ? .7 : 1.2) + '" fill="#2a1a10"/>'; }).join('') +
+      '<path d="M32 32V24M32 32l6 3" stroke="#2a1a10" stroke-width="2" stroke-linecap="round"/><rect x="47" y="30" width="3" height="4" rx="1" fill="#d4af37" ' + O + '/>'),
+    'Altın Kolye': S('<path d="M10 8c0 22 10 34 22 34s22-12 22-34" fill="none" stroke="#2a1a10" stroke-width="5"/><path d="M10 8c0 22 10 34 22 34s22-12 22-34" fill="none" stroke="#f5c542" stroke-width="2.5" stroke-dasharray="3 1.5"/>' +
+      '<path d="M32 42l-9 8 9 12 9-12z" fill="#f5c542" ' + O + '/><path d="M32 46l-4 4 4 6 4-6z" fill="#e53935"/><path d="M29 47l2 2" stroke="#fff" stroke-width="1.5"/>' +
+      '<path d="M52 20l1.5 3.5L57 25l-3.5 1.5L52 30l-1.5-3.5L47 25l3.5-1.5z" fill="#fff"/>'),
+    'Papyon': S('<path d="M8 20c0-4 4-6 8-4l12 8v16l-12 8c-4 2-8 0-8-4z" fill="#c62828" ' + O + '/><path d="M56 20c0-4-4-6-8-4l-12 8v16l12 8c4 2 8 0 8-4z" fill="#c62828" ' + O + '/>' +
+      '<rect x="26" y="24" width="12" height="16" rx="3" fill="#b71c1c" ' + O + '/><path d="M12 24l10 6M12 40l10-6M52 24l-10 6M52 40l-10-6" stroke="#ef9a9a" stroke-width="1.6" stroke-linecap="round"/>' +
+      [[14, 30], [18, 36], [50, 30], [46, 36]].map(p => '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="1.4" fill="#fff"/>').join('')),
+    'Çiçek Buketi': S('<path d="M22 40l10 22 10-22z" fill="#a5d6a7" ' + O + '/><path d="M26 44l6 14 6-14" stroke="#66bb6a" stroke-width="1.4" fill="none"/>' +
+      '<path d="M28 50h8" stroke="#e53935" stroke-width="4"/><path d="M32 40V24M26 40l-6-14M38 40l6-14" stroke="#2e7d32" stroke-width="2.5"/>' +
+      '<circle cx="32" cy="16" r="8" fill="#e53935" ' + O + '/><circle cx="18" cy="22" r="7" fill="#f8bbd0" ' + O + '/><circle cx="46" cy="22" r="7" fill="#fff176" ' + O + '/>' +
+      '<circle cx="24" cy="32" r="6" fill="#ce93d8" ' + O + '/><circle cx="40" cy="32" r="6" fill="#ffab91" ' + O + '/>' +
+      '<circle cx="32" cy="16" r="3" fill="#b71c1c"/><circle cx="18" cy="22" r="2.4" fill="#ec407a"/><circle cx="46" cy="22" r="2.4" fill="#f9a825"/><circle cx="24" cy="32" r="2" fill="#8e24aa"/><circle cx="40" cy="32" r="2" fill="#e64a19"/>')
+  });
+})();
 
 /* ---------- Hediyeler: masadakilere hediye yolla (çiple). Güzel de olur, takılmalık da. + "Sıra sende!" bildirimi ---------- */
 const GIFT_CATS = [
-  { id: 'kahve', name: 'Kahvehane', items: [['Çay', '🍵', 250], ['Türk Kahvesi', '☕', 500], ['Ayran', '🥛', 300], ['Gazoz', '🧃', 400], ['Salep', '🫖', 750], ['Limonata', '🍋', 600]] },
+  { id: 'kahve', name: 'Kahvehane', items: [['Çay', '🍵', 250], ['Türk Kahvesi', '☕', 500], ['Ayran', '🥛', 300], ['Gazoz', '🧃', 400], ['Salep', '🫖', 750], ['Limonata', '🍋', 600], ['Maden Suyu', '💧', 350], ['Boza', '🥛', 800], ['Şalgam', '🍷', 450], ['Ihlamur', '🍵', 550], ['Menengiç Kahvesi', '☕', 900]] },
   { id: 'yemek', name: 'Yiyecek', items: [['Simit', '🥯', 250], ['Lokum', '🍬', 500], ['Tost', '🥪', 400], ['Kumpir', '🥔', 1000], ['Baklava', '🍯', 1500], ['Dondurma', '🍦', 750]] },
   { id: 'gonul', name: 'Gönül', items: [['Gül', '🌹', 2500], ['Nazar Boncuğu', '🧿', 1500], ['Dört Yapraklı Yonca', '🍀', 2500], ['Kalp', '❤️', 5000], ['Pırlanta', '💎', 25000], ['Yüzük', '💍', 10000]] },
   { id: 'takil', name: 'Takılma', items: [['Terlik', '🩴', 750], ['Domates', '🍅', 300], ['Biberon', '🍼', 1000], ['Kaplumbağa', '🐢', 1500], ['Mendil', '🤧', 500], ['Salyangoz', '🐌', 1000], ['Palyaço', '🤡', 2000], ['Uyku', '😴', 750]] },
-  { id: 'kalici', name: 'Günlük', perm: true, items: [['Taç', '👑', 25000], ['Fötr Şapka', '🎩', 15000], ['Güneş Gözlüğü', '🕶️', 10000], ['Kupa', '🏆', 50000], ['Madalya', '🥇', 20000], ['Yıldız', '🌟', 30000]] },
+  { id: 'kalici', name: 'Günlük', perm: true, items: [['Taç', '👑', 25000], ['Fötr Şapka', '🎩', 15000], ['Güneş Gözlüğü', '🕶️', 10000], ['Kupa', '🏆', 50000], ['Madalya', '🥇', 20000], ['Yıldız', '🌟', 30000], ['Tespih', '📿', 12000], ['Kol Saati', '⌚', 40000], ['Altın Kolye', '📿', 35000], ['Papyon', '🎀', 8000], ['Çiçek Buketi', '💐', 18000]] },
   { id: 'ozel', name: 'Kalıcı', perm: true, forever: true, items: [['Sarı-Kırmızı Forma', '⚽', 1e6], ['Sarı-Lacivert Forma', '⚽', 1e6], ['Siyah-Beyaz Forma', '⚽', 1e6], ['Bordo-Mavi Forma', '⚽', 1e6], ['Kırmızı-Yeşil Forma', '⚽', 1e6], ['Kırmızı-Beyaz Forma', '⚽', 1e6], ['Yeşil-Beyaz Forma', '⚽', 1e6],
     ['Gelinlik', '👰', 1e6], ['Damatlık', '🤵', 1e6], ['Altın Semaver', '🫖', 1e6], ['Elmas Okey Taşı', '💎', 1e6], ['Kahvehane Tapusu', '📜', 1e6], ['Elmas Bardakta Çay', '🍵', 1e6], ['Lüks Otomobil', '🏎️', 1e6], ['Lüks Yat', '🛥️', 1e6]] }
 ];
@@ -2894,22 +2956,22 @@ function botLv(name) { let h = 0; for (const c of name) h = (h * 31 + c.charCode
 const PERM_MS = 24 * 3600 * 1000;
 function permStore() { let s = {}; try { s = JSON.parse(localStorage.getItem('okey101.permgifts') || '{}') || {}; } catch (e) { s = {}; } return s; }
 function permOf(name, key) { const e = permStore()[name + (key || '')]; return e && (e.forever || e.until > Date.now()) ? e.em : ''; }
-function savePerm(name, em, forever) {
+function savePerm(name, em, forever, price) {
   const s = permStore(), now = Date.now();
   for (const k in s) if (!s[k] || (!s[k].forever && s[k].until <= now)) delete s[k];
-  s[name + (forever ? '#ozel' : '')] = forever ? { em, forever: 1 } : { em, until: now + PERM_MS };
+  s[name + (forever ? '#ozel' : '')] = forever ? { em, forever: 1 } : { em, until: now + PERM_MS, p: price || 0 };
   try { localStorage.setItem('okey101.permgifts', JSON.stringify(s)); } catch (e) { /* depolama yok */ }
 }
 function giftBadge(i) {
   const g = (UI.gifts && UI.gifts[i]) || {}, now = Date.now(), tmp = g.tmp ? g.tmp.em : '';   // oyun bitene kadar kalır
   const perm = G && G.players[i] ? permOf(G.players[i].name) : '', oz = G && G.players[i] ? permOf(G.players[i].name, '#ozel') : '';
-  const btn = !oz && !perm && !tmp ? '<span class="pg-btn" title="Hediye yolla">' + giftIcon('Kalp').replace('<svg', '<svg class="pg-bi"') + '<i>Hediye</i></span>' : '';
-  return btn + (oz ? '<span class="pg-oz" title="Kalıcı hediye">' + icByName(oz) + '</span>' : '') + (perm ? '<span class="pg-perm" title="Günlük hediye (24 saat)">' + icByName(perm) + '</span>' : '') + (tmp ? '<span class="pg-tmp' + (g.tmp.fresh && Date.now() - g.tmp.fresh < 900 ? ' new' : '') + '">' + icByName(tmp) + '</span>' : '');
+  const btn = !oz && !perm && !tmp ? '<span class="pg-btn" data-act="gf-gift-' + i + '" title="Hediye yolla">' + giftIcon('Kalp').replace('<svg', '<svg class="pg-bi"') + '<i>Hediye</i></span>' : '';
+  return btn + (oz ? '<span class="pg-oz" data-act="gf-gift-' + i + '" title="Kalıcı hediye">' + icByName(oz) + '</span>' : '') + (perm ? '<span class="pg-perm" data-act="gf-gift-' + i + '" title="Günlük hediye (24 saat)">' + icByName(perm) + '</span>' : '') + (tmp ? '<span data-act="gf-gift-' + i + '" class="pg-tmp' + (g.tmp.fresh && Date.now() - g.tmp.fresh < 900 ? ' new' : '') + '">' + icByName(tmp) + '</span>' : '');
 }
-function setGift(i, em, perm, forever) {
+function setGift(i, em, perm, forever, price) {
   UI.gifts = UI.gifts || {};
   const g = UI.gifts[i] = UI.gifts[i] || {};
-  if (perm) savePerm(G.players[i].name, em, forever); else g.tmp = { em, fresh: Date.now() };
+  if (perm) savePerm(G.players[i].name, em, forever, price); else g.tmp = { em, fresh: Date.now(), p: price || 0 };
   if (G) renderBots();
 }
 // hediye uçuşu: kaynaktan hedefe kocaman emoji
@@ -2927,15 +2989,23 @@ function flyGift(from, to, em) {
 const PLATE = { 1: 'botR', 2: 'botTop', 3: 'botL' };
 function ic(it) { return giftIcon(it[0], it[1]); }
 function icByName(n) { for (const c of GIFT_CATS) for (const it of c.items) if (it[0] === n || it[1] === n) return ic(it); return giftIcon(n); }
+// üzerindeki hediyeden ucuzu gönderilemez (Kalıcı grup sabit fiyat, kurala girmez)
+function minPrice(i, cat) {
+  if (!G || cat.forever) return 0;
+  if (cat.perm) { const e = permStore()[G.players[i].name]; return e && e.until > Date.now() ? (e.p || 0) : 0; }
+  const g = UI.gifts && UI.gifts[i]; return g && g.tmp ? (g.tmp.p || 0) : 0;
+}
 function showGiftMenu(i) {
   if (!G || !G.players[i]) return;
   const P = G.players[i], cat = GIFT_CATS.find(c => c.id === (UI.gcat || 'kahve')) || GIFT_CATS[0];
   const tabs = GIFT_CATS.map(c => '<button class="tk-tab' + (c.id === cat.id ? ' on' : '') + '" data-act="gf-cat-' + i + '-' + c.id + '">' + c.name + '</button>').join('');
-  const items = cat.items.map((it, k) => '<button class="gf-it" data-act="gf-send-' + i + '-' + cat.id + '-' + k + '"' + (wallet().chips < it[2] ? ' disabled' : '') + '><b>' + it[0] + '</b><span class="gf-em">' + ic(it) + '</span><span class="tk-r"><i class="coin"></i>' + chipShort(it[2]) + '</span></button>').join('');
+  const mp = minPrice(i, cat);
+  const items = cat.items.slice().sort((a, b) => a[2] - b[2]).map(it => { const k = cat.items.indexOf(it), low = it[2] < mp;
+    return '<button class="gf-it' + (low ? ' low' : '') + '" data-act="gf-send-' + i + '-' + cat.id + '-' + k + '"' + (wallet().chips < it[2] || low ? ' disabled' : '') + '><b>' + it[0] + '</b><span class="gf-em">' + ic(it) + '</span><span class="tk-r"><i class="coin"></i>' + chipShort(it[2]) + '</span>' + (low ? '<em class="gf-lk">Üzerindekinden ucuz</em>' : '') + '</button>'; }).join('');
   const team = G.cfg.team ? (i === 2 ? ' · Eşin' : ' · Rakip') : '';
   openModal('<div class="gf"><div class="gf-head"><span class="lb-av gf-av">' + P.name[0] + '</span><div><b>' + P.name + team + '</b><small>Seviye ' + botLv(P.name) + '</small></div>' +
     '<div class="lb-chips sm"><i class="coin"></i>' + chipFmt(wallet().chips) + '</div></div>' +
-    '<h3 class="pf-h">Hediye Yolla</h3><div class="tk-tabs">' + tabs + '</div><div class="gf-grid">' + items + '</div>' +
+    (mp ? '<p class="gf-mp">Üzerinde ' + chipFmt(mp) + ' çiplik bir hediye var: bu gruptan en az ' + chipFmt(mp) + ' çiplik hediye gönderebilirsin.</p>' : '') + '<h3 class="pf-h">Hediye Yolla</h3><div class="tk-tabs">' + tabs + '</div><div class="gf-grid">' + items + '</div>' +
     (cat.forever ? '<p class="st-note">Kalıcı hediyeler süresizdir: başka biri farklı bir kalıcı hediye gönderene kadar oyuncunun kutusunda kalır. Her biri 1 milyon çip.</p>' : cat.perm ? '<p class="st-note">Günlük hediyeler 24 saat boyunca oyuncunun kutusunda durur; aynı oyuncuyla başka masada karşılaşırsan da görünür.</p>' : '<p class="st-note">Hediye oyun bitene kadar oyuncunun kutusunda durur. Takılmalık hediyelerle dalga geçmek serbest!</p>') +
     '<div class="mrow"><button class="btn pri" data-act="close">Kapat</button></div></div>');
 }
@@ -2943,9 +3013,10 @@ function sendGift(i, catId, k) {
   const cat = GIFT_CATS.find(c => c.id === catId), it = cat && cat.items[k];
   if (!it || !G) return;
   if (wallet().chips < it[2]) { warn('Bu hediye için yeterli çipin yok.'); return; }
+  if (it[2] < minPrice(i, cat)) { warn('Oyuncunun üzerindeki hediyeden daha ucuz bir hediye gönderemezsin. En az ' + chipFmt(minPrice(i, cat)) + ' çiplik bir hediye seç.'); return; }
   addChips(-it[2]); closeModal();
   flyGift(null, $(PLATE[i]), ic(it));
-  setTimeout(() => setGift(i, it[0], !!cat.perm, !!cat.forever), 800);
+  setTimeout(() => setGift(i, it[0], !!cat.perm, !!cat.forever, it[2]), 800);
   toast(G.players[i].name + ' oyuncusuna ' + it[0] + ' gönderdin', 'info');
   bump('gift_sent'); checkTasks();
   // bazen karşılık verir
@@ -2953,6 +3024,7 @@ function sendGift(i, catId, k) {
 }
 // bot hediyesi sana
 function botGift(from, catId) {
+  if (G && G.players[from] && social().blocked.includes(G.players[from].name)) return;   // engellediğinin hediyesi gelmez
   if (!G || !UI.table || G.phase === 'over' && !$('modal').classList.contains('show')) { /* oyun dışı: yine de gönder */ }
   if (!G) return;
   const cat = GIFT_CATS.find(c => c.id === catId) || GIFT_CATS[0], it = rnd(cat.items);
@@ -2965,13 +3037,57 @@ function giftReact(kind, who) {
   if (kind === 'penalty' && who === 0 && Math.random() < .55) { const f = 1 + Math.floor(Math.random() * 3); setTimeout(() => botGift(f, 'takil'), 1200); }
   else if (kind === 'penalty' && who > 0 && Math.random() < .25) {
     const from = [1, 2, 3].filter(x => x !== who)[Math.floor(Math.random() * 2)];
-    setTimeout(() => { if (!G) return; const it = rnd(GIFT_CATS[3].items); flyGift($(PLATE[from]), $(PLATE[who]), ic(it)); setTimeout(() => setGift(who, it[0], false), 800); }, 1200);
+    setTimeout(() => { if (!G) return; const it = rnd(GIFT_CATS[3].items); flyGift($(PLATE[from]), $(PLATE[who]), ic(it)); setTimeout(() => setGift(who, it[0], false, false, it[2]), 800); }, 1200);
   }
   else if (kind === 'win' && who === 0 && Math.random() < .5) setTimeout(() => botGift(1 + Math.floor(Math.random() * 3), rnd(['kahve', 'gonul'])), 1500);
 }
+/* ---------- Oyuncu kartı: istatistik, arkadaş ekle, engelle, bildir ---------- */
+function social() { let s = null; try { s = JSON.parse(localStorage.getItem('okey101.social') || 'null'); } catch (e) { s = null; } return s || { friends: [], blocked: [], reports: [] }; }
+function saveSocial(s) { try { localStorage.setItem('okey101.social', JSON.stringify(s)); } catch (e) { /* yok */ } }
+function botStats(name) {
+  let h = 7; for (const c of name) h = (h * 131 + c.charCodeAt(0)) % 100003;
+  const lv = botLv(name), games = 40 + lv * 23 + h % 400, pct = 22 + h % 26, wins = Math.round(games * pct / 100);
+  const day = 1 + h % 28, mon = 1 + h % 12, yr = 2020 + h % 6;
+  return { lv, games, wins, pct, best: (h % 40 + 5) * 1000 * Math.ceil(lv / 10), since: String(day).padStart(2, '0') + '.' + String(mon).padStart(2, '0') + '.' + yr };
+}
+function showPlayer(i) {
+  if (!G || !G.players[i]) return;
+  const P = G.players[i], st = botStats(P.name), so = social(), fr = so.friends.includes(P.name), bl = so.blocked.includes(P.name);
+  const oz = permOf(P.name, '#ozel'), pm = permOf(P.name);
+  const team = G.cfg.team ? (i === 2 ? ' · Eşin' : ' · Rakip') : '';
+  const stat = (t, v) => '<div class="pf-stat"><small>' + t + '</small><b>' + v + '</b></div>';
+  openModal('<div class="pc"><div class="pc-head"><div class="pf-av pc-av">' + P.name[0] + '</div><div class="pc-info"><b>' + P.name + team + '</b>' +
+    '<span>Seviye <em>' + st.lv + '</em> · Başlangıç ' + st.since + '</span>' +
+    '<span class="pc-gifts">' + (oz ? '<i title="Kalıcı hediye">' + icByName(oz) + '</i>' : '') + (pm ? '<i title="Günlük hediye">' + icByName(pm) + '</i>' : '') + (fr ? '<small class="chip ok">Arkadaşın</small>' : '') + (bl ? '<small class="chip bad">Engelli</small>' : '') + '</span></div>' +
+    '<button class="btn pri pc-gift" data-act="gf-open-' + i + '">Hediye Yolla</button></div>' +
+    '<div class="pf-stats">' + stat('Oynadığı oyun', st.games) + stat('Kazandığı oyun', st.wins) + stat('Galibiyet yüzdesi', '%' + st.pct) + stat('En büyük kazanç', chipShort(st.best)) + '</div>' +
+    '<div class="mrow pc-acts"><button class="btn" data-act="gf-friend-' + i + '">' + (fr ? 'Arkadaşlıktan Çıkar' : 'Arkadaş Ekle') + '</button>' +
+    '<button class="btn" data-act="gf-block-' + i + '">' + (bl ? 'Engeli Kaldır' : 'Engelle') + '</button>' +
+    '<button class="btn bad" data-act="gf-report-' + i + '">Bildir</button><button class="btn pri" data-act="close">Kapat</button></div></div>');
+}
+const REPORT_WHY = ['Hile yapıyor', 'Küfür / hakaret', 'Kasten oyunu uzatıyor', 'Uygunsuz isim', 'Diğer'];
+function showReport(i) {
+  const P = G.players[i];
+  openModal('<h2>' + P.name + ' oyuncusunu bildir</h2><p class="sub">Bildirimin ekibimize iletilir ve incelenir. Lütfen sebebini seç.</p>' +
+    '<div class="pc-why">' + REPORT_WHY.map((w, k) => '<button class="btn" data-act="gf-rep-' + i + '-' + k + '">' + w + '</button>').join('') + '</div>' +
+    '<div class="mrow"><button class="btn" data-act="gf-player-' + i + '">Vazgeç</button></div>');
+}
 function giftAct(a) {
+  { const p = a.split('-');
+    if (p[1] === 'player') { showPlayer(+p[2]); return; }
+    if (p[1] === 'gift') { showGiftMenu(+p[2]); return; }
+    if (p[1] === 'friend' || p[1] === 'block') {
+      const i = +p[2], n = G.players[i].name, s = social(), key = p[1] === 'friend' ? 'friends' : 'blocked', has = s[key].includes(n);
+      s[key] = has ? s[key].filter(x => x !== n) : s[key].concat(n); saveSocial(s);
+      toast(p[1] === 'friend' ? (has ? n + ' arkadaşlıktan çıkarıldı' : n + ' arkadaşlarına eklendi') : (has ? n + ' oyuncusunun engeli kaldırıldı' : n + ' engellendi: hediyelerini görmeyeceksin'), 'info');
+      showPlayer(i); return;
+    }
+    if (p[1] === 'report') { showReport(+p[2]); return; }
+    if (p[1] === 'rep') { const i = +p[2], s = social(); s.reports.push({ name: G.players[i].name, why: REPORT_WHY[+p[3]], at: Date.now() }); saveSocial(s); closeModal(); toast('Bildirimin alındı, teşekkürler. Ekibimiz inceleyecek.', 'good'); return; }
+  }
   const p = a.split('-');
   if (p[1] === 'open') { const i = +p[2]; if (i >= 1 && i <= 3) showGiftMenu(i); return; }
+  if (p[1] === 'pl') { const i = +p[2]; if (i >= 1 && i <= 3) showPlayer(i); return; }
   if (p[1] === 'cat') { UI.gcat = p[3]; showGiftMenu(+p[2]); return; }
   if (p[1] === 'send') { sendGift(+p[2], p[3], +p[4]); return; }
 }
@@ -3209,7 +3325,7 @@ function renderBots() {
     el.className = 'plate' + (i === 2 ? ' top' : '') + (active ? ' active' : '') + (UI.hitBot === i ? ' hit' : '');
     el.innerHTML = '<span class="av a' + i + '">' + P.name[0] + '</span><b class="nm">' + P.name + (G.cfg.team ? (i === 2 ? ' · Eşin' : ' · Rakip') : '') + '</b>' +
       '<div class="chips">' + chip + pen + '</div>' + giftBadge(i);
-    el.dataset.act = 'gf-open-' + i;
+    el.dataset.act = 'gf-pl-' + i;
   }
 }
 function box(label, html) { return '<div class="box">' + html + '<div class="lbl">' + label + '</div></div>'; }
