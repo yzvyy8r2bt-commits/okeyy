@@ -429,6 +429,14 @@ button { font-family: inherit; }
 .lb-sn { font-size: calc(var(--u) * 4.6); }
 .lb-row b { font-size: calc(var(--u) * 2.7); }
 
+.lb-wait { text-align: center; }
+.lb-wseats { display: flex; justify-content: center; gap: calc(var(--u) * 3); margin: calc(var(--u) * 1.4) 0; }
+.lb-wseats > div { display: flex; flex-direction: column; align-items: center; gap: calc(var(--u) * .5); font-size: calc(var(--u) * 2); }
+.lb-bet.big { display: inline-flex; font-size: calc(var(--u) * 3.6); }
+.lb-count { font: 800 calc(var(--u) * 10)/1 var(--f-num); color: var(--amber); margin: calc(var(--u) * 1) 0 0; animation: lbpop 1s ease-out infinite; }
+@keyframes lbpop { 0% { transform: scale(1.25); opacity: .6; } 30% { transform: scale(1); opacity: 1; } }
+.lb-wait .mrow { justify-content: center; }
+
 button { touch-action: manipulation; }
 </style>
 </head>
@@ -2146,6 +2154,26 @@ function sitAt(t) {
   const pool = BOT_NAMES.filter(n => !names.includes(n));
   while (names.length < 3) { const n = rnd(pool); pool.splice(pool.indexOf(n), 1); names.push(n); }
   const cfg = { mode: t.mode, hands: t.hands, team: t.team, speed: 'normal', hard: t.hard, pen: Object.assign({}, t.pen), names: ['Sen', names[0], names[1], names[2]] };
+  seatWait(t, cfg);
+}
+// Masaya oturunca 5 sn bekleme: bu sürede çip düşmeden kalkılabilir
+function seatWait(t, cfg) {
+  clearInterval(LB.waitT);
+  let left = 5;
+  const tags = [t.team ? 'Eşli' : 'Tek', t.hands + ' El', t.mode === 'katlamali' ? 'Katlamalı' : 'Klasik', t.hard ? 'Yardımsız' : 'Yardımlı'];
+  const draw = () => openModal('<div class="lb-wait"><h2>Masaya Oturdun</h2><p class="sub">' + SALONS[t.salon].name + ' · ' + tags.join(' · ') + '</p>' +
+    '<div class="lb-wseats">' + cfg.names.map((n, i) => '<div><span class="lb-av' + (i ? ' sm' : '') + '">' + n[0] + '</span><small>' + n + '</small></div>').join('') + '</div>' +
+    '<div class="lb-bet big"><i class="coin"></i>' + chipFmt(t.bet) + '</div>' +
+    '<div class="lb-count">' + left + '</div><p class="sub">Oyun ' + left + ' saniye içinde başlıyor. Başlayınca bahsin ortaya konur.</p>' +
+    '<div class="mrow"><button class="btn pri" data-act="lb-wait-go">Hemen Başlat</button><button class="btn bad" data-act="lb-wait-leave">Masadan Kalk</button></div></div>');
+  LB.wait = { t, cfg }; draw();
+  LB.waitT = setInterval(() => { left--; if (left <= 0) { clearInterval(LB.waitT); startSeat(); } else draw(); }, 1000);
+}
+function startSeat() {
+  clearInterval(LB.waitT);
+  const w = LB.wait; LB.wait = null; if (!w) return;
+  const t = w.t, cfg = w.cfg;
+  if (!canSit(t.bet)) { closeModal(); warn('Bu masa için yeterli çipin yok.'); return; }
   addChips(-t.bet);
   UI.table = { t, bet: t.bet, pot: t.bet * 4, cfg, settled: false };
   hideLobby(); closeModal(); UI.selected.clear(); UI.prefer = 'seri'; UI.statusMsg = null; UI.tOut = 0;
@@ -2222,6 +2250,8 @@ function lobbyAct(a) {
   }
   if (a === 'lb-leave') { toast('Masadan kalktın: ' + chipFmt(UI.table.bet) + ' çip gitti', 'bad'); showLobby(); return; }
   if (a === 'lb-lobby') { showLobby(); return; }
+  if (a === 'lb-wait-go') { startSeat(); return; }
+  if (a === 'lb-wait-leave') { clearInterval(LB.waitT); LB.wait = null; closeModal(); toast('Masadan kalktın, çipin gitmedi', 'info'); if (G && G.phase !== 'over') showLobby(); else { const el = document.getElementById('lobby'); if (el) el.hidden = false; showLobby(); } return; }
   if (a === 'lb-again') { const T = UI.table; if (!canEnter(SALONS[T.t.salon])) { warn(enterMsg(SALONS[T.t.salon])); showLobby(); return; } if (!canSit(T.bet)) { warn('Aynı masa için yeterli çipin kalmadı.'); showLobby(); return; } sitAt(T.t); return; }
 }
 
