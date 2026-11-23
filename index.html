@@ -2777,7 +2777,7 @@ function giftIcon(name, fallback) { return GI[name] || '<span>' + (fallback || '
   function jersey(a, b, p, num) {
     let fill = '';
     const id = 'j' + a.slice(1) + b.slice(1) + p;
-    if (p === 'stripes') fill = [20, 28.5, 37, 45.5].map(x => '<rect x="' + x + '" y="4" width="4.5" height="56" fill="' + b + '"/>').join('');
+    if (p === 'stripes') fill = [18.5, 27.5, 36.5, 45.5].map(c => '<rect x="' + (c - 2.25) + '" y="2" width="4.5" height="60" fill="' + b + '"/>').join('') + '<path d="M18 6v54M46 6v54" stroke="' + a + '" stroke-width="0"/>';   // gövdede simetrik, eşit genişlikte çubuklar
     else if (p === 'halves') fill = '<rect x="32" y="2" width="30" height="60" fill="' + b + '"/>';
     else if (p === 'sleeves') fill = '<path d="M2 18l18-12 2 22-14 6zM62 18L44 6l-2 22 14 6z" fill="' + b + '"/>';
     else if (p === 'hoops') fill = [17, 29, 41, 53].map(y => '<rect x="2" y="' + y + '" width="60" height="6" fill="' + b + '"/>').join('');
@@ -2800,6 +2800,7 @@ function giftIcon(name, fallback) { return GI[name] || '<span>' + (fallback || '
     'Sarı-Kırmızı Forma': jersey('#f5c518', '#c8102e', 'halves'),
     'Sarı-Lacivert Forma': jersey('#f5c518', '#1b2a6b', 'stripes'),
     'Siyah-Beyaz Forma': jersey('#ffffff', '#111111', 'stripes'),
+    'Kırmızı-Yeşil Forma': jersey('#c8102e', '#0a8a3a', 'stripes'),
     'Bordo-Mavi Forma': jersey('#7a1430', '#5aa9e6', 'sleeves'),
     'Kırmızı-Beyaz Forma': jersey('#d0102e', '#ffffff', 'hoops'),
     'Yeşil-Beyaz Forma': jersey('#0b8a3e', '#ffffff', 'sash'),
@@ -2860,7 +2861,7 @@ const GIFT_CATS = [
   { id: 'yemek', name: 'Yiyecek', items: [['Simit', '🥯', 250], ['Lokum', '🍬', 500], ['Tost', '🥪', 400], ['Kumpir', '🥔', 1000], ['Baklava', '🍯', 1500], ['Dondurma', '🍦', 750]] },
   { id: 'gonul', name: 'Gönül', items: [['Gül', '🌹', 2500], ['Nazar Boncuğu', '🧿', 1500], ['Dört Yapraklı Yonca', '🍀', 2500], ['Kalp', '❤️', 5000], ['Pırlanta', '💎', 25000], ['Yüzük', '💍', 10000]] },
   { id: 'takil', name: 'Takılma', items: [['Terlik', '🩴', 750], ['Domates', '🍅', 300], ['Biberon', '🍼', 1000], ['Kaplumbağa', '🐢', 1500], ['Mendil', '🤧', 500], ['Salyangoz', '🐌', 1000], ['Palyaço', '🤡', 2000], ['Uyku', '😴', 750]] },
-  { id: 'ozel', name: 'Özel', perm: true, forever: true, items: [['Sarı-Kırmızı Forma', '⚽', 1e6], ['Sarı-Lacivert Forma', '⚽', 1e6], ['Siyah-Beyaz Forma', '⚽', 1e6], ['Bordo-Mavi Forma', '⚽', 1e6], ['Kırmızı-Beyaz Forma', '⚽', 1e6], ['Yeşil-Beyaz Forma', '⚽', 1e6],
+  { id: 'ozel', name: 'Özel', perm: true, forever: true, items: [['Sarı-Kırmızı Forma', '⚽', 1e6], ['Sarı-Lacivert Forma', '⚽', 1e6], ['Siyah-Beyaz Forma', '⚽', 1e6], ['Bordo-Mavi Forma', '⚽', 1e6], ['Kırmızı-Yeşil Forma', '⚽', 1e6], ['Kırmızı-Beyaz Forma', '⚽', 1e6], ['Yeşil-Beyaz Forma', '⚽', 1e6],
     ['Gelinlik', '👰', 1e6], ['Damatlık', '🤵', 1e6], ['Altın Semaver', '🫖', 1e6], ['Elmas Okey Taşı', '💎', 1e6], ['Kahvehane Tapusu', '📜', 1e6], ['Elmas Bardakta Çay', '🍵', 1e6], ['Lüks Otomobil', '🏎️', 1e6], ['Lüks Yat', '🛥️', 1e6]] },
   { id: 'kalici', name: 'Kalıcı', perm: true, items: [['Taç', '👑', 25000], ['Fötr Şapka', '🎩', 15000], ['Güneş Gözlüğü', '🕶️', 10000], ['Kupa', '🏆', 50000], ['Madalya', '🥇', 20000], ['Yıldız', '🌟', 30000]] }
 ];
