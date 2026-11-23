@@ -658,10 +658,13 @@ button { font-family: inherit; }
 .po-info { margin: calc(var(--u) * -.4) 0 calc(var(--u) * 1.4); font-size: calc(var(--u) * 2.1); color: var(--muted); text-align: center; }
 .po-info b { color: #ffe39a; }
 
+.lb-pay { margin: calc(var(--u) * .6) auto; max-width: 92%; font-size: calc(var(--u) * 2); line-height: 1.45; color: var(--muted); text-align: center; }
+.lb-pay b { color: #ffe39a; }
+
 button { touch-action: manipulation; }
 </style>
 </head>
-<body data-ver="mwtl8wpx">
+<body data-ver="mwtlbh8y">
 <div id="stage" lang="tr">
   <div class="app">
     <header class="top">
@@ -2425,6 +2428,16 @@ function modeList(pen) {
   const p = pen || {}, on = k => p[k] !== false;
   return [['Rekorlu', on('rekor')], ['Okey çalma cezası', on('okeyCal')], ['Her taş cezalı', on('herTas')], ['Yandan açma cezalı', on('yanAc')], ['Gösterge', on('gosterge')]];
 }
+// bekleme ekranında ödül ve masa ücreti bilgisi
+function payInfo(t) {
+  const fee = Math.round(TABLE_FEE * 100), pot = t.bet * 4;
+  if (t.team) {
+    const half = pot / 2, cut = Math.round(half * TABLE_FEE);
+    return '<p class="lb-pay">🏆 Kazanan takımdaki iki oyuncu ortadaki çipi paylaşır, her biri <b>' + chipFmt(half - cut) + ' çip</b> alır. Bu paydan <b>%' + fee + ' masa ücreti</b> düşülmüştür.</p>';
+  }
+  const win = pot - t.bet, cut = Math.round(win * TABLE_FEE);
+  return '<p class="lb-pay">🏆 <b>Birinci</b> ortadaki çiplerin kalanını kazanır. Kazancından <b>%' + fee + ' masa ücreti</b> kesilir, eline <b>' + chipFmt(win - cut) + ' çip</b> geçer.<br>🥈 <b>İkinci</b> yatırdığı <b>' + chipFmt(t.bet) + ' çipi</b> geri alır.</p>';
+}
 function seatWait(t, cfg) {
   clearInterval(LB.waitT);
   let left = 10;
@@ -2432,7 +2445,7 @@ function seatWait(t, cfg) {
   const draw = () => openModal('<div class="lb-wait"><h2>Masaya Oturdun</h2><p class="sub">' + SALONS[t.salon].name + ' · ' + tags.join(' · ') + '</p>' +
     '<div class="lb-modes">' + modeList(t.pen).map(m => '<span class="' + (m[1] ? 'on' : 'off') + '">' + (m[1] ? '✓ ' : '✕ ') + m[0] + '</span>').join('') + '</div>' +
     '<div class="lb-wseats">' + cfg.names.map((n, i) => '<div><span class="lb-av' + (i ? ' sm' : '') + '">' + n[0] + '</span><small>' + n + '</small></div>').join('') + '</div>' +
-    '<div class="lb-bet big"><i class="coin"></i>' + chipFmt(t.bet) + '</div>' +
+    '<div class="lb-bet big"><i class="coin"></i>' + chipFmt(t.bet) + '</div>' + payInfo(t) +
     '<div class="lb-count">' + left + '</div><p class="sub">Oyun ' + left + ' saniye içinde başlıyor. Başlayınca bahsin ortaya konur.</p>' +
     '<div class="mrow"><button class="btn pri" data-act="lb-wait-go">Hemen Başlat</button><button class="btn bad" data-act="lb-wait-leave">Masadan Kalk</button></div></div>');
   LB.wait = { t, cfg }; draw();
