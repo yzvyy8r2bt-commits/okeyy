@@ -49,7 +49,7 @@ button { font-family: inherit; }
 }
 .app {
   position: absolute; inset: 0; padding: calc(var(--u) * 1 + var(--st, 0px)) calc(var(--u) * 1.6 + var(--sr, 0px)) calc(var(--u) * 1.6 + var(--sb, 0px)) calc(var(--u) * 1.6 + var(--sl, 0px));
-  display: grid; grid-template-rows: calc(var(--u) * 7.6) minmax(0, 1fr) auto; row-gap: calc(var(--u) * .8);
+  display: grid; grid-template-rows: calc(var(--u) * 9.4) minmax(0, 1fr) auto; row-gap: calc(var(--u) * .8);
 }
 
 /* ---- üst şerit ---- */
@@ -82,7 +82,7 @@ button { font-family: inherit; }
   background: var(--panel); border: 1px solid var(--line); border-radius: calc(var(--u) * 2);
   padding: calc(var(--u) * 1.1); display: flex; flex-direction: column; align-items: center; gap: calc(var(--u) * .8); min-width: 0; min-height: 0;
 }
-.plate.top { flex-direction: row; padding: calc(var(--u) * .5) calc(var(--u) * 1.4); gap: calc(var(--u) * 1.2); height: calc(var(--u) * 7.2); }
+.plate.top { flex-direction: row; padding: calc(var(--u) * .5) calc(var(--u) * 1.4); gap: calc(var(--u) * 1.2); height: calc(var(--u) * 9); }
 .plate.active { border-color: var(--amber); box-shadow: 0 0 calc(var(--u) * 2.4) rgba(255, 187, 51, .45); }
 .plate.hit { animation: shake .45s; border-color: var(--bad); }
 .av {
@@ -685,10 +685,15 @@ button { font-family: inherit; }
 .pg-shelf > :only-child, .pg-shelf > :last-child:nth-child(odd) { grid-column: 1 / -1; }
 .pg-shelf .chips, .plate .chips { flex: none; }
 
+/* üstteki oyuncunun (eşin) hediye yeri: kutunun sağında, akışta */
+.pg-topg { display: flex; align-items: center; justify-content: center; min-width: calc(var(--u) * 11); height: 100%; margin: calc(var(--u) * -1.2) 0; border-left: 1px dashed rgba(255, 255, 255, .14); padding-left: calc(var(--u) * 1); }
+.pg-topg .pg-oz, .pg-topg .pg-perm, .pg-topg .pg-tmp { position: static; transform: none; }
+.pg-topg .pg-oz svg, .pg-topg .pg-tmp svg, .pg-topg .pg-perm svg { width: calc(var(--u) * 10.5); height: calc(var(--u) * 10.5); }
+
 button { touch-action: manipulation; }
 </style>
 </head>
-<body data-ver="mwtm3fmv">
+<body data-ver="mwtmgmk7">
 <div id="stage" lang="tr">
   <div class="app">
     <header class="top">
@@ -3107,16 +3112,39 @@ function savePerm(name, em, forever, price) {
   s[name + (forever ? '#ozel' : '')] = forever ? { em, forever: 1 } : { em, until: now + PERM_MS, p: price || 0 };
   try { localStorage.setItem('okey101.permgifts', JSON.stringify(s)); } catch (e) { /* depolama yok */ }
 }
+function delPerm(name, key) { const s = permStore(); delete s[name + (key || '')]; try { localStorage.setItem('okey101.permgifts', JSON.stringify(s)); } catch (e) { /* yok */ } }
+// oyuncunun üzerindeki tek hediye: kalıcı > günlük > oyunluk
+function curGift(i) {
+  if (!G || !G.players[i]) return null;
+  const n = G.players[i].name, oz = permOf(n, '#ozel');
+  if (oz) return { kind: 'oz', em: oz, p: 1e6 };
+  const e = permStore()[n];
+  if (e && e.until > Date.now()) return { kind: 'perm', em: e.em, p: e.p || 0 };
+  const g = UI.gifts && UI.gifts[i];
+  return g && g.tmp ? { kind: 'tmp', em: g.tmp.em, p: g.tmp.p || 0 } : null;
+}
+// bu hediye gönderilebilir mi? boşsa olur, değilse nedenini döndürür
+function giftBlock(i, cat, price) {
+  const c = curGift(i);
+  if (!c) return '';
+  if (c.kind === 'oz') return cat.forever ? '' : 'Kalıcı hediyesi var';
+  if (cat.forever) return '';
+  return price > c.p ? '' : 'Üzerindekinden ucuz';
+}
 function giftBadge(i) {
-  const g = (UI.gifts && UI.gifts[i]) || {}, now = Date.now(), tmp = g.tmp ? g.tmp.em : '';   // oyun bitene kadar kalır
-  const perm = G && G.players[i] ? permOf(G.players[i].name) : '', oz = G && G.players[i] ? permOf(G.players[i].name, '#ozel') : '';
+  const c = curGift(i), g = (UI.gifts && UI.gifts[i]) || {};
+  const tmp = c && c.kind === 'tmp' ? c.em : '', perm = c && c.kind === 'perm' ? c.em : '', oz = c && c.kind === 'oz' ? c.em : '';
   const btn = !oz && !perm && !tmp ? '<span class="pg-btn" data-act="gf-gift-' + i + '" title="Hediye yolla">' + giftIcon('Kalp').replace('<svg', '<svg class="pg-bi"') + '<i>Hediye</i></span>' : '';
   return btn + (oz ? '<span class="pg-oz" data-act="gf-gift-' + i + '" title="Kalıcı hediye">' + icByName(oz) + '</span>' : '') + (perm ? '<span class="pg-perm" data-act="gf-gift-' + i + '" title="Günlük hediye (24 saat)">' + icByName(perm) + '</span>' : '') + (tmp ? '<span data-act="gf-gift-' + i + '" class="pg-tmp' + (g.tmp.fresh && Date.now() - g.tmp.fresh < 900 ? ' new' : '') + '">' + icByName(tmp) + '</span>' : '');
 }
 function setGift(i, em, perm, forever, price) {
   UI.gifts = UI.gifts || {};
   const g = UI.gifts[i] = UI.gifts[i] || {};
-  if (perm) savePerm(G.players[i].name, em, forever, price); else g.tmp = { em, fresh: Date.now(), p: price || 0 };
+  const n = G.players[i].name;   // tek hediye: yenisi eskisinin yerine geçer
+  if (forever) { delPerm(n); g.tmp = null; }
+  else if (perm) g.tmp = null;
+  else delPerm(n);
+  if (perm) savePerm(n, em, forever, price); else g.tmp = { em, fresh: Date.now(), p: price || 0 };
   if (G) renderBots();
 }
 // hediye uçuşu: kaynaktan hedefe kocaman emoji
@@ -3134,23 +3162,21 @@ function flyGift(from, to, em) {
 const PLATE = { 1: 'botR', 2: 'botTop', 3: 'botL' };
 function ic(it) { return giftIcon(it[0], it[1]); }
 function icByName(n) { for (const c of GIFT_CATS) for (const it of c.items) if (it[0] === n || it[1] === n) return ic(it); return giftIcon(n); }
-// üzerindeki hediyeden ucuzu gönderilemez (Kalıcı grup sabit fiyat, kurala girmez)
-function minPrice(i, cat) {
-  if (!G || cat.forever) return 0;
-  if (cat.perm) { const e = permStore()[G.players[i].name]; return e && e.until > Date.now() ? (e.p || 0) : 0; }
-  const g = UI.gifts && UI.gifts[i]; return g && g.tmp ? (g.tmp.p || 0) : 0;
-}
+
 function showGiftMenu(i) {
   if (!G || !G.players[i]) return;
   const P = G.players[i], cat = GIFT_CATS.find(c => c.id === (UI.gcat || 'kahve')) || GIFT_CATS[0];
   const tabs = GIFT_CATS.map(c => '<button class="tk-tab' + (c.id === cat.id ? ' on' : '') + '" data-act="gf-cat-' + i + '-' + c.id + '">' + c.name + '</button>').join('');
-  const mp = minPrice(i, cat);
-  const items = cat.items.slice().sort((a, b) => a[2] - b[2]).map(it => { const k = cat.items.indexOf(it), low = it[2] < mp;
-    return '<button class="gf-it' + (low ? ' low' : '') + '" data-act="gf-send-' + i + '-' + cat.id + '-' + k + '"' + (wallet().chips < it[2] || low ? ' disabled' : '') + '><b>' + it[0] + '</b><span class="gf-em">' + ic(it) + '</span><span class="tk-r"><i class="coin"></i>' + chipShort(it[2]) + '</span>' + (low ? '<em class="gf-lk">Üzerindekinden ucuz</em>' : '') + '</button>'; }).join('');
+  const cur = curGift(i);
+  const items = cat.items.slice().sort((a, b) => a[2] - b[2]).map(it => { const k = cat.items.indexOf(it), why = giftBlock(i, cat, it[2]);
+    return '<button class="gf-it' + (why ? ' low' : '') + '" data-act="gf-send-' + i + '-' + cat.id + '-' + k + '"' + (wallet().chips < it[2] || why ? ' disabled' : '') + '><b>' + it[0] + '</b><span class="gf-em">' + ic(it) + '</span><span class="tk-r"><i class="coin"></i>' + chipShort(it[2]) + '</span>' + (why ? '<em class="gf-lk">' + why + '</em>' : '') + '</button>'; }).join('');
+  const curName = cur ? (GIFT_CATS.flatMap(c => c.items).find(x => x[0] === cur.em || x[1] === cur.em) || [cur.em])[0] : '';
+  const mpTxt = !cur ? '' : cur.kind === 'oz' ? 'Üzerinde kalıcı hediye var (' + curName + '). Bu oyuncuya sadece Kalıcı bölümünden hediye gönderebilirsin.'
+    : 'Üzerinde ' + chipFmt(cur.p) + ' çiplik bir hediye var (' + curName + '). Ondan daha pahalı bir hediye ya da Kalıcı hediye gönderebilirsin.';
   const team = G.cfg.team ? (i === 2 ? ' · Eşin' : ' · Rakip') : '';
   openModal('<div class="gf"><div class="gf-head"><span class="lb-av gf-av">' + P.name[0] + '</span><div><b>' + P.name + team + '</b><small>Seviye ' + botLv(P.name) + '</small></div>' +
     '<div class="lb-chips sm"><i class="coin"></i>' + chipFmt(wallet().chips) + '</div></div>' +
-    (mp ? '<p class="gf-mp">Üzerinde ' + chipFmt(mp) + ' çiplik bir hediye var: bu gruptan en az ' + chipFmt(mp) + ' çiplik hediye gönderebilirsin.</p>' : '') + '<h3 class="pf-h">Hediye Yolla</h3><div class="tk-tabs">' + tabs + '</div><div class="gf-grid">' + items + '</div>' +
+    (mpTxt ? '<p class="gf-mp">' + mpTxt + '</p>' : '') + '<h3 class="pf-h">Hediye Yolla</h3><div class="tk-tabs">' + tabs + '</div><div class="gf-grid">' + items + '</div>' +
     (cat.forever ? '<p class="st-note">Kalıcı hediyeler süresizdir: başka biri farklı bir kalıcı hediye gönderene kadar oyuncunun kutusunda kalır. Her biri 1 milyon çip.</p>' : cat.perm ? '<p class="st-note">Günlük hediyeler 24 saat boyunca oyuncunun kutusunda durur; aynı oyuncuyla başka masada karşılaşırsan da görünür.</p>' : '<p class="st-note">Hediye oyun bitene kadar oyuncunun kutusunda durur. Takılmalık hediyelerle dalga geçmek serbest!</p>') +
     '<div class="mrow"><button class="btn pri" data-act="close">Kapat</button></div></div>');
 }
@@ -3158,7 +3184,8 @@ function sendGift(i, catId, k) {
   const cat = GIFT_CATS.find(c => c.id === catId), it = cat && cat.items[k];
   if (!it || !G) return;
   if (wallet().chips < it[2]) { warn('Bu hediye için yeterli çipin yok.'); return; }
-  if (it[2] < minPrice(i, cat)) { warn('Oyuncunun üzerindeki hediyeden daha ucuz bir hediye gönderemezsin. En az ' + chipFmt(minPrice(i, cat)) + ' çiplik bir hediye seç.'); return; }
+  const why = giftBlock(i, cat, it[2]);
+  if (why) { warn(why === 'Kalıcı hediyesi var' ? 'Bu oyuncunun üzerinde kalıcı hediye var. Sadece Kalıcı bölümünden hediye gönderebilirsin.' : 'Oyuncunun üzerindeki hediyeden daha pahalı bir hediye seçmelisin.'); return; }
   addChips(-it[2]); closeModal();
   flyGift(null, $(PLATE[i]), ic(it));
   setTimeout(() => setGift(i, it[0], !!cat.perm, !!cat.forever, it[2]), 800);
@@ -3182,7 +3209,7 @@ function giftReact(kind, who) {
   if (kind === 'penalty' && who === 0 && Math.random() < .55) { const f = 1 + Math.floor(Math.random() * 3); setTimeout(() => botGift(f, 'takil'), 1200); }
   else if (kind === 'penalty' && who > 0 && Math.random() < .25) {
     const from = [1, 2, 3].filter(x => x !== who)[Math.floor(Math.random() * 2)];
-    setTimeout(() => { if (!G) return; const it = rnd(GIFT_CATS[3].items); flyGift($(PLATE[from]), $(PLATE[who]), ic(it)); setTimeout(() => setGift(who, it[0], false, false, it[2]), 800); }, 1200);
+    setTimeout(() => { if (!G) return; const it = rnd(GIFT_CATS[3].items); if (giftBlock(who, GIFT_CATS[3], it[2])) return; flyGift($(PLATE[from]), $(PLATE[who]), ic(it)); setTimeout(() => setGift(who, it[0], false, false, it[2]), 800); }, 1200);
   }
   else if (kind === 'win' && who === 0 && Math.random() < .5) setTimeout(() => botGift(1 + Math.floor(Math.random() * 3), rnd(['kahve', 'gonul'])), 1500);
 }
@@ -3595,7 +3622,7 @@ function renderBots() {
     const el = $(slot[i]);
     el.className = 'plate' + (i === 2 ? ' top' : '') + (active ? ' active' : '') + (UI.hitBot === i ? ' hit' : '');
     el.innerHTML = '<span class="av a' + i + '">' + P.name[0] + '</span><b class="nm">' + P.name + (G.cfg.team ? (i === 2 ? ' · Eşin' : ' · Rakip') : '') + '</b>' +
-      '<div class="chips">' + chip + pen + '</div>' + (i === 2 ? giftBadge(i) : '<div class="pg-shelf">' + giftBadge(i) + '</div>');
+      '<div class="chips">' + chip + pen + '</div>' + (i === 2 ? '<div class="pg-topg">' + giftBadge(i) + '</div>' : '<div class="pg-shelf">' + giftBadge(i) + '</div>');
     el.dataset.act = 'gf-pl-' + i;
   }
 }
