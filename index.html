@@ -651,7 +651,7 @@ button { font-family: inherit; }
 button { touch-action: manipulation; }
 </style>
 </head>
-<body data-ver="mwtjvcih">
+<body data-ver="mwtk0dco">
 <div id="stage" lang="tr">
   <div class="app">
     <header class="top">
@@ -3216,11 +3216,12 @@ function showPlaytime() {
 (function testChips() { const w = wallet(); if (w.test1 !== 1) { w.test1 = 1; w.chips += 5000000; saveWallet(); setTimeout(() => toast('Test için hesabına 5.000.000 çip yüklendi', 'good'), 1500); } })();
 
 /* ---------- Ödüllü reklam (taslak): şimdilik deneme reklamı; mağaza sürümünde AdMob bağlanacak ---------- */
-const AD_REWARD = 5000, AD_DAILY = 10, AD_COOL = 3 * 60 * 1000, AD_LEN = 15, AD_BROKE = 25000, BROKE_AT = 10000;
+const AD_REWARD = 5000, AD_DAILY = 5,   // gelir iyi olursa 10'a çıkarılabilir
+      AD_COOL = 3 * 60 * 1000, AD_LEN = 15, AD_BROKE = 25000, BROKE_AT = 10000;
 function adState() { const w = wallet(); if (!w.ad || w.ad.day !== today()) w.ad = { day: today(), n: 0, last: 0, broke: 0 }; return w.ad; }
 function adLeft() { return Math.max(0, AD_DAILY - adState().n); }
 function adWait() { return Math.max(0, adState().last + AD_COOL - Date.now()); }
-function brokeOffer() { return wallet().chips < BROKE_AT && !adState().broke; }
+function brokeOffer() { return false; }   // özel 25.000 fırsatı kaldırıldı
 function adBadge() {
   if (brokeOffer()) return '<button class="btn sm pri glow ad-btn" data-act="lb-ad-broke"><b>▶</b> Reklam izle · +' + chipShort(AD_BROKE) + '</button>';
   const w = adWait(), left = adLeft();
@@ -3231,7 +3232,7 @@ function adBadge() {
 function showAdInfo() {
   const s = adState(), w = adWait();
   openModal('<h2>Reklam İzle, Çip Kazan</h2><p class="sub">Reklamı sonuna kadar izlersen <b>' + chipFmt(AD_REWARD) + ' çip</b> kazanırsın. Günde en fazla ' + AD_DAILY + ' reklam, iki reklam arası ' + (AD_COOL / 60000) + ' dakika.</p>' +
-    '<div class="ad-cnt"><div><small>Bugün izlenen</small><b>' + s.n + ' / ' + AD_DAILY + '</b></div><div><small>Kazanılan</small><b><i class="coin"></i>' + chipFmt(s.n * AD_REWARD + (s.broke ? AD_BROKE : 0)) + '</b></div></div>' +
+    '<div class="ad-cnt"><div><small>Bugün izlenen</small><b>' + s.n + ' / ' + AD_DAILY + '</b></div><div><small>Kazanılan</small><b><i class="coin"></i>' + chipFmt(s.n * AD_REWARD) + '</b></div></div>' +
     '<div class="mrow">' + (!adLeft() ? '<button class="btn" disabled>Bugünkü hakkın bitti</button>' : w ? '<button class="btn" disabled>' + Math.ceil(w / 1000) + ' sn sonra</button>' : '<button class="btn pri" data-act="lb-ad-go">▶ Reklamı İzle</button>') +
     '<button class="btn" data-act="close">Kapat</button></div>');
 }
