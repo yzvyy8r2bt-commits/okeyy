@@ -48,7 +48,7 @@ button { font-family: inherit; }
   background-position: 0 0, 0 0, calc(var(--u) * 3.5) calc(var(--u) * 3.5), 0 0;
 }
 .app {
-  position: absolute; inset: 0; padding: calc(var(--u) * 1 + var(--st, 0px)) calc(var(--u) * 1.6 + var(--sr, 0px)) calc(var(--u) * .5 + var(--sb, 0px) * .3) calc(var(--u) * 1.6 + var(--sl, 0px));
+  position: absolute; inset: 0; padding: calc(var(--u) * 1 + var(--st, 0px)) calc(var(--u) * 1.6 + var(--sr, 0px)) calc(var(--u) * 1.4 + var(--sb, 0px) * .3) calc(var(--u) * 1.6 + var(--sl, 0px));
   display: grid; grid-template-rows: calc(var(--u) * 8.2) minmax(0, 1fr) auto; row-gap: calc(var(--u) * .8);
 }
 
@@ -707,7 +707,7 @@ button { font-family: inherit; }
 button { touch-action: manipulation; }
 </style>
 </head>
-<body data-ver="mwtnbjbz">
+<body data-ver="mwtni315">
 <div id="stage" lang="tr">
   <div class="app">
     <header class="top">
@@ -3740,7 +3740,7 @@ function renderMelds() {
 // Masadaki taşlar kaydırma gerektirmesin: sığana kadar küçült
 function fitMat(el) {
   if (!el) return;
-  let s = 0.82;
+  let s = 0.74;
   el.style.setProperty('--ms', s);
   while (el.scrollHeight > el.clientHeight + 1 && s > 0.5) { s -= 0.05; el.style.setProperty('--ms', s.toFixed(2)); }
 }
