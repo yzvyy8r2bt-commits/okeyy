@@ -351,25 +351,16 @@ function RulesModal({ u, visible, onClose, howto }) {
 
 // göstergenin üstünde masanın özellikleri (101 Plus'taki gibi kutucuklar)
 function TableInfo({ u, g }) {
-  const c = g.cfg, on = k => !c.pen || c.pen[k] !== false;
+  // sadece masanın dört özelliği; oyun modları masa menüsünde (Ayarlar) görünür
+  const c = g.cfg;
   const boxes = [[c.team ? 'EŞLİ' : 'TEK'], [c.hands + ' EL'], [c.hard ? 'YARDIMSIZ' : 'YARDIMLI'], [c.mode === 'katlamali' ? 'KATLAMALI' : 'KLASİK', c.mode === 'katlamali']];
-  const modes = [['Rekorlu', on('rekor')], ['Okey çalma', on('okeyCal')], ['Her taş', on('herTas')], ['Yandan açma', on('yanAc')], ['Gösterge', on('gosterge')]].filter(m => m[1]);
-  const [h, setH] = useState(0);
-  const bh = 2.9 * u, gap = 0.4 * u;
-  const rest = h - boxes.length * (bh + gap) - 0.8 * u;                  // kutulardan sonra kalan yer
-  const mfs = modes.length ? Math.max(0.9 * u, Math.min(1.55 * u, rest / (modes.length * 1.22))) : 0;
   return (
-    <View pointerEvents="none" onLayout={e => setH(e.nativeEvent.layout.height)} style={{ flex: 1, minHeight: 0, justifyContent: 'flex-end', overflow: 'hidden', gap }}>
+    <View pointerEvents="none" style={{ flex: 1, minHeight: 0, justifyContent: 'center', gap: 0.6 * u }}>
       {boxes.map(([t, red]) => (
-        <View key={t} style={{ height: bh, borderRadius: 0.8 * u, backgroundColor: red ? '#8e1f2c' : 'rgba(6,10,30,0.75)', borderWidth: 1, borderColor: red ? '#c0394a' : 'rgba(255,255,255,0.12)', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 0.4 * u }}>
-          <Text allowFontScaling={false} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={{ color: '#fff', fontFamily: NUM_FONT, fontWeight: '800', fontSize: 2 * u }}>{t}</Text>
+        <View key={t} style={{ height: 3.4 * u, borderRadius: 0.9 * u, backgroundColor: red ? '#8e1f2c' : 'rgba(6,10,30,0.75)', borderWidth: 1, borderColor: red ? '#c0394a' : 'rgba(255,255,255,0.12)', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 0.5 * u }}>
+          <Text allowFontScaling={false} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={{ color: '#fff', fontFamily: NUM_FONT, fontWeight: '800', fontSize: 2.3 * u }}>{t}</Text>
         </View>
       ))}
-      {modes.length && rest > 1.2 * u ? (
-        <View style={{ borderRadius: 0.8 * u, backgroundColor: 'rgba(6,10,30,0.55)', paddingVertical: 0.4 * u, paddingHorizontal: 0.4 * u }}>
-          {modes.map(([n]) => <Text key={n} allowFontScaling={false} numberOfLines={1} adjustsFontSizeToFit style={{ color: '#7ef0b5', fontWeight: '700', fontSize: mfs, lineHeight: mfs * 1.2, textAlign: 'center' }}>✓ {n}</Text>)}
-        </View>
-      ) : null}
     </View>
   );
 }
@@ -651,7 +642,7 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
               : <Text allowFontScaling={false} style={[styles.emptyNote, { fontSize: 2.6 * u }]}>Masada henüz açılmış seri per yok.</Text>}
           </ScrollView>
         </Mat>
-        <View style={[styles.mid, { width: 12 * u, gap: 1.2 * u }]}>
+        <View style={[styles.mid, { width: 12 * u, gap: 0.8 * u }]}>
           <TableInfo u={u} g={g} />
           <CenterBox u={u} label="DESTE" drag={deckDrag}>
             <TileBack w={9 * u} h={11 * u} fs={6.4 * u} count={g.deck.length} hot={canDraw} />
