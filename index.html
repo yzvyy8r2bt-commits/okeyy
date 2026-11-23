@@ -437,6 +437,12 @@ button { font-family: inherit; }
 @keyframes lbpop { 0% { transform: scale(1.25); opacity: .6; } 30% { transform: scale(1); opacity: 1; } }
 .lb-wait .mrow { justify-content: center; }
 
+.lb-modes { display: flex; flex-wrap: wrap; justify-content: center; gap: calc(var(--u) * .7); margin: calc(var(--u) * .4) 0 calc(var(--u) * .8); }
+.lb-modes span { font-size: calc(var(--u) * 2); font-weight: 700; padding: calc(var(--u) * .4) calc(var(--u) * 1.1); border-radius: calc(var(--u) * 1.4); }
+.lb-modes .on { background: rgba(79, 224, 163, .16); color: #8ff0c6; border: 1px solid rgba(79, 224, 163, .4); }
+.lb-modes .off { background: rgba(255, 255, 255, .05); color: rgba(255, 255, 255, .4); border: 1px solid rgba(255, 255, 255, .1); text-decoration: line-through; }
+.lb-count { font-size: calc(var(--u) * 8); }
+
 button { touch-action: manipulation; }
 </style>
 </head>
@@ -2157,11 +2163,16 @@ function sitAt(t) {
   seatWait(t, cfg);
 }
 // Masaya oturunca 5 sn bekleme: bu sürede çip düşmeden kalkılabilir
+function modeList(pen) {
+  const p = pen || {}, on = k => p[k] !== false;
+  return [['Rekorlu', on('rekor')], ['Okey çalma cezası', on('okeyCal')], ['Her taş cezalı', on('herTas')], ['Yandan açma cezalı', on('yanAc')], ['Gösterge', on('gosterge')]];
+}
 function seatWait(t, cfg) {
   clearInterval(LB.waitT);
-  let left = 5;
+  let left = 10;
   const tags = [t.team ? 'Eşli' : 'Tek', t.hands + ' El', t.mode === 'katlamali' ? 'Katlamalı' : 'Klasik', t.hard ? 'Yardımsız' : 'Yardımlı'];
   const draw = () => openModal('<div class="lb-wait"><h2>Masaya Oturdun</h2><p class="sub">' + SALONS[t.salon].name + ' · ' + tags.join(' · ') + '</p>' +
+    '<div class="lb-modes">' + modeList(t.pen).map(m => '<span class="' + (m[1] ? 'on' : 'off') + '">' + (m[1] ? '✓ ' : '✕ ') + m[0] + '</span>').join('') + '</div>' +
     '<div class="lb-wseats">' + cfg.names.map((n, i) => '<div><span class="lb-av' + (i ? ' sm' : '') + '">' + n[0] + '</span><small>' + n + '</small></div>').join('') + '</div>' +
     '<div class="lb-bet big"><i class="coin"></i>' + chipFmt(t.bet) + '</div>' +
     '<div class="lb-count">' + left + '</div><p class="sub">Oyun ' + left + ' saniye içinde başlıyor. Başlayınca bahsin ortaya konur.</p>' +
@@ -2214,6 +2225,7 @@ function lobbySettle() {
 function showTableMenu() {
   const T = UI.table;
   openModal('<h2>Masa</h2><p class="sub">Bahis ' + chipFmt(T.bet) + ' çip · ' + (T.cfg.team ? 'Eşli' : 'Tek') + ' · ' + T.cfg.hands + ' El · ' + (T.cfg.mode === 'katlamali' ? 'Katlamalı' : 'Klasik') + (T.cfg.hard ? ' · Yardımsız' : '') + '</p>' +
+    '<div class="lb-modes">' + modeList(T.cfg.pen).map(m => '<span class="' + (m[1] ? 'on' : 'off') + '">' + (m[1] ? '✓ ' : '✕ ') + m[0] + '</span>').join('') + '</div>' +
     '<p class="sub">Oyun bitmeden masadan kalkarsan ortaya koyduğun ' + chipFmt(T.bet) + ' çip geri gelmez.</p>' +
     '<div class="mrow"><button class="btn pri" data-act="close">Oyuna Dön</button><button class="btn" data-act="rules">Kurallar</button><button class="btn bad" data-act="lb-leave">Masadan Kalk</button></div>');
 }
