@@ -191,7 +191,7 @@ function Corner({ u, tile, hot, cref, style, drag }) {
   );
 }
 // masadaki yeşil çuha (.mat) ve ızgarası
-function Mat({ u, title, limit, children, style }) {
+function Mat({ u, title, limit, side, children, style }) {
   const [sz, setSz] = useState(null);
   const lines = [];
   if (sz) {
@@ -202,11 +202,16 @@ function Mat({ u, title, limit, children, style }) {
   return (
     <View onLayout={e => setSz({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}
       style={[styles.mat, { borderRadius: 2.2 * u, borderWidth: 0.5 * u }, style]}>
-      <View pointerEvents="none" style={StyleSheet.absoluteFill}>{lines}</View>
+      <View pointerEvents="none" style={[StyleSheet.absoluteFill, { overflow: 'hidden', borderRadius: 1.8 * u }]}>{lines}</View>
       <Text allowFontScaling={false} style={[styles.matTitle, { top: 0.6 * u, right: 1.2 * u, fontSize: 1.7 * u }]}>{title}</Text>
-      {limit ? <View style={[styles.lim, { top: 0.5 * u, left: 1 * u, borderRadius: u, paddingHorizontal: 0.8 * u, paddingVertical: 0.15 * u }]}>
-        <Text allowFontScaling={false} style={{ fontSize: 2.4 * u, color: '#cfeee8', fontWeight: '700' }}>Limit <Text style={{ color: C.amber, fontFamily: NUM_FONT, fontSize: 3.6 * u }}>{limit}</Text></Text>
-      </View> : null}
+      {limit ? (   // açma limiti: masanın kenarına yapışık yuvarlak rozet (101 Plus'taki gibi, sadece sayı)
+        <View pointerEvents="none" style={[styles.limWrap, { top: 12 * u }, side === 'right' ? { right: -4.8 * u, flexDirection: 'row-reverse' } : { left: -4.8 * u }]}>
+          <View style={[styles.limPill, { height: 5.4 * u, minWidth: 8.6 * u, borderRadius: 2.7 * u, borderWidth: 0.35 * u, paddingHorizontal: 1.2 * u }]}>
+            <Text allowFontScaling={false} style={{ color: '#fff', fontFamily: NUM_FONT, fontWeight: '800', fontSize: 3.6 * u, includeFontPadding: false }}>{limit}</Text>
+          </View>
+          <View style={[styles.limTip, { width: 1.7 * u, height: 1.7 * u }, side === 'right' ? { marginRight: -1 * u } : { marginLeft: -1 * u }]} />
+        </View>
+      ) : null}
       {children}
     </View>
   );
@@ -344,6 +349,26 @@ function RulesModal({ u, visible, onClose, howto }) {
   );
 }
 
+// göstergenin üstünde masanın özellikleri (101 Plus'taki gibi kutucuklar)
+function TableInfo({ u, g }) {
+  const c = g.cfg, on = k => !c.pen || c.pen[k] !== false;
+  const boxes = [[c.team ? 'EŞLİ' : 'TEK'], [c.hands + ' EL'], [c.hard ? 'YARDIMSIZ' : 'YARDIMLI'], [c.mode === 'katlamali' ? 'KATLAMALI' : 'KLASİK', c.mode === 'katlamali']];
+  const modes = [['Rekorlu', on('rekor')], ['Okey çalma', on('okeyCal')], ['Her taş', on('herTas')], ['Yandan açma', on('yanAc')], ['Gösterge', on('gosterge')]].filter(m => m[1]);
+  return (
+    <View pointerEvents="none" style={{ flex: 1, justifyContent: 'flex-end', overflow: 'hidden', gap: 0.5 * u }}>
+      {boxes.map(([t, red]) => (
+        <View key={t} style={{ height: 3.6 * u, borderRadius: 0.8 * u, backgroundColor: red ? '#8e1f2c' : 'rgba(6,10,30,0.75)', borderWidth: 1, borderColor: red ? '#c0394a' : 'rgba(255,255,255,0.1)', alignItems: 'center', justifyContent: 'center' }}>
+          <Text allowFontScaling={false} numberOfLines={1} adjustsFontSizeToFit style={{ color: '#fff', fontFamily: NUM_FONT, fontWeight: '800', fontSize: 2.2 * u, letterSpacing: 0.05 * u }}>{t}</Text>
+        </View>
+      ))}
+      {modes.length ? (
+        <View style={{ borderRadius: 0.8 * u, backgroundColor: 'rgba(6,10,30,0.55)', paddingVertical: 0.4 * u, paddingHorizontal: 0.5 * u }}>
+          {modes.map(([n]) => <Text key={n} allowFontScaling={false} numberOfLines={1} adjustsFontSizeToFit style={{ color: '#7ef0b5', fontWeight: '700', fontSize: 1.5 * u, textAlign: 'center' }}>✓ {n}</Text>)}
+        </View>
+      ) : null}
+    </View>
+  );
+}
 // göstergenin üstündeki bildirim: tek bildirim, kutuya sığana kadar yazı küçülür (web'deki gibi)
 function ToastBox({ u, toast }) {
   const [box, setBox] = useState(null);
@@ -398,9 +423,10 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
   const bumpRack = useCallback(() => { setRackVer(v => v + 1); setTick(t => t + 1); }, []);
   const toast = useCallback((msg, kind) => {
     if (!msg) return;
-    const id = Math.random();
-    setToasts(a => [...a.slice(-2), { id, msg, kind: kind || 'info' }]);
-    setTimeout(() => setToasts(a => a.filter(x => x.id !== id)), 3200);
+    // ortadaki bildirim kutusu kaldırıldı: sadece uyarılar ıstakanın üstündeki durum satırında görünür
+    if (kind !== 'bad') return;
+    clearTimeout(stT.current); setStatusMsg(msg);
+    stT.current = setTimeout(() => setStatusMsg(null), 4500);
   }, []);
   const feedback = useCallback((r) => {
     if (!r) return;
@@ -417,7 +443,7 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
     Object.assign(GM.H, {
       render: rerender,
       toast: (m, k) => toast(m, k),
-      banner: (title, sub, kind) => toast(title + (sub ? ' · ' + sub : ''), kind === 'gold' ? 'good' : kind),
+      banner: () => {},   // büyük duyurular kaldırıldı (cezalar oyuncu kutularında görünür)
       sfx: (k) => { sfx(k); if (k === 'penalty') warn(); },
       wait: (ms) => sleep(ms),
       ev: (name, d) => { if (name === 'penalty' && d && d.amt >= 101) giftReact('penalty', d.i); else if (name === 'finish' && d) giftReact('win', d.i); },
@@ -615,14 +641,14 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
           <Corner u={u} tile={lastOf(2)} />
           <SidePlate u={u} i={3} g={g} cur={giftOf(3)} onGift={() => setGiftFor(3)} />
         </View>
-        <Mat u={u} title="SERİ PERLER" limit={kat ? String(GM.seriesNeed()) : null} style={{ flex: 1 }}>
+        <Mat u={u} title="SERİ PERLER" limit={kat ? String(GM.seriesNeed()) : null} side="left" style={{ flex: 1, zIndex: 3 }}>
           <ScrollView contentContainerStyle={[styles.melds, { padding: 1.2 * u, paddingTop: 3.4 * u, rowGap: u * ms, columnGap: 1.2 * u * ms }]}>
             {series.length ? series.map(m => <MeldView key={m.id} u={u} m={m} ms={ms} setRef={setMeldRef} />)
               : <Text allowFontScaling={false} style={[styles.emptyNote, { fontSize: 2.6 * u }]}>Masada henüz açılmış seri per yok.</Text>}
           </ScrollView>
         </Mat>
         <View style={[styles.mid, { width: 12 * u, gap: 1.2 * u }]}>
-          <ToastBox u={u} toast={toasts[toasts.length - 1]} />
+          <TableInfo u={u} g={g} />
           <CenterBox u={u} label="DESTE" drag={deckDrag}>
             <TileBack w={9 * u} h={11 * u} fs={6.4 * u} count={g.deck.length} hot={canDraw} />
           </CenterBox>
@@ -630,7 +656,7 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
             <TileFace tile={g.gosterge} w={9 * u} h={11 * u} fs={6.4 * u} />
           </CenterBox>
         </View>
-        <Mat u={u} title="ÇİFTLER" limit={kat ? GM.pairsNeed() + ' çift' : null} style={{ width: 34 * u }}>
+        <Mat u={u} title="ÇİFTLER" limit={kat ? String(GM.pairsNeed()) : null} side="right" style={{ width: 34 * u, zIndex: 3 }}>
           <ScrollView contentContainerStyle={[styles.melds, { padding: 0.9 * u, paddingTop: 3.4 * u, gap: 0.8 * u * ms }]}>
             {pairs.map(m => <MeldView key={m.id} u={u} m={m} ms={ms} setRef={setMeldRef} />)}
           </ScrollView>
@@ -941,7 +967,10 @@ const styles = StyleSheet.create({
   nm: { color: C.ink, fontWeight: '800', maxWidth: '100%' },
   chips: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center' },
   shelf: { flex: 1, alignSelf: 'stretch', borderTopWidth: 1, borderStyle: 'dashed', borderColor: 'rgba(255,255,255,0.12)' },
-  mat: { backgroundColor: '#0f3036', borderColor: '#07181b', overflow: 'hidden' },
+  mat: { backgroundColor: '#0f3036', borderColor: '#07181b' },
+  limWrap: { position: 'absolute', zIndex: 5, flexDirection: 'row', alignItems: 'center' },
+  limPill: { backgroundColor: '#24489c', borderColor: '#a9c2ff', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOpacity: 0.5, shadowRadius: 4, shadowOffset: { width: 0, height: 2 } },
+  limTip: { backgroundColor: '#a9c2ff', transform: [{ rotate: '45deg' }], zIndex: -1 },
   gridV: { position: 'absolute', top: 0, bottom: 0, width: 1, backgroundColor: 'rgba(120,235,215,0.075)' },
   gridH: { position: 'absolute', left: 0, right: 0, height: 1, backgroundColor: 'rgba(120,235,215,0.075)' },
   matTitle: { position: 'absolute', fontWeight: '800', letterSpacing: 2, color: 'rgba(190,240,232,0.28)' },
