@@ -580,10 +580,20 @@ button { font-family: inherit; }
 .plate.top .pg-btn { margin-top: 0; }
 .plate.top .pg-tmp { bottom: auto; top: calc(var(--u) * -1); right: calc(var(--u) * -4); }
 
+/* hediyeler biraz daha büyük, kalıcı görünür */
+.pg-tmp { animation: none; opacity: 1; }
+.pg-tmp.new { animation: pgin .6s ease-out; }
+@keyframes pgin { 0% { transform: scale(.2); opacity: 0; } 60% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(1); } }
+.pg-tmp svg { width: calc(var(--u) * 9.5); height: calc(var(--u) * 9.5); }
+.pg-oz svg { width: calc(var(--u) * 7.8); height: calc(var(--u) * 7.8); }
+.pg-perm svg { width: calc(var(--u) * 6.6); height: calc(var(--u) * 6.6); }
+.gf-em svg { width: calc(var(--u) * 9.5); height: calc(var(--u) * 9.5); }
+.gift-fly svg { width: calc(var(--u) * 12); height: calc(var(--u) * 12); }
+
 button { touch-action: manipulation; }
 </style>
 </head>
-<body data-ver="mwtinnhp">
+<body data-ver="mwtiu785">
 <div id="stage" lang="tr">
   <div class="app">
     <header class="top">
@@ -2891,17 +2901,16 @@ function savePerm(name, em, forever) {
   try { localStorage.setItem('okey101.permgifts', JSON.stringify(s)); } catch (e) { /* depolama yok */ }
 }
 function giftBadge(i) {
-  const g = (UI.gifts && UI.gifts[i]) || {}, now = Date.now(), tmp = g.tmp && g.tmp.until > now ? g.tmp.em : '';
+  const g = (UI.gifts && UI.gifts[i]) || {}, now = Date.now(), tmp = g.tmp ? g.tmp.em : '';   // oyun bitene kadar kalır
   const perm = G && G.players[i] ? permOf(G.players[i].name) : '', oz = G && G.players[i] ? permOf(G.players[i].name, '#ozel') : '';
-  const btn = !oz && !perm ? '<span class="pg-btn" title="Hediye yolla">' + giftIcon('Kalp').replace('<svg', '<svg class="pg-bi"') + '<i>Hediye</i></span>' : '';
-  return btn + (oz ? '<span class="pg-oz" title="Kalıcı hediye">' + icByName(oz) + '</span>' : '') + (perm ? '<span class="pg-perm" title="Günlük hediye (24 saat)">' + icByName(perm) + '</span>' : '') + (tmp ? '<span class="pg-tmp">' + icByName(tmp) + '</span>' : '');
+  const btn = !oz && !perm && !tmp ? '<span class="pg-btn" title="Hediye yolla">' + giftIcon('Kalp').replace('<svg', '<svg class="pg-bi"') + '<i>Hediye</i></span>' : '';
+  return btn + (oz ? '<span class="pg-oz" title="Kalıcı hediye">' + icByName(oz) + '</span>' : '') + (perm ? '<span class="pg-perm" title="Günlük hediye (24 saat)">' + icByName(perm) + '</span>' : '') + (tmp ? '<span class="pg-tmp' + (g.tmp.fresh && Date.now() - g.tmp.fresh < 900 ? ' new' : '') + '">' + icByName(tmp) + '</span>' : '');
 }
 function setGift(i, em, perm, forever) {
   UI.gifts = UI.gifts || {};
   const g = UI.gifts[i] = UI.gifts[i] || {};
-  if (perm) savePerm(G.players[i].name, em, forever); else g.tmp = { em, until: Date.now() + 9000 };
+  if (perm) savePerm(G.players[i].name, em, forever); else g.tmp = { em, fresh: Date.now() };
   if (G) renderBots();
-  clearTimeout(setGift['t' + i]); setGift['t' + i] = setTimeout(() => { if (G) renderBots(); }, 9100);
 }
 // hediye uçuşu: kaynaktan hedefe kocaman emoji
 function flyGift(from, to, em) {
@@ -2927,7 +2936,7 @@ function showGiftMenu(i) {
   openModal('<div class="gf"><div class="gf-head"><span class="lb-av gf-av">' + P.name[0] + '</span><div><b>' + P.name + team + '</b><small>Seviye ' + botLv(P.name) + '</small></div>' +
     '<div class="lb-chips sm"><i class="coin"></i>' + chipFmt(wallet().chips) + '</div></div>' +
     '<h3 class="pf-h">Hediye Yolla</h3><div class="tk-tabs">' + tabs + '</div><div class="gf-grid">' + items + '</div>' +
-    (cat.forever ? '<p class="st-note">Kalıcı hediyeler süresizdir: başka biri farklı bir kalıcı hediye gönderene kadar oyuncunun kutusunda kalır. Her biri 1 milyon çip.</p>' : cat.perm ? '<p class="st-note">Günlük hediyeler 24 saat boyunca oyuncunun kutusunda durur; aynı oyuncuyla başka masada karşılaşırsan da görünür.</p>' : '<p class="st-note">Hediye birkaç saniye oyuncunun kutusunda görünür. Takılmalık hediyelerle dalga geçmek serbest!</p>') +
+    (cat.forever ? '<p class="st-note">Kalıcı hediyeler süresizdir: başka biri farklı bir kalıcı hediye gönderene kadar oyuncunun kutusunda kalır. Her biri 1 milyon çip.</p>' : cat.perm ? '<p class="st-note">Günlük hediyeler 24 saat boyunca oyuncunun kutusunda durur; aynı oyuncuyla başka masada karşılaşırsan da görünür.</p>' : '<p class="st-note">Hediye oyun bitene kadar oyuncunun kutusunda durur. Takılmalık hediyelerle dalga geçmek serbest!</p>') +
     '<div class="mrow"><button class="btn pri" data-act="close">Kapat</button></div></div>');
 }
 function sendGift(i, catId, k) {
