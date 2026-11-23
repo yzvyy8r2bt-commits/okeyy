@@ -561,6 +561,12 @@ button { font-family: inherit; }
 .pg-perm svg { width: calc(var(--u) * 5.5); height: calc(var(--u) * 5.5); display: block; }
 .pg-perm, .pg-tmp { font-size: 0; }
 
+.pg-oz { position: absolute; top: calc(var(--u) * -1.6); left: calc(var(--u) * -1.2); font-size: 0; filter: drop-shadow(0 0 calc(var(--u) * 1) rgba(255, 210, 74, .9)); }
+.pg-oz svg { width: calc(var(--u) * 6.5); height: calc(var(--u) * 6.5); display: block; }
+.gf-grid { max-height: calc(var(--u) * 42); overflow-y: auto; }
+.tk-tabs .tk-tab[data-act*="-ozel"] { background: linear-gradient(160deg, #ffd54f, #b8860b); color: #3b2500; opacity: .85; }
+.tk-tabs .tk-tab.on[data-act*="-ozel"] { opacity: 1; box-shadow: 0 0 0 2px #fff; }
+
 button { touch-action: manipulation; }
 </style>
 </head>
@@ -2762,6 +2768,74 @@ const GI = (() => {
   };
 })();
 function giftIcon(name, fallback) { return GI[name] || '<span>' + (fallback || '🎁') + '</span>'; }
+/* ---------- Özel (sınırsız) grup çizimleri ---------- */
+(() => {
+  const S = (b) => '<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">' + b + '</svg>';
+  const O = 'stroke="#2a1a10" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"';
+  const BODY = 'M22 8l-14 8 5 12 6-3v31h26V25l6 3 5-12-14-8c-2 4-6 6-10 6s-8-2-10-6z';
+  // forma: a = gövde rengi, b = ikinci renk, p = desen
+  function jersey(a, b, p, num) {
+    let fill = '';
+    const id = 'j' + a.slice(1) + b.slice(1) + p;
+    if (p === 'stripes') fill = [22, 30, 38].map(x => '<rect x="' + x + '" y="6" width="4" height="52" fill="' + b + '"/>').join('');
+    else if (p === 'halves') fill = '<rect x="32" y="4" width="30" height="56" fill="' + b + '"/>';
+    else if (p === 'sleeves') fill = '<path d="M8 16l11-6 1 16-7 2zM56 16l-11-6-1 16 7 2z" fill="' + b + '"/>';
+    else if (p === 'hoops') fill = [16, 28, 40].map(y => '<rect x="4" y="' + y + '" width="56" height="6" fill="' + b + '"/>').join('');
+    else if (p === 'sash') fill = '<path d="M18 8h8l20 40v8h-8L18 16z" fill="' + b + '"/>';
+    return S('<defs><clipPath id="' + id + '"><path d="' + BODY + '"/></clipPath></defs>' +
+      '<path d="' + BODY + '" fill="' + a + '"/><g clip-path="url(#' + id + ')">' + fill + '</g>' +
+      '<path d="' + BODY + '" fill="none" ' + O + '/><path d="M22 8c2 4 6 6 10 6s8-2 10-6" fill="none" ' + O + ' stroke-width="3"/>' +
+      '<text x="32" y="44" text-anchor="middle" font-family="Arial" font-weight="900" font-size="15" fill="#fff" stroke="#2a1a10" stroke-width="1.2">' + (num || '10') + '</text>');
+  }
+  Object.assign(GI, {
+    'Sarı-Kırmızı Forma': jersey('#f5c518', '#c8102e', 'halves'),
+    'Sarı-Lacivert Forma': jersey('#f5c518', '#1b2a6b', 'stripes'),
+    'Siyah-Beyaz Forma': jersey('#ffffff', '#111111', 'stripes'),
+    'Bordo-Mavi Forma': jersey('#7a1430', '#5aa9e6', 'sleeves'),
+    'Kırmızı-Beyaz Forma': jersey('#d0102e', '#ffffff', 'hoops'),
+    'Yeşil-Beyaz Forma': jersey('#0b8a3e', '#ffffff', 'sash'),
+    'Gelinlik': S('<path d="M26 8c2 3 10 3 12 0l2 14-4 6H28l-4-6z" fill="#fff" ' + O + '/>' +
+      '<path d="M28 28h8l16 28c-6 4-34 4-40 0z" fill="#fff" ' + O + '/>' +
+      '<path d="M32 30v24M26 34l-6 18M38 34l6 18" stroke="#e0e0e0" stroke-width="1.6"/>' +
+      '<path d="M27 28h10" stroke="#f8bbd0" stroke-width="3"/><circle cx="32" cy="28" r="2.4" fill="#f48fb1" ' + O + '/>' +
+      '<path d="M22 6c-4 6-8 20-10 44" stroke="#e3f2fd" stroke-width="3" fill="none" opacity=".9"/>' +
+      [[29, 16], [35, 16], [32, 21], [30, 40], [36, 44], [24, 48], [40, 50]].map(p => '<circle cx="' + p[0] + '" cy="' + p[1] + '" r=".9" fill="#b0bec5"/>').join('')),
+    'Damatlık': S('<path d="M14 16l12-8 6 10 6-10 12 8 2 40H12z" fill="#212121" ' + O + '/>' +
+      '<path d="M26 8l6 10 6-10-2 0-4 6-4-6z" fill="#fff"/><path d="M28 10l4 8 4-8v46h-8z" fill="#fff" ' + O + '/>' +
+      '<path d="M28 18l-6 16 6 2M36 18l6 16-6 2" fill="#333" ' + O + '/>' +
+      '<path d="M27 12l5 4 5-4-5 3z" fill="#111" ' + O + '/><path d="M26 11l6 4 6-4v6l-6-3-6 3z" fill="#111" ' + O + '/>' +
+      '<circle cx="32" cy="28" r="1.3" fill="#111"/><circle cx="32" cy="36" r="1.3" fill="#111"/><circle cx="32" cy="44" r="1.3" fill="#111"/>' +
+      '<path d="M18 24l2 6" stroke="#fff" stroke-width="2"/><circle cx="19" cy="22" r="2.4" fill="#e53935"/>'),
+    'Altın Semaver': S('<ellipse cx="32" cy="58" rx="18" ry="3" fill="#000" opacity=".2"/>' +
+      '<path d="M22 52h20l-3-4H25z" fill="#d4a017" ' + O + '/><path d="M20 22c0-4 6-6 12-6s12 2 12 6v20c0 4-6 6-12 6s-12-2-12-6z" fill="#f5c542" ' + O + '/>' +
+      '<path d="M44 34h6l2 3h-4" fill="#f5c542" ' + O + '/><path d="M20 28c-4 0-6 4-4 8M44 28c4 0 6 4 4 8" fill="none" ' + O + '/>' +
+      '<path d="M26 16c0-4 2-6 6-6s6 2 6 6" fill="#e0a800" ' + O + '/>' +
+      '<path d="M28 6c0-2 8-2 8 0v4h-8z" fill="#f5c542" ' + O + '/><path d="M27 4c2-3 8-3 10 0" stroke="#bbb" stroke-width="2" fill="none"/>' +
+      '<path d="M24 26v14" stroke="#fff59d" stroke-width="3" stroke-linecap="round" opacity=".8"/><path d="M50 8l1.5 3.5L55 13l-3.5 1.5L50 18l-1.5-3.5L45 13l3.5-1.5z" fill="#fff"/>'),
+    'Elmas Okey Taşı': S('<rect x="14" y="6" width="36" height="50" rx="5" fill="#b3e5fc" ' + O + '/><rect x="17" y="9" width="30" height="44" rx="3" fill="#e1f5fe"/>' +
+      '<path d="M17 20l30 20M17 34l20 19M27 9l20 16" stroke="#fff" stroke-width="2" opacity=".8"/>' +
+      '<text x="32" y="38" text-anchor="middle" font-family="Arial" font-weight="900" font-size="22" fill="#0288d1" stroke="#01579b" stroke-width="1">1</text>' +
+      '<circle cx="32" cy="46" r="2.6" fill="#0288d1"/><rect x="14" y="54" width="36" height="5" rx="2" fill="#4fc3f7" ' + O + '/>' +
+      '<path d="M52 6l1.5 3.5L57 11l-3.5 1.5L52 16l-1.5-3.5L47 11l3.5-1.5zM10 46l1 2.5 2.5 1-2.5 1-1 2.5-1-2.5L6 49.5l2.5-1z" fill="#fff"/>'),
+    'Kahvehane Tapusu': S('<path d="M10 10h44v42H10z" fill="#fff8e1" ' + O + '/><path d="M10 10h44v8H10z" fill="#c62828" ' + O + '/>' +
+      '<text x="32" y="16.5" text-anchor="middle" font-family="Arial" font-weight="900" font-size="6.5" fill="#fff">TAPU</text>' +
+      '<path d="M22 30l10-7 10 7v10H22z" fill="#8d6e63" ' + O + '/><path d="M29 40v-6h6v6" fill="#5d4037"/><path d="M18 31l14-10 14 10" fill="none" stroke="#c62828" stroke-width="2.5" stroke-linecap="round"/>' +
+      '<path d="M16 46h20M16 49h14" stroke="#9e9e9e" stroke-width="1.6"/><circle cx="46" cy="46" r="6" fill="#e53935" ' + O + '/><path d="M43 46l2 2 4-4" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/>'),
+    'Klasik Otomobil': S('<ellipse cx="32" cy="52" rx="28" ry="3" fill="#000" opacity=".2"/>' +
+      '<path d="M4 42c0-6 4-8 10-9l8-9c2-2 4-3 8-3h10c4 0 6 1 8 4l5 8c6 0 9 3 9 9v3H4z" fill="#c62828" ' + O + '/>' +
+      '<path d="M24 26c1-1 3-2 6-2h4v9H19zM38 24h3c2 0 4 1 5 3l3 6H38z" fill="#bbdefb" ' + O + '/>' +
+      '<circle cx="16" cy="45" r="6" fill="#263238" ' + O + '/><circle cx="16" cy="45" r="2.4" fill="#cfd8dc"/><circle cx="48" cy="45" r="6" fill="#263238" ' + O + '/><circle cx="48" cy="45" r="2.4" fill="#cfd8dc"/>' +
+      '<path d="M8 38h6M54 38h4" stroke="#ffeb3b" stroke-width="3" stroke-linecap="round"/><path d="M24 36h8" stroke="#fff" stroke-width="1.6" opacity=".7"/>'),
+    'Lüks Yat': S('<path d="M2 50c6 3 10-3 16 0s10-3 16 0 10-3 16 0 10-3 12 0v10H2z" fill="#1e88e5"/>' +
+      '<path d="M6 42h52l-8 10H14z" fill="#fff" ' + O + '/><path d="M14 34h32l6 8H12z" fill="#eceff1" ' + O + '/><path d="M22 26h18l4 8H20z" fill="#fff" ' + O + '/>' +
+      '<path d="M18 38h4M26 38h4M34 38h4M42 38h4M26 30h3M33 30h3" stroke="#1565c0" stroke-width="2.4" stroke-linecap="round"/>' +
+      '<path d="M8 46h48" stroke="#ffc107" stroke-width="2"/><path d="M31 26V12l8 6-8 2" fill="#e53935" ' + O + '/>'),
+    'Sıcak Hava Balonu': S('<path d="M32 4C18 4 10 14 10 26c0 10 8 16 14 22h16c6-6 14-12 14-22C54 14 46 4 32 4z" fill="#e53935" ' + O + '/>' +
+      '<path d="M32 4c-6 0-10 10-10 22 0 10 3 16 4 22M32 4c6 0 10 10 10 22 0 10-3 16-4 22" fill="#fdd835" ' + O + '/><path d="M32 4v44" stroke="#2a1a10" stroke-width="2"/>' +
+      '<path d="M12 22h40" stroke="#1e88e5" stroke-width="4" opacity=".85"/>' +
+      '<path d="M24 48l2 6M40 48l-2 6" stroke="#5d4037" stroke-width="1.6"/><rect x="25" y="54" width="14" height="8" rx="1.5" fill="#8d6e63" ' + O + '/>')
+  });
+})();
 
 /* ---------- Hediyeler: masadakilere hediye yolla (çiple). Güzel de olur, takılmalık da. + "Sıra sende!" bildirimi ---------- */
 const GIFT_CATS = [
@@ -2769,6 +2843,8 @@ const GIFT_CATS = [
   { id: 'yemek', name: 'Yiyecek', items: [['Simit', '🥯', 250], ['Lokum', '🍬', 500], ['Tost', '🥪', 400], ['Kumpir', '🥔', 1000], ['Baklava', '🍯', 1500], ['Dondurma', '🍦', 750]] },
   { id: 'gonul', name: 'Gönül', items: [['Gül', '🌹', 2500], ['Nazar Boncuğu', '🧿', 1500], ['Dört Yapraklı Yonca', '🍀', 2500], ['Kalp', '❤️', 5000], ['Pırlanta', '💎', 25000], ['Yüzük', '💍', 10000]] },
   { id: 'takil', name: 'Takılma', items: [['Terlik', '🩴', 750], ['Domates', '🍅', 300], ['Biberon', '🍼', 1000], ['Kaplumbağa', '🐢', 1500], ['Mendil', '🤧', 500], ['Salyangoz', '🐌', 1000], ['Palyaço', '🤡', 2000], ['Uyku', '😴', 750]] },
+  { id: 'ozel', name: 'Özel', perm: true, forever: true, items: [['Sarı-Kırmızı Forma', '⚽', 1e6], ['Sarı-Lacivert Forma', '⚽', 1e6], ['Siyah-Beyaz Forma', '⚽', 1e6], ['Bordo-Mavi Forma', '⚽', 1e6], ['Kırmızı-Beyaz Forma', '⚽', 1e6], ['Yeşil-Beyaz Forma', '⚽', 1e6],
+    ['Gelinlik', '👰', 1e6], ['Damatlık', '🤵', 1e6], ['Altın Semaver', '🫖', 1e6], ['Elmas Okey Taşı', '💎', 1e6], ['Kahvehane Tapusu', '📜', 1e6], ['Klasik Otomobil', '🚗', 1e6], ['Lüks Yat', '🛥️', 1e6], ['Sıcak Hava Balonu', '🎈', 1e6]] },
   { id: 'kalici', name: 'Kalıcı', perm: true, items: [['Taç', '👑', 25000], ['Fötr Şapka', '🎩', 15000], ['Güneş Gözlüğü', '🕶️', 10000], ['Kupa', '🏆', 50000], ['Madalya', '🥇', 20000], ['Yıldız', '🌟', 30000]] }
 ];
 // bot seviyesi/çipi: isme göre sabit sanal değerler (taslak)
@@ -2776,22 +2852,22 @@ function botLv(name) { let h = 0; for (const c of name) h = (h * 31 + c.charCode
 // kalıcı hediyeler oyuncunun adına 24 saat saklanır
 const PERM_MS = 24 * 3600 * 1000;
 function permStore() { let s = {}; try { s = JSON.parse(localStorage.getItem('okey101.permgifts') || '{}') || {}; } catch (e) { s = {}; } return s; }
-function permOf(name) { const e = permStore()[name]; return e && e.until > Date.now() ? e.em : ''; }
-function savePerm(name, em) {
+function permOf(name, key) { const e = permStore()[name + (key || '')]; return e && (e.forever || e.until > Date.now()) ? e.em : ''; }
+function savePerm(name, em, forever) {
   const s = permStore(), now = Date.now();
-  for (const k in s) if (!s[k] || s[k].until <= now) delete s[k];
-  s[name] = { em, until: now + PERM_MS };
+  for (const k in s) if (!s[k] || (!s[k].forever && s[k].until <= now)) delete s[k];
+  s[name + (forever ? '#ozel' : '')] = forever ? { em, forever: 1 } : { em, until: now + PERM_MS };
   try { localStorage.setItem('okey101.permgifts', JSON.stringify(s)); } catch (e) { /* depolama yok */ }
 }
 function giftBadge(i) {
   const g = (UI.gifts && UI.gifts[i]) || {}, now = Date.now(), tmp = g.tmp && g.tmp.until > now ? g.tmp.em : '';
-  const perm = G && G.players[i] ? permOf(G.players[i].name) : '';
-  return (perm ? '<span class="pg-perm" title="Kalıcı hediye (24 saat)">' + icByName(perm) + '</span>' : '') + (tmp ? '<span class="pg-tmp">' + icByName(tmp) + '</span>' : '');
+  const perm = G && G.players[i] ? permOf(G.players[i].name) : '', oz = G && G.players[i] ? permOf(G.players[i].name, '#ozel') : '';
+  return (oz ? '<span class="pg-oz" title="Özel hediye (sınırsız)">' + icByName(oz) + '</span>' : '') + (perm ? '<span class="pg-perm" title="Kalıcı hediye (24 saat)">' + icByName(perm) + '</span>' : '') + (tmp ? '<span class="pg-tmp">' + icByName(tmp) + '</span>' : '');
 }
-function setGift(i, em, perm) {
+function setGift(i, em, perm, forever) {
   UI.gifts = UI.gifts || {};
   const g = UI.gifts[i] = UI.gifts[i] || {};
-  if (perm) savePerm(G.players[i].name, em); else g.tmp = { em, until: Date.now() + 9000 };
+  if (perm) savePerm(G.players[i].name, em, forever); else g.tmp = { em, until: Date.now() + 9000 };
   if (G) renderBots();
   clearTimeout(setGift['t' + i]); setGift['t' + i] = setTimeout(() => { if (G) renderBots(); }, 9100);
 }
@@ -2819,7 +2895,7 @@ function showGiftMenu(i) {
   openModal('<div class="gf"><div class="gf-head"><span class="lb-av gf-av">' + P.name[0] + '</span><div><b>' + P.name + team + '</b><small>Seviye ' + botLv(P.name) + '</small></div>' +
     '<div class="lb-chips sm"><i class="coin"></i>' + chipFmt(wallet().chips) + '</div></div>' +
     '<h3 class="pf-h">Hediye Yolla</h3><div class="tk-tabs">' + tabs + '</div><div class="gf-grid">' + items + '</div>' +
-    (cat.perm ? '<p class="st-note">Kalıcı hediyeler 24 saat boyunca oyuncunun kutusunda durur; aynı oyuncuyla başka masada karşılaşırsan da görünür.</p>' : '<p class="st-note">Hediye birkaç saniye oyuncunun kutusunda görünür. Takılmalık hediyelerle dalga geçmek serbest!</p>') +
+    (cat.forever ? '<p class="st-note">Özel hediyeler süresiz: oyuncunun kutusunda hep kalır. Her biri 1 milyon çip.</p>' : cat.perm ? '<p class="st-note">Kalıcı hediyeler 24 saat boyunca oyuncunun kutusunda durur; aynı oyuncuyla başka masada karşılaşırsan da görünür.</p>' : '<p class="st-note">Hediye birkaç saniye oyuncunun kutusunda görünür. Takılmalık hediyelerle dalga geçmek serbest!</p>') +
     '<div class="mrow"><button class="btn pri" data-act="close">Kapat</button></div></div>');
 }
 function sendGift(i, catId, k) {
@@ -2828,7 +2904,7 @@ function sendGift(i, catId, k) {
   if (wallet().chips < it[2]) { warn('Bu hediye için yeterli çipin yok.'); return; }
   addChips(-it[2]); closeModal();
   flyGift(null, $(PLATE[i]), ic(it));
-  setTimeout(() => setGift(i, it[0], !!cat.perm), 800);
+  setTimeout(() => setGift(i, it[0], !!cat.perm, !!cat.forever), 800);
   toast(G.players[i].name + ' oyuncusuna ' + it[0] + ' gönderdin', 'info');
   bump('gift_sent'); checkTasks();
   // bazen karşılık verir
