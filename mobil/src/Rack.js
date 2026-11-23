@@ -28,13 +28,14 @@ function slotXY(g, slot) {
   return { x: g.pad + c * (g.cellW + g.gap), y: g.pad + r * (g.tileH + g.rowGap) };
 }
 
-function DraggableTile({ tile, slot, geom, ver, mark, onDrop }) {
+function DraggableTile({ tile, slot, geom, ver, mark, fresh, onDrop, onDropOut }) {
   const p0 = slotXY(geom, slot);
   const pos = useRef(new Animated.ValueXY(p0)).current;
   const lift = useRef(new Animated.Value(0)).current;
   const cur = useRef({ ...p0 });
   const st = useRef({ x: 0, y: 0 });
   const [up, setUp] = useState(false);
+  const dragging = useRef(false);
 
   useEffect(() => {
     const id = pos.addListener(v => { cur.current = v; });
@@ -43,6 +44,7 @@ function DraggableTile({ tile, slot, geom, ver, mark, onDrop }) {
 
   // yuva değişince (dizme, araya sokma, kayma) yumuşakça yerine git
   useEffect(() => {
+    if (dragging.current) return;
     Animated.timing(pos, { toValue: slotXY(geom, slot), duration: 150, useNativeDriver: false }).start();
   }, [slot, geom, ver]);
 
@@ -51,6 +53,7 @@ function DraggableTile({ tile, slot, geom, ver, mark, onDrop }) {
     .minDistance(0)
     .maxPointers(1)
     .onBegin(() => {
+      dragging.current = true;
       pos.stopAnimation();
       st.current = { ...cur.current };
       setUp(true);
@@ -62,6 +65,11 @@ function DraggableTile({ tile, slot, geom, ver, mark, onDrop }) {
     })
     .onEnd(() => {
       const { x, y } = cur.current;
+      if (y + geom.tileH * 0.5 < 0 && onDropOut) {   // ıstakanın dışına (yukarı) bırakıldı: at / işle
+        Animated.spring(pos, { toValue: slotXY(geom, slot), friction: 7, tension: 140, useNativeDriver: false }).start();
+        onDropOut(tile, x + geom.cellW / 2, y + geom.tileH / 2);
+        return;
+      }
       const step = geom.cellW + geom.gap;
       const raw = (x + geom.cellW / 2 - geom.pad) / step;
       let col = Math.floor(raw);
@@ -75,8 +83,9 @@ function DraggableTile({ tile, slot, geom, ver, mark, onDrop }) {
       } else onDrop(slot, to, after);
     })
     .onFinalize(() => {
+      dragging.current = false;
       Animated.timing(lift, { toValue: 0, duration: 120, useNativeDriver: false }).start(() => setUp(false));
-    }), [slot, geom, onDrop]);
+    }), [slot, geom, onDrop, onDropOut, tile]);
 
   const style = {
     transform: [
@@ -93,13 +102,13 @@ function DraggableTile({ tile, slot, geom, ver, mark, onDrop }) {
   return (
     <GestureDetector gesture={pan}>
       <Animated.View style={[styles.tileWrap, style]}>
-        <TileFace tile={tile} w={geom.cellW} h={geom.tileH} mark={mark} />
+        <TileFace tile={tile} w={geom.cellW} h={geom.tileH} mark={mark} glow={fresh} />
       </Animated.View>
     </GestureDetector>
   );
 }
 
-export default function Rack({ slots, geom, ver, marks, onDrop }) {
+export default function Rack({ slots, geom, ver, marks, freshId, onDrop, onDropOut }) {
   const holes = [];
   for (let i = 0; i < COLS * ROWS; i++) {
     const p = slotXY(geom, i);
@@ -115,7 +124,7 @@ export default function Rack({ slots, geom, ver, marks, onDrop }) {
     tiles.push(
       <DraggableTile key={t.id} tile={t} slot={i} geom={geom} ver={ver}
         mark={marks.meld.has(t.id) ? 'meld' : marks.pair.has(t.id) ? 'pair' : null}
-        onDrop={onDrop} />,
+        fresh={t.id === freshId} onDrop={onDrop} onDropOut={onDropOut} />,
     );
   });
   return (
