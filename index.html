@@ -48,8 +48,8 @@ button { font-family: inherit; }
   background-position: 0 0, 0 0, calc(var(--u) * 3.5) calc(var(--u) * 3.5), 0 0;
 }
 .app {
-  position: absolute; inset: 0; padding: calc(var(--u) * 1 + var(--st, 0px)) calc(var(--u) * 1.6 + var(--sr, 0px)) calc(var(--u) * 1.6 + var(--sb, 0px)) calc(var(--u) * 1.6 + var(--sl, 0px));
-  display: grid; grid-template-rows: calc(var(--u) * 9.4) minmax(0, 1fr) auto; row-gap: calc(var(--u) * .8);
+  position: absolute; inset: 0; padding: calc(var(--u) * 1 + var(--st, 0px)) calc(var(--u) * 1.6 + var(--sr, 0px)) calc(var(--u) * .5 + var(--sb, 0px) * .3) calc(var(--u) * 1.6 + var(--sl, 0px));
+  display: grid; grid-template-rows: calc(var(--u) * 8.2) minmax(0, 1fr) auto; row-gap: calc(var(--u) * .8);
 }
 
 /* ---- üst şerit ---- */
@@ -82,7 +82,7 @@ button { font-family: inherit; }
   background: var(--panel); border: 1px solid var(--line); border-radius: calc(var(--u) * 2);
   padding: calc(var(--u) * 1.1); display: flex; flex-direction: column; align-items: center; gap: calc(var(--u) * .8); min-width: 0; min-height: 0;
 }
-.plate.top { flex-direction: row; padding: calc(var(--u) * .5) calc(var(--u) * 1.4); gap: calc(var(--u) * 1.2); height: calc(var(--u) * 9); }
+.plate.top { flex-direction: row; padding: calc(var(--u) * .5) calc(var(--u) * 1.4); gap: calc(var(--u) * 1.2); height: calc(var(--u) * 8); }
 .plate.active { border-color: var(--amber); box-shadow: 0 0 calc(var(--u) * 2.4) rgba(255, 187, 51, .45); }
 .plate.hit { animation: shake .45s; border-color: var(--bad); }
 .av {
@@ -688,12 +688,18 @@ button { font-family: inherit; }
 /* üstteki oyuncunun (eşin) hediye yeri: kutunun sağında, akışta */
 .pg-topg { display: flex; align-items: center; justify-content: center; min-width: calc(var(--u) * 11); height: 100%; margin: calc(var(--u) * -1.2) 0; border-left: 1px dashed rgba(255, 255, 255, .14); padding-left: calc(var(--u) * 1); }
 .pg-topg .pg-oz, .pg-topg .pg-perm, .pg-topg .pg-tmp { position: static; transform: none; }
-.pg-topg .pg-oz svg, .pg-topg .pg-tmp svg, .pg-topg .pg-perm svg { width: calc(var(--u) * 10.5); height: calc(var(--u) * 10.5); }
+.pg-topg .pg-oz svg, .pg-topg .pg-tmp svg, .pg-topg .pg-perm svg { width: calc(var(--u) * 10); height: calc(var(--u) * 10); }
+
+/* bana gelen hediye: ıstakanın üstünde, sürenin yanında */
+.mygift { flex: none; display: flex; align-items: center; justify-content: center; width: calc(var(--u) * 6.6); height: calc(var(--u) * 6.6); margin-bottom: calc(var(--u) * -.6); border-radius: calc(var(--u) * 1.2); background: rgba(0, 0, 0, .3); border: 1px dashed rgba(255, 255, 255, .16); }
+.mygift[hidden] { display: none; }
+.mygift svg { width: calc(var(--u) * 6.4); height: calc(var(--u) * 6.4); display: block; filter: drop-shadow(0 2px 4px rgba(0,0,0,.5)); }
+.mygift.new { animation: pgin .6s ease-out; }
 
 button { touch-action: manipulation; }
 </style>
 </head>
-<body data-ver="mwtmgmk7">
+<body data-ver="mwtmokfv">
 <div id="stage" lang="tr">
   <div class="app">
     <header class="top">
@@ -732,6 +738,7 @@ button { touch-action: manipulation; }
       <div class="corner side" id="dBL" data-drop="side"></div>
       <div class="rackwrap">
         <div class="srow">
+          <div class="mygift" id="myGift" hidden title="Sana gelen hediye"></div>
           <div class="clock" id="clock" hidden title="Tur süresi">0:60</div>
           <div class="status" id="status" aria-live="polite"></div>
           <div class="bk right" id="actR"></div>
@@ -3137,6 +3144,15 @@ function giftBadge(i) {
   const btn = !oz && !perm && !tmp ? '<span class="pg-btn" data-act="gf-gift-' + i + '" title="Hediye yolla">' + giftIcon('Kalp').replace('<svg', '<svg class="pg-bi"') + '<i>Hediye</i></span>' : '';
   return btn + (oz ? '<span class="pg-oz" data-act="gf-gift-' + i + '" title="Kalıcı hediye">' + icByName(oz) + '</span>' : '') + (perm ? '<span class="pg-perm" data-act="gf-gift-' + i + '" title="Günlük hediye (24 saat)">' + icByName(perm) + '</span>' : '') + (tmp ? '<span data-act="gf-gift-' + i + '" class="pg-tmp' + (g.tmp.fresh && Date.now() - g.tmp.fresh < 900 ? ' new' : '') + '">' + icByName(tmp) + '</span>' : '');
 }
+function renderMyGift() {
+  const el = $('myGift'); if (!el) return;
+  const c = UI.table && G ? curGift(0) : null;
+  el.hidden = !c;
+  if (!c) { el.innerHTML = ''; return; }
+  const g = UI.gifts && UI.gifts[0];
+  el.innerHTML = icByName(c.em);
+  el.classList.toggle('new', !!(g && g.tmp && g.tmp.fresh && Date.now() - g.tmp.fresh < 900));
+}
 function setGift(i, em, perm, forever, price) {
   UI.gifts = UI.gifts || {};
   const g = UI.gifts[i] = UI.gifts[i] || {};
@@ -3145,7 +3161,7 @@ function setGift(i, em, perm, forever, price) {
   else if (perm) g.tmp = null;
   else delPerm(n);
   if (perm) savePerm(n, em, forever, price); else g.tmp = { em, fresh: Date.now(), p: price || 0 };
-  if (G) renderBots();
+  if (G) { renderBots(); renderMyGift(); }
 }
 // hediye uçuşu: kaynaktan hedefe kocaman emoji
 function flyGift(from, to, em) {
@@ -3199,8 +3215,11 @@ function botGift(from, catId) {
   if (G && G.players[from] && social().blocked.includes(G.players[from].name)) return;   // engellediğinin hediyesi gelmez
   if (!G || !UI.table || G.phase === 'over' && !$('modal').classList.contains('show')) { /* oyun dışı: yine de gönder */ }
   if (!G) return;
-  const cat = GIFT_CATS.find(c => c.id === catId) || GIFT_CATS[0], it = rnd(cat.items);
-  flyGift($(PLATE[from]), null, ic(it));
+  const cat = GIFT_CATS.find(c => c.id === catId) || GIFT_CATS[0], ok = cat.items.filter(x => !giftBlock(0, cat, x[2]));
+  if (!ok.length) return;   // benim üzerimdeki hediyeden pahalısı yoksa göndermez
+  const it = rnd(ok);
+  flyGift($(PLATE[from]), $('myGift').hidden ? null : $('myGift'), ic(it));
+  setTimeout(() => setGift(0, it[0], false, false, it[2]), 800);
   setTimeout(() => toast(G.players[from].name + ' sana ' + it[0] + ' gönderdi', catId === 'takil' ? 'bad' : 'good'), 700);
 }
 // oyun olaylarına göre botların takılması
@@ -3549,6 +3568,10 @@ function toast(msg, kind) {
   placeToasts();
   box.appendChild(el);
   while (box.children.length > (box.classList.contains('mini') ? 1 : 3)) box.removeChild(box.firstChild);
+  if (box.classList.contains('mini')) {   // uzun bildirim kutuya sığana kadar yazıyı küçült
+    let fs = parseFloat(getComputedStyle(el).fontSize), n = 0;
+    while (el.offsetHeight > box.clientHeight && fs > 6 && n++ < 20) { fs -= .6; el.style.fontSize = fs + 'px'; }
+  }
   setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 3800);
 }
 function warn(msg) {
@@ -3600,7 +3623,7 @@ function render() {
   const P = G.players[0];
   for (const id of Array.from(UI.selected)) if (!P.slots || !P.slots.some(t => t && t.id === id)) UI.selected.delete(id);
   computeHighlights();
-  renderHeader(); renderBots(); renderCenter(); renderMelds(); renderTicker(); renderRack(); renderActions(); renderStatus();
+  renderHeader(); renderBots(); renderMyGift(); renderCenter(); renderMelds(); renderTicker(); renderRack(); renderActions(); renderStatus();
   if (UI.drawerOpen) renderScore();
 }
 function renderHeader() {
