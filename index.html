@@ -655,10 +655,13 @@ button { font-family: inherit; }
 .po-row b { font: 800 calc(var(--u) * 2.8)/1.1 var(--f-num); color: #ffe39a; }
 .po-row small { font-size: calc(var(--u) * 1.5); color: var(--muted); min-height: 1.2em; }
 
+.po-info { margin: calc(var(--u) * -.4) 0 calc(var(--u) * 1.4); font-size: calc(var(--u) * 2.1); color: var(--muted); text-align: center; }
+.po-info b { color: #ffe39a; }
+
 button { touch-action: manipulation; }
 </style>
 </head>
-<body data-ver="mwtl51b2">
+<body data-ver="mwtl8wpx">
 <div id="stage" lang="tr">
   <div class="app">
     <header class="top">
@@ -2464,8 +2467,8 @@ function quickPlay() {
 
 /* ---------- Çip hesabı ---------- */
 // Ödül dağıtımı: 1. ortadakinden (2.'nin iadesi düşüldükten sonra) kalanı alır, 2. kendi bahsini geri alır.
-// Kazanandan masa ücreti (%5) kesilir. Eşlide kazanan takım ortadakini paylaşır, ücret yine kesilir.
-const TABLE_FEE = 0.05;
+// Kazanandan masa ücreti (%7) kesilir. Eşlide kazanan takım ortadakini paylaşır, ücret yine kesilir.
+const TABLE_FEE = 0.07;
 function payouts(totals, bet, team) {
   const pot = bet * 4, pay = [0, 0, 0, 0], fee = [0, 0, 0, 0];
   const cut = (i, amt) => { const f = Math.round(amt * TABLE_FEE); fee[i] = f; pay[i] = amt - f; };
@@ -2494,7 +2497,8 @@ function lobbySettle() {
   const order = [0, 1, 2, 3].sort((a, b) => r.pay[b] - r.pay[a]);
   const rows = order.map(i => '<div class="po-row' + (i === 0 ? ' me' : '') + '"><span>' + G.players[i].name + '</span><b>' + (r.pay[i] ? '+' + chipFmt(r.pay[i]) : '0') + '</b>' + (r.fee[i] ? '<small>masa ücreti −' + chipFmt(r.fee[i]) + '</small>' : r.pay[i] && r.pay[i] <= T.bet ? '<small>bahis iadesi</small>' : '<small></small>') + '</div>').join('');
   T.resHTML = '<div class="lb-res ' + (net > 0 ? 'good' : net < 0 ? 'bad' : '') + '"><i class="coin"></i>' + (net > 0 ? '+' + chipFmt(net) : net < 0 ? '−' + chipFmt(-net) : '±0') + ' çip <small>Bakiye: ' + chipFmt(wallet().chips) + '</small></div>' +
-    '<div class="po">' + rows + '</div>';
+    '<div class="po">' + rows + '</div>' +
+    '<p class="po-info">' + (G.cfg.team ? 'Kazanan takım ortadaki çipleri paylaşır. Kazananların payından <b>%' + Math.round(TABLE_FEE * 100) + ' masa ücreti</b> kesilir.' : 'Birinci, ortadaki çiplerin kalanını alır ve kazancından <b>%' + Math.round(TABLE_FEE * 100) + ' masa ücreti</b> kesilir. İkinci, yatırdığı çipi geri alır.') + '</p>';
   return T.resHTML;
 }
 function showTableMenu() {
