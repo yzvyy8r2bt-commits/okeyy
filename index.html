@@ -367,7 +367,7 @@ button { font-family: inherit; }
   background: rgba(0, 0, 0, .4); border: 1px solid rgba(255, 201, 60, .45); color: #ffe39a; }
 .btn.glow { animation: lbglow 1.6s ease-in-out infinite; }
 @keyframes lbglow { 50% { box-shadow: 0 0 calc(var(--u) * 2.4) rgba(255, 187, 51, .8); } }
-.lb-salons { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: calc(var(--u) * 1.8); }
+.lb-salons { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: calc(var(--u) * 1.8); }
 .lb-salon { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: calc(var(--u) * .8); text-align: left; cursor: pointer; color: #fff; font-family: var(--f-ui);
   border: 0; border-radius: calc(var(--u) * 2.6); padding: calc(var(--u) * 2.4) calc(var(--u) * 2.2); overflow: hidden;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .14), 0 calc(var(--u) * 1) calc(var(--u) * 3) rgba(0, 0, 0, .45); }
@@ -423,6 +423,11 @@ button { font-family: inherit; }
 .lb-betl { display: flex; align-items: center; justify-content: space-between; }
 .lb-betl b { display: flex; align-items: center; font: 800 calc(var(--u) * 2.8)/1 var(--f-num); color: #ffe39a; letter-spacing: 0; text-transform: none; }
 .lb-salons > .lb-salon { align-self: stretch; height: 100%; margin: 0; }
+
+.lb-salon.king { background: linear-gradient(160deg, #a0182e, #3d0610); }
+.lb-salon { padding: calc(var(--u) * 2) calc(var(--u) * 1.8); }
+.lb-sn { font-size: calc(var(--u) * 4.6); }
+.lb-row b { font-size: calc(var(--u) * 2.7); }
 
 button { touch-action: manipulation; }
 </style>
@@ -2007,10 +2012,11 @@ if (typeof module !== 'undefined' && module.exports) {
 
 /* ---------- Lobi: salonlar, masalar, çip (şimdilik cihazda; online sürümde sunucuya taşınacak) ---------- */
 const SALONS = [
-  { id: 'cayci', name: 'Çaycı', sub: 'Yeni başlayanlar', min: 1000, max: 5000, step: 500, hue: 'tea' },
-  { id: 'kahveci', name: 'Kahveci', sub: 'Mahallenin müdavimleri', min: 10000, max: 50000, step: 5000, hue: 'coffee' },
-  { id: 'usta', name: 'Usta', sub: 'Masanın ağır topları', min: 100000, max: 500000, step: 50000, hue: 'master' },
-  { id: 'efsane', name: 'Efsane', sub: 'Sadece büyükler', min: 1000000, max: 5000000, step: 500000, hue: 'legend' }
+  { id: 'cayci', name: 'Çaycı', sub: 'Yeni başlayanlar', min: 1000, max: 10000, step: 1000, hands: [1], hue: 'tea' },
+  { id: 'kahveci', name: 'Kahveci', sub: 'Mahallenin müdavimleri', min: 10000, max: 50000, step: 5000, hands: [1, 2], hue: 'coffee' },
+  { id: 'usta', name: 'Usta', sub: 'Masanın ağır topları', min: 50000, max: 150000, step: 10000, hands: [1, 2, 4], hue: 'master' },
+  { id: 'efsane', name: 'Efsane', sub: 'Sadece büyükler', min: 150000, max: 1000000, step: 50000, hands: [1, 2, 4, 8], hue: 'legend' },
+  { id: 'kral', name: 'Kral', sub: 'Kahvenin sahibi', min: 5000000, max: 100000000, step: 5000000, hands: [1, 2, 4, 8, 12], hue: 'king' }
 ];
 const START_CHIPS = 50000, DAILY_GIFT = 5000, ENTRY_MULT = 10;
 const BOT_NAMES = ['Ahmet', 'Mehmet', 'Ayşe', 'Fatma', 'Hasan', 'Hüseyin', 'Zeynep', 'Emine', 'Mustafa', 'Ali', 'Hatice', 'Osman', 'Yusuf', 'Elif', 'İbrahim', 'Murat', 'Serkan', 'Gül', 'Kemal', 'Sevim', 'Cemil', 'Nuri', 'Recep', 'Dilek', 'Erol', 'Tülay', 'Bayram', 'Şükrü'];
@@ -2045,7 +2051,7 @@ function genTables(si) {
     for (const i of idx) { let n; do { n = rnd(BOT_NAMES); } while (used.has(n) && used.size < BOT_NAMES.length - 4); used.add(n); seats[i] = n; }
     out.push({
       id: si + '-' + k + '-' + Date.now(), salon: si, bet: Math.min(bet, s.max),
-      hands: rnd([1, 2, 2, 4, 4, 8]), team: Math.random() < .3, mode: Math.random() < .7 ? 'katlamali' : 'klasik', hard: Math.random() < .3,
+      hands: rnd(s.hands), team: Math.random() < .3, mode: Math.random() < .7 ? 'katlamali' : 'klasik', hard: Math.random() < .3,
       pen: { gosterge: Math.random() < .6, rekor: Math.random() < .7, okeyCal: true, yanAc: Math.random() < .8, herTas: Math.random() < .6 },
       seats
     });
@@ -2079,6 +2085,7 @@ function showLobby() {
       '<span class="lb-sn">' + s.name + '</span><span class="lb-ss">' + s.sub + '</span>' +
       '<span class="lb-row"><small>Bahis</small><b>' + chipShort(s.min) + ' – ' + chipShort(s.max) + '</b></span>' +
       '<span class="lb-row"><small>En az giriş</small><b>' + chipShort(salonEntry(s)) + '</b></span>' +
+      '<span class="lb-row"><small>El sayısı</small><b>' + s.hands.join(' · ') + '</b></span>' +
       (ok ? '<span class="lb-go">Masalara bak</span>' : '<span class="lb-lock">Yetersiz çip</span>') + '</button>';
   }).join('');
   el.innerHTML = topBar() + '<div class="lb-salons">' + cards + '</div>' +
@@ -2113,6 +2120,7 @@ function hideLobby() { const el = document.getElementById('lobby'); if (el) el.h
 /* ---------- Masa Aç ---------- */
 function showCreate() {
   const s = SALONS[LB.salon], st = UI.settings;
+  if (!s.hands.includes(st.hands)) st.hands = s.hands[s.hands.length - 1];
   const maxOk = Math.max(s.min, Math.min(s.max, Math.floor(wallet().chips / ENTRY_MULT / s.step) * s.step));
   if (!LB.cBet || LB.cBet < s.min || LB.cBet > maxOk) LB.cBet = s.min;
   openModal('<div class="menu-c"><h2>Masa Aç · ' + s.name + '</h2><p class="sub">Bahis: herkes ortaya koyar, en düşük puanlı oyuncu ortadakini alır.</p>' +
@@ -2120,7 +2128,7 @@ function showCreate() {
     '<div class="field"><div class="lbl lb-betl">Bahis <b id="lbBetV"><i class="coin"></i>' + chipFmt(LB.cBet) + '</b></div><div class="lb-slider"><input type="range" id="lbBet" min="' + s.min + '" max="' + maxOk + '" step="' + s.step + '" value="' + LB.cBet + '"></div></div>' +
     seg('mode', 'Oyun', [['klasik', 'Klasik 101'], ['katlamali', 'Katlamalı 101']], st.mode) +
     seg('team', 'Biçim', [[false, 'Tek'], [true, 'Eşli']], st.team) +
-    seg('hands', 'El sayısı', [[1, '1'], [2, '2'], [4, '4'], [8, '8']], st.hands) +
+    seg('hands', 'El sayısı', s.hands.map(h => [h, String(h)]), st.hands) +
     '</div><div class="field"><div class="lbl">Oyun modları</div><div class="chips">' +
     MODE_CHIPS.map(c => '<button type="button" class="mchip' + (chipOn(c[0]) ? ' on' : '') + '" data-tog="' + c[0] + '"><i></i><span><b>' + c[1] + '</b><small>' + c[2] + '</small></span></button>').join('') +
     '</div></div></div>' +
@@ -2149,7 +2157,7 @@ function quickPlay() {
   const ok = tablesOf(si).filter(t => canSit(t.bet) && t.seats.some(x => !x));
   if (ok.length) return sitAt(rnd(ok));
   const s = SALONS[si];
-  sitAt({ id: 'q' + Date.now(), salon: si, bet: s.min, hands: 2, team: false, mode: 'katlamali', hard: false, pen: Object.assign({}, UI.settings.pen), seats: [null, null, null, null] });
+  sitAt({ id: 'q' + Date.now(), salon: si, bet: s.min, hands: s.hands[Math.min(1, s.hands.length - 1)], team: false, mode: 'katlamali', hard: false, pen: Object.assign({}, UI.settings.pen), seats: [null, null, null, null] });
 }
 
 /* ---------- Çip hesabı ---------- */
@@ -2203,7 +2211,8 @@ function lobbyAct(a) {
   if (a === 'lb-create-go') {
     saveSettings();
     const st = UI.settings;
-    sitAt({ id: 'c' + Date.now(), salon: LB.salon, bet: LB.cBet, hands: st.hands, team: st.team, mode: st.mode, hard: st.hard, pen: Object.assign({}, st.pen), seats: [null, null, null, null] });
+    const sh = SALONS[LB.salon].hands;
+    sitAt({ id: 'c' + Date.now(), salon: LB.salon, bet: LB.cBet, hands: sh.includes(st.hands) ? st.hands : sh[sh.length - 1], team: st.team, mode: st.mode, hard: st.hard, pen: Object.assign({}, st.pen), seats: [null, null, null, null] });
     return;
   }
   if (a === 'lb-leave') { toast('Masadan kalktın: ' + chipFmt(UI.table.bet) + ' çip gitti', 'bad'); showLobby(); return; }
@@ -2223,7 +2232,7 @@ const UI = {
 let drag = null;
 
 function loadSettings() {
-  try { const s = JSON.parse(localStorage.getItem('okey101.settings') || 'null'); if (s) Object.assign(UI.settings, s); if (![1, 2, 4, 8].includes(UI.settings.hands)) UI.settings.hands = 4; UI.settings.pen = Object.assign({ gosterge: true, rekor: true, okeyCal: true, yanAc: true, herTas: true }, UI.settings.pen || {}); UI.settings.speed = 'normal'; } catch (e) { /* depolama yok */ }
+  try { const s = JSON.parse(localStorage.getItem('okey101.settings') || 'null'); if (s) Object.assign(UI.settings, s); if (![1, 2, 4, 8, 12].includes(UI.settings.hands)) UI.settings.hands = 4; UI.settings.pen = Object.assign({ gosterge: true, rekor: true, okeyCal: true, yanAc: true, herTas: true }, UI.settings.pen || {}); UI.settings.speed = 'normal'; } catch (e) { /* depolama yok */ }
 }
 function saveSettings() {
   try { localStorage.setItem('okey101.settings', JSON.stringify(UI.settings)); } catch (e) { /* depolama yok */ }
