@@ -304,6 +304,22 @@ button { font-family: inherit; }
 .lim b { color: var(--amber); font-family: var(--f-num); font-size: 1.15em; }
 .lim[hidden] { display: none; }
 
+/* sade ayarlar menüsü */
+.menu-c h2 { margin-bottom: 0; }
+.menu-c .sub { margin-bottom: calc(var(--u) * 1.4); }
+.mgrid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: calc(var(--u) * 2.4); align-items: start; }
+.menu-c .field { margin-bottom: calc(var(--u) * 1.3); }
+.menu-c .field .lbl { font-size: calc(var(--u) * 1.9); margin-bottom: calc(var(--u) * .5); }
+.menu-c .seg button { min-height: calc(var(--u) * 5.2); font-size: calc(var(--u) * 2.5); }
+.chips { display: flex; flex-direction: column; gap: calc(var(--u) * .7); }
+.mchip { display: flex; align-items: center; gap: calc(var(--u) * 1.1); border: 1px solid rgba(255, 255, 255, .12); background: rgba(0, 0, 0, .35); color: var(--ink);
+  border-radius: calc(var(--u) * 1.2); padding: 0 calc(var(--u) * 1.3); min-height: calc(var(--u) * 5); font: 700 calc(var(--u) * 2.4) var(--f-ui); cursor: pointer; text-align: left; }
+.mchip i { width: calc(var(--u) * 2.6); height: calc(var(--u) * 2.6); border-radius: calc(var(--u) * .6); border: 2px solid rgba(255, 255, 255, .35); flex: none; position: relative; }
+.mchip.on { border-color: rgba(255, 187, 51, .7); background: rgba(255, 187, 51, .12); }
+.mchip.on i { background: var(--amber); border-color: var(--amber); }
+.mchip.on i::after { content: ''; position: absolute; left: 30%; top: 10%; width: 30%; height: 55%; border: solid var(--amber-ink); border-width: 0 .22em .22em 0; transform: rotate(45deg); }
+.mchip:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+
 button { touch-action: manipulation; }
 </style>
 </head>
@@ -910,11 +926,12 @@ function pairsNeed() { return G.cfg.mode === 'katlamali' ? Math.max(5, G.maxPair
 function fail(msg) { return { ok: false, msg }; }
 function tableMeldById(id) { return G.table.find(m => m.id === id); }
 const PEN_DEFS = [
+  ['rekor', 'Rekorlu', '150+ puanla ya da 7+ çiftle açana −101 rekor ödülü'],
   ['okeyCal', 'Okey çalma', 'Perdeki okeyi çalınan oyuncuya 101 ceza'],
   ['yanAc', 'Yandan taş alıp açma', 'Yandan alınan taşla açılırsa taşı atana taş×10 (çiftte ×20) ceza'],
   ['herTas', 'Her taş ceza', 'Elini açtıktan sonra yandan alıp per veya çift indirdiğin taşın sahibine taş×10 (çiftte ×20) ceza']
 ];
-const PEN_KEYS = { okeyCal: 1, yanAc: 1, herTas: 1 };
+const PEN_KEYS = { rekor: 1, okeyCal: 1, yanAc: 1, herTas: 1 };
 function penOn(k) { return !PEN_KEYS[k] || !G.cfg.pen || G.cfg.pen[k] !== false; }
 const LAST_MSG = 'Elini bitirmek için son taşını atmalısın: elinde en az bir taş kalmalı.';
 // Geri alma / son taş koruması için anlık görüntü
@@ -940,6 +957,7 @@ function restoreSnap(P, s) {
 // Rekor ödülü: 150+ puanla ya da 7+ çiftle açan en yüksek açana −101 yazılır
 const REC_MIN = { seri: 150, cift: 7 };
 function awardRecord(P, kind, val) {
+  if (!penOn('rekor')) return;
   if (val < REC_MIN[kind]) return;
   const cur = G.rec[kind];
   if (cur && val <= cur.val) return;
@@ -1775,13 +1793,13 @@ if (typeof module !== 'undefined' && module.exports) {
 const $ = id => document.getElementById(id);
 const UI = {
   selected: new Set(), prefer: 'seri', drawerOpen: false,
-  settings: { pen: { okeyCal: true, yanAc: true, herTas: true }, mode: 'katlamali', hands: 4, team: false, speed: 'normal', sound: true, hint: false, hard: false },
+  settings: { pen: { rekor: true, okeyCal: true, yanAc: true, herTas: true }, mode: 'katlamali', hands: 4, team: false, speed: 'normal', sound: true, hint: false, hard: false },
   statusMsg: null, statusUntil: 0, lastTap: null, acceptIds: new Set(), swapKeys: new Set(), tickerLines: [], hitBot: -1
 };
 let drag = null;
 
 function loadSettings() {
-  try { const s = JSON.parse(localStorage.getItem('okey101.settings') || 'null'); if (s) Object.assign(UI.settings, s); if (![1, 2, 4, 8].includes(UI.settings.hands)) UI.settings.hands = 4; UI.settings.pen = Object.assign({ okeyCal: true, yanAc: true, herTas: true }, UI.settings.pen || {}); } catch (e) { /* depolama yok */ }
+  try { const s = JSON.parse(localStorage.getItem('okey101.settings') || 'null'); if (s) Object.assign(UI.settings, s); if (![1, 2, 4, 8].includes(UI.settings.hands)) UI.settings.hands = 4; UI.settings.pen = Object.assign({ rekor: true, okeyCal: true, yanAc: true, herTas: true }, UI.settings.pen || {}); UI.settings.speed = 'normal'; } catch (e) { /* depolama yok */ }
 }
 function saveSettings() {
   try { localStorage.setItem('okey101.settings', JSON.stringify(UI.settings)); } catch (e) { /* depolama yok */ }
@@ -2088,22 +2106,19 @@ function seg(key, label, opts, cur) {
   return '<div class="field"><div class="lbl">' + label + '</div><div class="seg" data-seg="' + key + '">' +
     opts.map(o => '<button data-segv="' + o[0] + '" class="' + (String(o[0]) === String(cur) ? 'on' : '') + '">' + o[1] + '</button>').join('') + '</div></div>';
 }
+const MODE_CHIPS = [['pen.rekor', 'Rekorlu'], ['pen.okeyCal', 'Okey çalmalı'], ['pen.herTas', 'Her taş cezalı'], ['pen.yanAc', 'Yandan açma cezalı'], ['hard', 'Yardımsız']];
+function chipOn(k) { return k.indexOf('pen.') === 0 ? UI.settings.pen[k.slice(4)] !== false : !!UI.settings[k]; }
 function showMenu(first) {
   const s = UI.settings;
-  openModal('<h2>101 Okey</h2><p class="sub">' + (first ? 'Kahve usulü, üç yapay zekaya karşı. Düşük puan kazanır.' : 'Ayarlar. "Oyunu Başlat" yeni bir oyun başlatır.') + '</p>' +
-    seg('mode', 'Oyun modu', [['klasik', 'Klasik 101'], ['katlamali', 'Katlamalı 101']], s.mode) +
-    seg('team', 'Oyun biçimi', [[false, 'Tek'], [true, 'Eşli (Sen + Mehmet)']], s.team) +
-    seg('hands', 'El sayısı', [[1, '1 El'], [2, '2 El'], [4, '4 El'], [8, '8 El']], s.hands) +
-    seg('speed', 'Bot hızı', [['normal', 'Normal'], ['fast', 'Hızlı']], s.speed) +
-    seg('sound', 'Ses', [[true, 'Açık'], [false, 'Kapalı']], s.sound) +
-    seg('hard', 'Yardımsız mod', [[false, 'Kapalı'], [true, 'Açık']], s.hard) +
-    '<div class="mrow"><button class="btn pri" data-act="start">Oyunu Başlat</button><button class="btn" data-act="rules">Kurallar</button><button class="btn" data-act="penmenu">Cezalar</button>' + (first ? '' : '<button class="btn" data-act="close">Vazgeç</button>') + '</div>');
-}
-function showPenalties() {
-  const s = UI.settings;
-  openModal('<h2>Cezalar</h2><p class="sub">Hangi cezaların uygulanacağını seç. Kapattığın ceza yazılmaz. Değişiklik yeni oyunda geçerli olur.</p>' +
-    PEN_DEFS.map(d => seg('pen.' + d[0], d[1] + ' <small style="opacity:.6;font-weight:400">· ' + d[2] + '</small>', [[true, 'Açık'], [false, 'Kapalı']], s.pen[d[0]])).join('') +
-    '<div class="mrow"><button class="btn pri" data-act="menu">Tamam</button></div>');
+  openModal('<div class="menu-c"><h2>101 Okey</h2><p class="sub">' + (first ? 'Kahve usulü. Düşük puan kazanır.' : '"Oyunu Başlat" yeni bir oyun başlatır.') + '</p>' +
+    '<div class="mgrid"><div>' +
+    seg('mode', 'Oyun', [['klasik', 'Klasik 101'], ['katlamali', 'Katlamalı 101']], s.mode) +
+    seg('team', 'Biçim', [[false, 'Tek'], [true, 'Eşli']], s.team) +
+    seg('hands', 'El sayısı', [[1, '1'], [2, '2'], [4, '4'], [8, '8']], s.hands) +
+    '</div><div class="field"><div class="lbl">Oyun modları</div><div class="chips">' +
+    MODE_CHIPS.map(c => '<button type="button" class="mchip' + (chipOn(c[0]) ? ' on' : '') + '" data-tog="' + c[0] + '"><i></i>' + c[1] + '</button>').join('') +
+    '</div></div></div>' +
+    '<div class="mrow"><button class="btn pri" data-act="start">Oyunu Başlat</button><button class="btn" data-act="rules">Kurallar</button>' + (first ? '' : '<button class="btn" data-act="close">Vazgeç</button>') + '</div></div>');
 }
 function showRules(back) {
   openModal('<h2>Kurallar</h2><div class="rules">' +
@@ -2111,7 +2126,7 @@ function showRules(back) {
     '<h3>El açma</h3><ul><li>Seri: en az 3 taşlı perlerle (aynı renk ardışık ya da farklı renkte aynı sayı) en az 101 puan. 1 taşı yalnızca başta (1-2-3) kullanılır ve 1 puandır; 12-13-1 per olmaz.</li><li>Çift: en az 5 çift. Çift açan hem çift hem seri perlere işleyebilir; ama bir turda bir perin her ucuna (sağ ve sol) en fazla 2 taş işleyebilir, okey çalabilir.</li><li>Katlamalı modda masadaki en yüksek açılışı geçmek gerekir (seri puanı ya da çift sayısı).</li><li>Istakada yan yana (boşluksuz) duran taşlar bir per sayılır. Yeşil çizgi per, altın çizgi çift demektir.</li></ul>' +
     '<h3>İşleme ve okey çalma</h3><ul><li>Elini açtıysan yerdeki perlere taş işleyebilirsin: taşı seçip pere dokun ya da sürükle. Yardımsız mod kapalıyken Tümünü İşle düğmesi işlenebilen tüm taşları işler.</li><li>Yandan aldığın taşı mutlaka kullanmalısın: elin kapalıysa onunla el açarsın, açıksa pere işler ya da yeni per (çift açtıysan çift) indirirsin. Kullanamayacağını anlarsan taşı Yan kutusuna geri sürükle: ceza yok, ama o turda desteden çekersin.</li><li>Yandan aldığın taşla yanlış el açmaya çalışırsan (puan yetmiyor, Katlamalıda rakibi geçemiyorsun) +101 ceza yersin ve taş geri gider. Yandan taş almadan başarısız el açmaya çalışmak da +101 cezadır.</li><li>Masada hem seri hem çift açan varsa, seri açan oyuncu da elindeki çiftleri Çift Aç düğmesiyle indirebilir (bir turda en fazla 2 çift; sıra tekrar gelince 2 çift daha). Yandan aldığı taşla çift indirirse taşı atana ×10 ceza yazılır (çift açan çift indirirse ×20).</li><li>Her taş ceza: elini açtıktan sonra yandan aldığın taşla yeni per ya da çift indirirsen o taşı atan oyuncu taş sayısı ×10 (çiftte ×20) ceza yer. Yandan aldığın taşı elindeki taşla bağlayıp (örneğin yerde kırmızı 3-4-5, elinde 6, yandan 7) pere işlersen de ceza yazılır; çift açan bunu yaparsa ×10, çift indirirse ×20 yazılır.</li><li>Yandan aldığın taşla el açarsan o taşı atan oyuncu, taş sayısı ×10 (çift açtıysan ×20) ceza yer.</li><li>Yan oyuncu işlek taş atıp 101 ceza yediyse, o taşı yandan alınca cezası 101 yerine taş sayısı ×10 olur (alana ceza yok).</li><li>Bir oyuncunun perde bıraktığı okeyi çalarsan okeyi bırakan oyuncuya 101 ceza yazılır (kendi okeyini alırsan ceza yok).</li><li>Perdeki okeyi almak için yerine tam olarak temsil ettiği taşı koymalısın; okey ıstakana gelir. Çiftteki okey de, çiftin eşi olan taşla alınabilir (eşin değilse okeyi bırakana 101 ceza).</li><li>Masadaki bir okeyin (seri ya da çift) yerini tutan taşı atmak işlek sayılır: atan 101 ceza yer.</li></ul>' +
     '<h3>Ceza ve puan</h3><ul><li>Yanlışa taş atma: attığın taş masadaki bir pere işleniyorsa +101 ceza.</li><li>El sonunda eli açmamış oyuncuya 202. Eli açan, kalan taşlarının toplamını yazar; elinde okey kalırsa +101 ekstra.</li><li>Bitiren −101 alır. Kafa (kimse el açmamışken eli açıp aynı turda son taşı atarak bitirmek) ×2, okey atarak bitme ×2, ikisi birlikte (okey kafa) ×4 çarpan uygular. Başkası açtıktan sonra aynı turda açıp bitirmek normal bitiştir. Çift açıp bitiren −202 alır, rakiplerin kalan puanı ×2 olur. Eli ortada okey atmak 101 cezadır.</li><li>Deste biterse el berabere biter, herkes kalan taşına göre yazılır.</li></ul>' +
-    '<h3>Cezalar menüsü</h3><ul><li>Ayarlar içindeki Cezalar bölümünden okey çalma, yandan taş alıp açma ve her taş ceza tek tek açılıp kapatılabilir. Kapalı ceza uygulanmaz.</li></ul><h3>El açma ve bitirme</h3><ul><li>Rekor ödülü: 150 ve üzeri puanla ya da 7 ve üzeri çiftle el açan −101 kazanır. Seri ve çift için ödül ayrıdır. Daha yüksek açan olursa ödül ona geçer, öncekinin ödülü silinir.</li><li>Katlamalıda rakibin açtığı sayıyı geçemiyorsan bile, işlek yapmadan elindeki taşlardan tek taş kalacak şekilde 101+ puanla açabilirsen eli açabilir ve o son taşı atıp bitirebilirsin. Rakibin sayısı aranmaz. Bu normal bitiş sayılır (kimse açmamışsa kafa).</li><li>Eli açarken tüm taşlarını indiremezsin: elinde en az bir taş kalmalı. Eli son taşını sağına atarak bitirirsin. Kimse açmadan aynı turda açıp bitirmek kafadır.</li><li>El açtığın turda Geri Topla düğmesiyle indirdiklerini geri alabilirsin. Düzeltip yeniden açabilirsen ceza yok; açamazsan ya da açmadan taş atarsan +101 yanlış el açma cezası yazılır.</li><li>Çift açan oyuncu eli bitirememişse kalan taşının 2 katı yazılır. Rakip okeyle ya da çiftle bitirirse bu 4 kata, seri açanın cezası 2 kata çıkar.</li></ul><h3>Eşli oyun</h3><ul><li>Ayarlardan Eşli seçilirse Sen ile Mehmet (karşılıklı oturanlar) bir takım, Ahmet ile Ayşe rakip takım olur.</li><li>Eli bitiren oyuncunun eşine o el için puan yazılmaz (0), ama eş bitirmeden önce ceza yediyse o ceza yazılır. Eşe katlama yoktur. Rakiplere olağan puanlar yazılır.</li><li>Eşinin perde bıraktığı okeyi çalarsan eşine ceza yazılmaz.</li><li>Oyun sonunda iki oyuncunun toplamı takım puanıdır; düşük olan takım kazanır. El sayısı 1, 2, 4 ya da 8 seçilebilir (Tek oyunda da).</li></ul><h3>Yardımsız mod</h3><ul><li>Ayarlardan açılır, Klasik ve Katlamalı ile birlikte oynanır. Istakadaki per ve çift çizgileri görünmez, taş seçince işleyeceği perler parlamaz, işlek taş ipucu çalışmaz. Perleri kendin dizmelisin.</li></ul><h3>Kontroller</h3><ul><li>Taşa dokun: seç. Sürükle: yerleştir; taşı atmak için Attığın alanına, işlemek için pere bırak.</li><li>Seri Diz ve Çift Diz, ıstakayı en iyi dizilimle düzenler.</li></ul></div>' +
+    '<h3>Oyun modları</h3><ul><li>Ayarlardaki Oyun modları bölümünden Rekorlu, Okey çalmalı, Her taş cezalı, Yandan açma cezalı ve Yardımsız seçenekleri tek tek açılıp kapatılabilir. Kapalı olan kural uygulanmaz. Değişiklik yeni oyunda geçerli olur.</li></ul><h3>El açma ve bitirme</h3><ul><li>Rekor ödülü: 150 ve üzeri puanla ya da 7 ve üzeri çiftle el açan −101 kazanır. Seri ve çift için ödül ayrıdır. Daha yüksek açan olursa ödül ona geçer, öncekinin ödülü silinir.</li><li>Katlamalıda rakibin açtığı sayıyı geçemiyorsan bile, işlek yapmadan elindeki taşlardan tek taş kalacak şekilde 101+ puanla açabilirsen eli açabilir ve o son taşı atıp bitirebilirsin. Rakibin sayısı aranmaz. Bu normal bitiş sayılır (kimse açmamışsa kafa).</li><li>Eli açarken tüm taşlarını indiremezsin: elinde en az bir taş kalmalı. Eli son taşını sağına atarak bitirirsin. Kimse açmadan aynı turda açıp bitirmek kafadır.</li><li>El açtığın turda Geri Topla düğmesiyle indirdiklerini geri alabilirsin. Düzeltip yeniden açabilirsen ceza yok; açamazsan ya da açmadan taş atarsan +101 yanlış el açma cezası yazılır.</li><li>Çift açan oyuncu eli bitirememişse kalan taşının 2 katı yazılır. Rakip okeyle ya da çiftle bitirirse bu 4 kata, seri açanın cezası 2 kata çıkar.</li></ul><h3>Eşli oyun</h3><ul><li>Ayarlardan Eşli seçilirse Sen ile Mehmet (karşılıklı oturanlar) bir takım, Ahmet ile Ayşe rakip takım olur.</li><li>Eli bitiren oyuncunun eşine o el için puan yazılmaz (0), ama eş bitirmeden önce ceza yediyse o ceza yazılır. Eşe katlama yoktur. Rakiplere olağan puanlar yazılır.</li><li>Eşinin perde bıraktığı okeyi çalarsan eşine ceza yazılmaz.</li><li>Oyun sonunda iki oyuncunun toplamı takım puanıdır; düşük olan takım kazanır. El sayısı 1, 2, 4 ya da 8 seçilebilir (Tek oyunda da).</li></ul><h3>Yardımsız mod</h3><ul><li>Ayarlardan açılır, Klasik ve Katlamalı ile birlikte oynanır. Istakadaki per ve çift çizgileri görünmez, taş seçince işleyeceği perler parlamaz, işlek taş ipucu çalışmaz. Perleri kendin dizmelisin.</li></ul><h3>Kontroller</h3><ul><li>Taşa dokun: seç. Sürükle: yerleştir; taşı atmak için Attığın alanına, işlemek için pere bırak.</li><li>Seri Diz ve Çift Diz, ıstakayı en iyi dizilimle düzenler.</li></ul></div>' +
     '<div class="mrow"><button class="btn pri" data-act="' + (back ? 'menu' : 'close') + '">' + (back ? 'Geri' : 'Kapat') + '</button></div>');
 }
 function showHandEnd(rec, last) {
@@ -2145,7 +2160,7 @@ function showGameEnd() {
 function startNew() {
   closeModal(); UI.selected.clear(); UI.prefer = 'seri'; UI.statusMsg = null;
   saveSettings();
-  newGame({ mode: UI.settings.mode, hands: UI.settings.hands, team: UI.settings.team, speed: UI.settings.speed, hard: UI.settings.hard, pen: UI.settings.pen });
+  newGame({ mode: UI.settings.mode, hands: UI.settings.hands, team: UI.settings.team, speed: 'normal', hard: UI.settings.hard, pen: UI.settings.pen });
 }
 
 /* ---------- Eylemler ---------- */
@@ -2173,7 +2188,6 @@ function act(a) {
     case 'score': toggleDrawer(true); break;
     case 'rules': showRules(!!$('modal').classList.contains('show') && !!document.querySelector('[data-act="start"]')); break;
     case 'menu': showMenu(false); break;
-    case 'penmenu': showPenalties(); break;
     case 'settings': showMenu(false); break;
     case 'sound': UI.settings.sound = !UI.settings.sound; saveSettings(); initAudio(); render(); break;
     case 'start': startNew(); break;
@@ -2433,6 +2447,12 @@ function init() {
     if (UI.noClick && Date.now() - UI.noClick < 400) return;
     const b = e.target.closest('[data-act]');
     if (b && !b.disabled) { act(b.dataset.act); return; }
+    const tg = e.target.closest('[data-tog]');
+    if (tg) {
+      const k = tg.dataset.tog, v = !chipOn(k);
+      if (k.indexOf('pen.') === 0) UI.settings.pen[k.slice(4)] = v; else UI.settings[k] = v;
+      tg.classList.toggle('on', v); saveSettings(); return;
+    }
     const sg = e.target.closest('[data-segv]');
     if (sg) {
       const key = sg.parentNode.dataset.seg;
@@ -2479,7 +2499,7 @@ function init() {
   document.addEventListener('visibilitychange', () => { if (document.hidden && drag) endDrag({ pointerId: drag.pid, clientX: 0, clientY: 0 }, true); killGhosts(); });
   window.addEventListener('blur', e => endDrag(e, true));
   rack.addEventListener('contextmenu', e => e.preventDefault());
-  newGame({ mode: UI.settings.mode, hands: UI.settings.hands, team: UI.settings.team, speed: UI.settings.speed, hard: UI.settings.hard, pen: UI.settings.pen });
+  newGame({ mode: UI.settings.mode, hands: UI.settings.hands, team: UI.settings.team, speed: 'normal', hard: UI.settings.hard, pen: UI.settings.pen });
   showMenu(true);
 }
 init();
