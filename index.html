@@ -715,7 +715,7 @@ button { font-family: inherit; }
 button { touch-action: manipulation; }
 </style>
 </head>
-<body data-ver="mwtoc5uh">
+<body data-ver="mwtogbse">
 <div id="stage" lang="tr">
   <div class="app">
     <header class="top">
@@ -3649,12 +3649,13 @@ function fmt(n) { return n < 0 ? '−' + Math.abs(n) : String(n); }
 /* ---------- Render ---------- */
 function render() {
   if (!G) return;
-  if (drag) { UI.dirty = true; return; }
-  UI.dirty = false;
+  const dragging = !!drag;       // sürüklerken masa, rakipler ve sayaçlar güncellenmeye devam eder; sadece ıstaka bekler
+  UI.dirty = dragging;
   const P = G.players[0];
   for (const id of Array.from(UI.selected)) if (!P.slots || !P.slots.some(t => t && t.id === id)) UI.selected.delete(id);
   computeHighlights();
-  renderHeader(); renderBots(); renderMe(); renderMyGift(); renderCenter(); renderMelds(); renderTicker(); renderRack(); renderActions(); renderStatus();
+  renderHeader(); renderBots(); renderMe(); renderMyGift(); renderCenter(); renderMelds(); renderTicker(); if (!dragging) renderRack(); renderActions(); renderStatus();
+  if (dragging && drag.target && !drag.target.isConnected) drag.target = null;
   if (UI.drawerOpen) renderScore();
 }
 function renderHeader() {
@@ -4311,7 +4312,6 @@ function botClock(now, dt) {
 }
 function clockTick() {
   const now = Date.now(), dt = now - (UI.cLast || now); UI.cLast = now;
-  if (drag && drag.moved) { if (UI.cEnd) UI.cEnd += dt; return; }   // sürüklerken ekrana dokunma: akıcılık
   try { botClock(now, dt); } catch (e) { /* yok say */ }
   const key = clockKey(), el = $('clock');
   if (!key) { if (el) el.hidden = true; UI.cKey = null; return; }
@@ -4320,7 +4320,7 @@ function clockTick() {
     UI.cKey = key; UI.cEnd = now + turnSec() * 1000;
   }
   const paused = document.hidden || $('modal').classList.contains('show') || (UI.drawerOpen === true);
-  if (paused || drag) UI.cEnd += dt;                    // pencere açıkken / sürüklerken süre durur
+  if (paused) UI.cEnd += dt;                            // pencere açıkken süre durur (sürüklerken akmaya devam eder)
   const left = Math.max(0, UI.cEnd - now), s = Math.ceil(left / 1000);
   if (el && el.dataset.s !== String(s)) {          // sadece saniye değişince ekranı güncelle
     el.dataset.s = s;
