@@ -8,14 +8,14 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="101 Okey">
+<meta name="apple-mobile-web-app-title" content="Kahve 101">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>101 Okey</title>
+<title>Kahve Usulü 101 Okey</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700;800&display=swap">
 <style>
 :root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
 body { margin: 0; }
-/* 101 Okey: yatay düzen. Tüm ölçüler --u birimiyle (JS: sahne yüksekliği/100) */
+/* Kahve Usulü 101 Okey: yatay düzen. Tüm ölçüler --u birimiyle (JS: sahne yüksekliği/100) */
 :root {
   color-scheme: dark;
   --bg0: #170a2e; --bg1: #2c1252; --bg2: #3b1a6b;
@@ -331,6 +331,8 @@ button { font-family: inherit; }
 /* gösterge rozeti (sadece ıstakada) */
 .tile .gb { position: absolute; left: 6%; top: 4%; font: 800 .26em/1 var(--f-ui); color: var(--amber-ink); background: var(--amber); border-radius: .3em; padding: .12em .28em; font-style: normal; pointer-events: none; }
 
+.brand em { font-style: normal; font-family: var(--f-ui); font-weight: 700; font-size: calc(var(--u) * 2.2); letter-spacing: .14em; text-transform: uppercase; color: #e9d3ff; align-self: center; margin-right: calc(var(--u) * .2); }
+
 button { touch-action: manipulation; }
 </style>
 </head>
@@ -338,7 +340,7 @@ button { touch-action: manipulation; }
 <div id="stage" lang="tr">
   <div class="app">
     <header class="top">
-      <div class="brand"><b>101</b><span>OKEY</span><small id="modeLbl"></small></div>
+      <div class="brand"><em>Kahve Usulü</em><b>101</b><span>OKEY</span><small id="modeLbl"></small></div>
       <div class="topbot" id="botTop"></div>
       <div class="top-actions">
         <button class="btn sm" id="btnScore" type="button">Yazboz</button>
@@ -2156,7 +2158,7 @@ const MODE_CHIPS = [
 function chipOn(k) { return k.indexOf('pen.') === 0 ? UI.settings.pen[k.slice(4)] !== false : !!UI.settings[k]; }
 function showMenu(first) {
   const s = UI.settings;
-  openModal('<div class="menu-c"><h2>101 Okey</h2><p class="sub">' + (first ? 'Kahve usulü. Düşük puan kazanır.' : '"Oyunu Başlat" yeni bir oyun başlatır.') + '</p>' +
+  openModal('<div class="menu-c"><h2>Kahve Usulü 101 Okey</h2><p class="sub">' + (first ? 'Üç yapay zekaya karşı. Düşük puan kazanır.' : '"Oyunu Başlat" yeni bir oyun başlatır.') + '</p>' +
     '<div class="mgrid"><div>' +
     seg('mode', 'Oyun', [['klasik', 'Klasik 101'], ['katlamali', 'Katlamalı 101']], s.mode) +
     seg('team', 'Biçim', [[false, 'Tek'], [true, 'Eşli']], s.team) +
@@ -2473,7 +2475,7 @@ function layout() {
   let rm = document.getElementById('rotMsg');
   if (!rm) {
     rm = document.createElement('div'); rm.id = 'rotMsg';
-    rm.innerHTML = '<div class="rot-ic"><div class="rot-ph"></div></div><b>Telefonu yan çevir</b><span>101 Okey yatay oynanır</span>';
+    rm.innerHTML = '<div class="rot-ic"><div class="rot-ph"></div></div><b>Telefonu yan çevir</b><span>Kahve Usulü 101 Okey yatay oynanır</span>';
     document.body.appendChild(rm);
   }
   rm.hidden = !(h > w);
