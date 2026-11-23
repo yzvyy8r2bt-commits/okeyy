@@ -342,6 +342,10 @@ button { font-family: inherit; }
 @keyframes clockp { 50% { opacity: .7; } }
 .clock[hidden] { display: none; }
 
+/* okey çevirme */
+.rack .slot { perspective: calc(var(--u) * 60); }
+.rack .tile.lifted { z-index: 5; box-shadow: 0 calc(var(--u) * 1.6) calc(var(--u) * 2.4) rgba(0, 0, 0, .55), 0 calc(var(--u) * .5) 0 var(--ivory-lip); }
+
 button { touch-action: manipulation; }
 </style>
 </head>
@@ -2268,7 +2272,7 @@ function showMenu(first) {
 }
 function showRules(back) {
   openModal('<h2>Kurallar</h2><div class="rules">' +
-    '<h3>Taşlar</h3><ul><li>1-13 arası 4 renk, ikişer takım ve 2 sahte okey: 106 taş.</li><li>Gösterge açılır, bir üstü Okey olur (13 ise 1). Gerçek okey her taşın yerine geçer. Sahte okey üzerinde halka ve yıldız işareti olan bir taştır; okey taşının yüzü yerine geçen sıradan bir taş gibi davranır, joker değildir. Gerçek okey ise sıradan taş gibi görünür; basılı tutunca beyaza döner.</li><li>Başlayana 22, diğerlerine 21 taş verilir. Başlayan çekmeden taş atar.</li></ul>' +
+    '<h3>Taşlar</h3><ul><li>1-13 arası 4 renk, ikişer takım ve 2 sahte okey: 106 taş.</li><li>Gösterge açılır, bir üstü Okey olur (13 ise 1). Gerçek okey her taşın yerine geçer. Sahte okey üzerinde halka ve yıldız işareti olan bir taştır; okey taşının yüzü yerine geçen sıradan bir taş gibi davranır, joker değildir. Gerçek okey ise sıradan taş gibi görünür; basılı tutunca hafifçe kalkıp ters döner (beyaz yüz), 0,6 saniye tutarsan ters kalır.</li><li>Başlayana 22, diğerlerine 21 taş verilir. Başlayan çekmeden taş atar.</li></ul>' +
     '<h3>El açma</h3><ul><li>Seri: en az 3 taşlı perlerle (aynı renk ardışık ya da farklı renkte aynı sayı) en az 101 puan. 1 taşı yalnızca başta (1-2-3) kullanılır ve 1 puandır; 12-13-1 per olmaz.</li><li>Çift: en az 5 çift. Çift açan hem çift hem seri perlere işleyebilir; ama bir turda bir perin her ucuna (sağ ve sol) en fazla 2 taş işleyebilir, okey çalabilir.</li><li>Katlamalı modda masadaki en yüksek açılışı geçmek gerekir (seri puanı ya da çift sayısı). Elini açtığın turda, taş atmadan sonradan indirdiğin per ve çiftler de açılışına eklenir ve limit buna göre yükselir. O turda okey ya da gösterge çaldıktan sonra indirdiklerin eklenmez.</li><li>Istakada yan yana (boşluksuz) duran taşlar bir per sayılır. Yeşil çizgi per, altın çizgi çift demektir.</li></ul>' +
     '<h3>İşleme ve okey çalma</h3><ul><li>Elini açtıysan yerdeki perlere taş işleyebilirsin: taşı seçip pere dokun ya da sürükle. Yardımsız mod kapalıyken Tümünü İşle düğmesi işlenebilen tüm taşları işler.</li><li>Yandan aldığın taşı mutlaka kullanmalısın: elin kapalıysa onunla el açarsın, açıksa pere işler ya da yeni per (çift açtıysan çift) indirirsin. Kullanamayacağını anlarsan taşı Yan kutusuna geri sürükle: ceza yok, ama o turda desteden çekersin.</li><li>Yandan aldığın taşla yanlış el açmaya çalışırsan (puan yetmiyor, Katlamalıda rakibi geçemiyorsun) +101 ceza yersin ve taş geri gider. Yandan taş almadan başarısız el açmaya çalışmak da +101 cezadır.</li><li>Masada hem seri hem çift açan varsa, seri açan oyuncu da elindeki çiftleri Çift Aç düğmesiyle indirebilir (bir turda en fazla 2 çift; sıra tekrar gelince 2 çift daha). Yandan aldığı taşla çift indirirse taşı atana ×10 ceza yazılır (çift açan çift indirirse ×20).</li><li>Her taş ceza: elini açtıktan sonra yandan aldığın taşla yeni per ya da çift indirirsen o taşı atan oyuncu taş sayısı ×10 (çiftte ×20) ceza yer. Yandan aldığın taşı elindeki taşla bağlayıp (örneğin yerde kırmızı 3-4-5, elinde 6, yandan 7) pere işlersen de ceza yazılır; çift açan bunu yaparsa ×10, çift indirirse ×20 yazılır.</li><li>Yandan aldığın taşla el açarsan o taşı atan oyuncu, taş sayısı ×10 (çift açtıysan ×20) ceza yer.</li><li>Yan oyuncu işlek taş atıp 101 ceza yediyse, o taşı yandan alınca cezası 101 yerine taş sayısı ×10 olur (alana ceza yok).</li><li>Bir oyuncunun perde bıraktığı okeyi çalarsan okeyi bırakan oyuncuya 101 ceza yazılır (kendi okeyini alırsan ceza yok).</li><li>Perdeki okeyi almak için yerine tam olarak temsil ettiği taşı koymalısın; okey ıstakana gelir. Çiftteki okey de, çiftin eşi olan taşla alınabilir (eşin değilse okeyi bırakana 101 ceza).</li><li>Masadaki bir okeyin (seri ya da çift) yerini tutan taşı atmak işlek sayılır: atan 101 ceza yer.</li></ul>' +
     '<h3>Ceza ve puan</h3><ul><li>Yanlışa taş atma: attığın taş masadaki bir pere işleniyorsa +101 ceza.</li><li>El sonunda eli açmamış oyuncuya 202. Eli açan, kalan taşlarının toplamını yazar; elinde okey kalırsa +101 ekstra.</li><li>Bitiren −101 alır. Kafa (kimse el açmamışken eli açıp aynı turda son taşı atarak bitirmek) ×2, okey atarak bitme ×2, ikisi birlikte (okey kafa) ×4 çarpan uygular. Başkası açtıktan sonra aynı turda açıp bitirmek normal bitiştir. Çift açıp bitiren −202 alır, rakiplerin kalan puanı ×2 olur. Eli ortada okey atmak 101 cezadır.</li><li>Deste biterse el berabere biter, herkes kalan taşına göre yazılır.</li></ul>' +
@@ -2416,6 +2420,20 @@ function handleDrop(id, el, x, y) {
 }
 
 /* ---------- Sürükle-bırak (fare + dokunmatik) ---------- */
+// Okeyi çevirme: önce kenarına döner (90°), yüz değişir, sonra kalkmış halde düzelir
+function flipTile(el, on, lift, cb) {
+  const up = 'translateY(-14%) scale(1.1)';
+  el.style.transition = 'transform .13s ease-in';
+  el.style.transform = up + ' rotateY(90deg)';
+  el.classList.add('lifted');
+  setTimeout(() => {
+    el.classList.toggle('peek', on);
+    el.style.transition = 'transform .15s ease-out';
+    el.style.transform = lift ? up : '';
+    if (!lift) el.classList.remove('lifted');
+    if (cb) cb();
+  }, 130);
+}
 function killGhosts() { document.querySelectorAll('.ghost').forEach(x => x.remove()); }
 function guardDown(e) {
   if (e.isPrimary === false) return false;      // ikinci parmak: yok say
@@ -2438,8 +2456,10 @@ function onDown(e) {
     d.timer = setTimeout(() => { if (drag === d && !d.moved && !d.peeked) { d.peeked = true; feedback(announceGost(0)); render(); } }, 350);
   } else if (pt && pt.wild) {
     const d = drag;
-    d.timer = setTimeout(() => { if (drag === d && !d.moved) { d.peeked = true; UI.peekId = d.id; d.el.classList.add('peek'); } }, 320);
-    d.timer2 = setTimeout(() => { if (drag === d && !d.moved) { pt.mark = !pt.mark; d.marked = true; d.el.classList.toggle('peek', true); } }, 1000);
+    d.wildPeek = true; d.pt = pt;
+    // basılı tutunca taş hafifçe kalkıp ters döner (beyaz yüz); 0,6 sn tutulursa ters kalır
+    d.timer = setTimeout(() => { if (drag === d && !d.moved) { d.peeked = true; UI.peekId = d.id; flipTile(d.el, true, true); } }, 320);
+    d.timer2 = setTimeout(() => { if (drag === d && !d.moved) { pt.mark = !pt.mark; d.marked = true; } }, 600);
   }
 }
 function onDownSrc(e) {
@@ -2520,6 +2540,11 @@ function endDrag(e, cancel) {
   clearTimeout(d.timer); clearTimeout(d.timer2);
   if (UI.peekId) { UI.peekId = null; }
   killGhosts();
+  if (d.peeked && d.wildPeek && d.el && d.el.isConnected) {
+    if (d.pt && d.pt.mark) { d.el.style.transition = 'transform .16s ease-out'; d.el.style.transform = ''; setTimeout(render, 170); }
+    else flipTile(d.el, false, false, () => setTimeout(render, 160));
+    return;
+  }
   if (d.peeked) { render(); return; }
   if (d.src) {
     if (d.moved) { UI.noClick = Date.now(); if (!cancel) dropDraw(d.src, document.elementFromPoint(e.clientX, e.clientY), e.clientX, e.clientY); render(); }
