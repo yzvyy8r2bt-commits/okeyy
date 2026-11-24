@@ -39,7 +39,7 @@ export function slotAt(g, cx, cy) {
 
 const ND = true;   // animasyonlar telefonun kendi çizim katmanında (JavaScript'i beklemez)
 
-function DraggableTileBase({ tile, slot, geom, ver, mark, fresh, gb, hw, hover, onDrop, onDropOut, onGost }) {
+function DraggableTileBase({ tile, slot, geom, ver, mark, fresh, gb, gbShow, hw, hover, onDrop, onDropOut, onGost }) {
   const p0 = slotXY(geom, slot);
   const pos = useRef(new Animated.ValueXY(p0)).current;
   const lift = useRef(new Animated.Value(0)).current;
@@ -148,7 +148,7 @@ function DraggableTileBase({ tile, slot, geom, ver, mark, fresh, gb, hw, hover, 
     <GestureDetector gesture={pan}>
       <Animated.View style={[styles.tileWrap, style]}>
         <Animated.View style={{ transform: [{ scaleX: flipV }] }}>
-          <TileFace tile={tile} w={geom.cellW} h={geom.tileH} fs={geom.fs} mark={back ? null : mark} glow={fresh} gb={gb && !back} blank={back} hw={hw} />
+          <TileFace tile={tile} w={geom.cellW} h={geom.tileH} fs={geom.fs} mark={back ? null : mark} glow={fresh} gb={gb && gbShow && !back} blank={back} hw={hw} />
         </Animated.View>
       </Animated.View>
     </GestureDetector>
@@ -157,9 +157,9 @@ function DraggableTileBase({ tile, slot, geom, ver, mark, fresh, gb, hw, hover, 
 // sadece kendi bilgisi değişen taş yeniden çizilir (botlar oynarken ıstaka boşuna çizilmez)
 const DraggableTile = React.memo(DraggableTileBase, (a, b) =>
   a.tile === b.tile && a.slot === b.slot && a.geom === b.geom && a.ver === b.ver &&
-  a.mark === b.mark && a.fresh === b.fresh && a.gb === b.gb && a.hw === b.hw);
+  a.mark === b.mark && a.fresh === b.fresh && a.gb === b.gb && a.gbShow === b.gbShow && a.hw === b.hw);
 
-export default function Rack({ slots, geom, ver, marks, freshId, gbId, hwIds, myTurn, onDrop, onDropOut, onGost, onHoverOut }) {
+export default function Rack({ slots, geom, ver, marks, freshId, gbId, gbShow, hwIds, myTurn, onDrop, onDropOut, onGost, onHoverOut }) {
   const g = geom;
   // sürüklerken taşın bırakılacağı yuva parlar
   const hlPos = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
@@ -196,7 +196,7 @@ export default function Rack({ slots, geom, ver, marks, freshId, gbId, hwIds, my
     tiles.push(
       <DraggableTile key={t.id} tile={t} slot={i} geom={g} ver={ver}
         mark={marks.meld.has(t.id) ? 'meld' : marks.pair.has(t.id) ? 'pair' : null}
-        fresh={t.id === freshId} gb={t.id === gbId} hw={!!(hwIds && hwIds.has(t.id))} hover={hover.current} onDrop={onDrop} onDropOut={onDropOut} onGost={onGost} />,
+        fresh={t.id === freshId} gb={t.id === gbId} gbShow={gbShow !== false} hw={!!(hwIds && hwIds.has(t.id))} hover={hover.current} onDrop={onDrop} onDropOut={onDropOut} onGost={onGost} />,
     );
   });
   return (

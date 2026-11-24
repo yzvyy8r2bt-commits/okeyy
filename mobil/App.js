@@ -779,7 +779,7 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
             </View>
           </View>
           <View ref={rackRef} collapsable={false}>
-            <Rack slots={P.slots} geom={geom} ver={rackVer} marks={marks} freshId={g.freshId} gbId={gbId} hwIds={hwIds}
+            <Rack slots={P.slots} geom={geom} ver={rackVer} marks={marks} freshId={g.freshId} gbId={gbId} gbShow={!hard} hwIds={hwIds}
               myTurn={g.turn === 0 && g.phase !== 'over'} onDrop={onDrop} onDropOut={onDropOut} onGost={onGost} onHoverOut={onHoverOut} />
           </View>
         </View>
