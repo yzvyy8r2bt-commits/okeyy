@@ -33,7 +33,7 @@ function SegFull({ u, opts, val, onPick }) {
     <View style={[styles.seg, { borderRadius: 1.4 * u, padding: 0.5 * u, flexDirection: 'row' }]}>
       {opts.map(([v, label]) => (
         <Pressable key={String(v)} onPress={() => onPick(v)} style={[{ flex: 1, height: 6.6 * u, borderRadius: 1.2 * u, alignItems: 'center', justifyContent: 'center' }, val === v && { backgroundColor: C.amber }]}>
-          <Text allowFontScaling={false} numberOfLines={1} style={{ fontSize: 2.8 * u, fontWeight: '800', color: val === v ? C.amberInk : C.ink }}>{label}</Text>
+          <Text allowFontScaling={false} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={{ fontSize: 2.8 * u, fontWeight: '800', color: val === v ? C.amberInk : C.ink, paddingHorizontal: 0.4 * u }}>{label}</Text>
         </Pressable>
       ))}
     </View>
@@ -344,13 +344,13 @@ export default function LobbyScreen({ u, ins, set, saveSet, onStart, openSetting
           <View style={{ flexDirection: 'row', gap: 2.4 * u }}>
             <View style={{ flex: 1 }}>
               <Text allowFontScaling={false} style={cLbl(u)}>BİÇİM</Text>
-              <SegFull u={u} opts={[['all', 'Hepsi'], ['tek', 'Tek'], ['esli', 'Eşli']]} val={filter.team} onPick={v => setFilter({ ...filter, team: v })} />
+              <SegFull u={u} opts={[['all', 'Fark etmez'], ['tek', 'Tek'], ['esli', 'Eşli']]} val={filter.team} onPick={v => setFilter({ ...filter, team: v })} />
               <Text allowFontScaling={false} style={[cLbl(u), { marginTop: 1.2 * u }]}>OYUN</Text>
-              <SegFull u={u} opts={[['all', 'Hepsi'], ['klasik', 'Klasik'], ['katlamali', 'Katlamalı']]} val={filter.mode} onPick={v => setFilter({ ...filter, mode: v })} />
+              <SegFull u={u} opts={[['all', 'Fark etmez'], ['klasik', 'Klasik'], ['katlamali', 'Katlamalı']]} val={filter.mode} onPick={v => setFilter({ ...filter, mode: v })} />
               <Text allowFontScaling={false} style={[cLbl(u), { marginTop: 1.2 * u }]}>EL SAYISI</Text>
-              <SegFull u={u} opts={[['all', 'Hepsi']].concat(s.hands.map(h => [h, String(h)]))} val={filter.hands} onPick={v => setFilter({ ...filter, hands: v })} />
+              <SegFull u={u} opts={[['all', 'Fark etmez']].concat(s.hands.map(h => [h, String(h)]))} val={filter.hands} onPick={v => setFilter({ ...filter, hands: v })} />
               <Text allowFontScaling={false} style={[cLbl(u), { marginTop: 1.2 * u }]}>YARDIM</Text>
-              <SegFull u={u} opts={[['all', 'Hepsi'], ['yardimli', 'Yardımlı'], ['yardimsiz', 'Yardımsız']]} val={filter.hard} onPick={v => setFilter({ ...filter, hard: v })} />
+              <SegFull u={u} opts={[['all', 'Fark etmez'], ['yardimli', 'Yardımlı'], ['yardimsiz', 'Yardımsız']]} val={filter.hard} onPick={v => setFilter({ ...filter, hard: v })} />
             </View>
             <View style={{ flex: 1.1 }}>
               <Text allowFontScaling={false} style={cLbl(u)}>OYUN MODLARI <Text style={{ fontSize: 1.7 * u }}>(dokun: fark etmez → olsun → olmasın)</Text></Text>
