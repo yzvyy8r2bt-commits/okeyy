@@ -1,5 +1,6 @@
 // Lobi mantığı: salonlar, masalar, çip, seviye, günlük hediye (web sürümüyle aynı kurallar)
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { DEV_NAME } from './media';
 
 export const SALONS = [
   { id: 'cayci', name: 'Çaycı', sub: 'Yeni başlayanlar', min: 1000, max: 10000, step: 1000, hands: [1], maxIn: 25000, hue: ['#1f7a5c', '#0d3b2c'] },
@@ -46,6 +47,7 @@ export async function loadWallet() {
   if (!w.st) w.st = fresh().st;
   // misafir adı değiştirilemez ve herkese ayrı verilir (ör. C372748)
   if (!/^C\d{6}$/.test(w.name || '')) w.name = guestName();
+  if (DEV_NAME) w.name = DEV_NAME;   // yalnız Expo Go denemesinde
   W.w = w;
   saveWalletNow(w);
   return w;

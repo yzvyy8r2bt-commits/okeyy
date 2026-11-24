@@ -69,3 +69,4 @@ export const GIFT_IMG = {
   'yildiz': require('../assets/gifts/yildiz.png'),
   'yuzuk': require('../assets/gifts/yuzuk.png'),
 };
+export const DEV_NAME = null;   // mağaza sürümünde herkes kendi rastgele adını alır
