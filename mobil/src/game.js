@@ -99,7 +99,7 @@ function announceGost(i) {
   const t = handOf(P).find(isGostTwin);
   t.gost = true; P.gostSaid = true; H.ev('gost', { i });
   logEv(i, 'Gösterge bende');
-  H.toast((P.human ? 'Gösterge bende! ' + tileName(t) + ' çiftte her taşla eşleşir.' : P.name + ': Gösterge bende'), 'info');
+  H.toast((P.human ? 'Gösterge bende! ' + tileName(t) + ' çiftte her taşla eşleşir.' : P.name + ': Gösterge bende'), 'alert');
   H.render();
   return { ok: true, msg: 'Gösterge bende' };
 }
@@ -362,7 +362,7 @@ function doDiscard(i, tile) {
   if (!finishing) {
     const left = handOf(P).length;
     if (left >= 1 && left <= 3) {
-      H.toast(P.human ? 'Elinde ' + left + ' taş kaldı' : P.name + ' oyuncusunun ' + left + ' taşı kaldı', 'info');
+      H.toast(P.human ? 'Elinde ' + left + ' taş kaldı' : P.name + ' oyuncusunun ' + left + ' taşı kaldı', 'alert');
       logEv(i, left + ' taşı kaldı');
     }
   }

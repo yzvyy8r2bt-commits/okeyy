@@ -120,6 +120,8 @@ function stateChips(u, P) {
       {!P.opened ? <Chip u={u}>Kapalı</Chip> : P.openKind === 'seri' ? <Chip u={u} kind="ok">Açtı · {P.openVal}</Chip> : <Chip u={u} kind="gold">Çift · {P.openVal}</Chip>}
       {pp ? <Chip u={u} kind="bad">Ceza +{pp}</Chip> : null}
       {bn ? <Chip u={u} kind="gold">Rekor {bn}</Chip> : null}
+      {P.gostSaid ? <Chip u={u} kind="gold">Gösterge</Chip> : null}
+      {(() => { const n = GM.handOf(P).length; return P.opened && n >= 1 && n <= 3 ? <Chip u={u} kind="bad">{n} taş</Chip> : null; })()}
     </>
   );
 }
@@ -434,7 +436,7 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
   const toast = useCallback((msg, kind) => {
     if (!msg) return;
     // ortadaki bildirim kutusu kaldırıldı: sadece uyarılar ıstakanın üstündeki durum satırında görünür
-    if (kind !== 'bad' && kind !== 'task') return;
+    if (kind !== 'bad' && kind !== 'task' && kind !== 'alert') return;
     clearTimeout(stT.current); setStatusMsg(msg); setStatusKind(kind);
     stT.current = setTimeout(() => setStatusMsg(null), 4500);
   }, []);
@@ -766,7 +768,7 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
             ) : null}
             <ClockPill u={u} who="me" style={{ alignSelf: 'center' }} />
             <View style={{ flex: 1, alignItems: statusMsg ? 'flex-start' : 'flex-end' }}>
-              {statusMsg ? <Text allowFontScaling={false} numberOfLines={2} style={{ color: statusKind === 'task' ? '#7ef0b5' : '#ffc0b9', fontWeight: '700', fontSize: 2.3 * u }}>{statusMsg}</Text>
+              {statusMsg ? <Text allowFontScaling={false} numberOfLines={2} style={{ color: statusKind === 'task' ? '#7ef0b5' : statusKind === 'alert' ? '#ffd27a' : '#ffc0b9', fontWeight: '700', fontSize: 2.3 * u }}>{statusMsg}</Text>
                 : <Text allowFontScaling={false} style={{ color: C.amber, fontFamily: NUM_FONT, fontWeight: '700', fontSize: 2.6 * u, letterSpacing: 0.1 * u }}>Toplam {fmt(g.totals[0])}{penMine ? ' · Bu el ceza +' + penMine : ''}</Text>}
             </View>
             <View style={{ flexDirection: 'row', gap: 0.7 * u }}>
