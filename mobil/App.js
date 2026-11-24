@@ -119,6 +119,10 @@ function PtPill({ u }) {
     </View>
   );
 }
+// el sonu açıklamalarından sadece rakamlar: "El açamadı 202" → 202, "Yandan taşı açıldı (1×20) +20" → +20
+function numNotes(notes) {
+  return notes.map(n => n.replace(/\([^)]*\)/g, '').split(/\s+/).filter(w => /\d/.test(w)).join(' ')).filter(Boolean).join('   ');
+}
 // Türkçe bulunma eki: Mehmet'te, Ayşe'de, Hasan'da, Kemal'de
 function locName(n) {
   const v = (n.toLocaleLowerCase('tr-TR').match(/[aeıioöuü]/g) || ['e']).pop();
@@ -862,7 +866,7 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
                 return (
                   <View key={i} style={[styles.resRow, { paddingVertical: 0.7 * u }]}>
                     <Text allowFontScaling={false} numberOfLines={1} adjustsFontSizeToFit style={[styles.resName, { fontSize: 4 * u, width: 22 * u }, i === handEnd.rec.winner && { color: C.amber }]}>{i === 0 ? L.wallet().name : p.name}</Text>
-                    <Text allowFontScaling={false} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.7} style={{ flex: 1, color: '#d9cdf2', fontSize: 4 * u, lineHeight: 4.6 * u }}>{r.notes.join(', ')}</Text>
+                    <Text allowFontScaling={false} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.7} style={{ flex: 1, color: '#d9cdf2', fontSize: 4 * u, lineHeight: 4.6 * u }}>{numNotes(r.notes)}</Text>
                     <Text allowFontScaling={false} style={{ color: '#fff', width: 15 * u, textAlign: 'right', fontWeight: '700', fontSize: 4 * u }}>{r.total > 0 ? '+' + r.total : fmt(r.total)}</Text>
                     <Text allowFontScaling={false} style={{ color: C.amber, width: 15 * u, textAlign: 'right', fontWeight: '800', fontSize: 4 * u }}>{fmt(g.totals[i])}</Text>
                   </View>
