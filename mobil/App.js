@@ -1014,21 +1014,21 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
       {/* yazboz */}
       <Modal visible={scoreOpen} transparent animationType="fade" supportedOrientations={['landscape']}>
         <Pressable style={styles.modalBg} onPress={() => setScoreOpen(false)}>
-          <View style={[styles.modal, { borderRadius: 2.4 * u, padding: 3 * u }]}>
+          <View style={[styles.modal, { width: '86%', maxHeight: '96%', borderRadius: 2.4 * u, paddingVertical: 2.2 * u, paddingHorizontal: 3 * u }]}>
             <Text allowFontScaling={false} style={[styles.modalT, { fontSize: 4.2 * u }]}>Yazboz</Text>
             <View style={[styles.resRow, { paddingVertical: 0.6 * u }]}>
-              <Text allowFontScaling={false} style={{ width: 10 * u, color: C.muted, fontSize: 2 * u }}>El</Text>
-              {g.players.map((p, i) => <Text key={i} allowFontScaling={false} style={{ flex: 1, textAlign: 'right', color: '#fff', fontWeight: '800', fontSize: 2.4 * u }}>{i === 0 ? L.wallet().name : p.name}</Text>)}
+              <Text allowFontScaling={false} style={{ width: 10 * u, color: C.muted, fontSize: 2.6 * u }}>El</Text>
+              {g.players.map((p, i) => <Text key={i} allowFontScaling={false} style={{ flex: 1, textAlign: 'right', color: '#fff', fontWeight: '800', fontSize: 3 * u }}>{i === 0 ? L.wallet().name : p.name}</Text>)}
             </View>
             {g.hands.map((h, k) => (
               <View key={k} style={[styles.resRow, { paddingVertical: 0.6 * u }]}>
-                <Text allowFontScaling={false} style={{ width: 10 * u, color: C.muted, fontSize: 2 * u }}>{k + 1}. el</Text>
-                {h.per.map((r, i) => <Text key={i} allowFontScaling={false} style={{ flex: 1, textAlign: 'right', color: i === h.winner ? C.amber : '#fff', fontSize: 2.4 * u }}>{fmt(r.total)}</Text>)}
+                <Text allowFontScaling={false} style={{ width: 10 * u, color: C.muted, fontSize: 2.6 * u }}>{k + 1}. el</Text>
+                {h.per.map((r, i) => <Text key={i} allowFontScaling={false} style={{ flex: 1, textAlign: 'right', color: i === h.winner ? C.amber : '#fff', fontSize: 3.2 * u, fontWeight: '700' }}>{fmt(r.total)}</Text>)}
               </View>
             ))}
             <View style={[styles.resRow, { paddingVertical: 0.6 * u, borderBottomWidth: 0 }]}>
-              <Text allowFontScaling={false} style={{ width: 10 * u, color: C.amber, fontWeight: '800', fontSize: 2.2 * u }}>Toplam</Text>
-              {g.totals.map((t, i) => <Text key={i} allowFontScaling={false} style={{ flex: 1, textAlign: 'right', color: C.amber, fontWeight: '800', fontSize: 2.6 * u }}>{fmt(t)}</Text>)}
+              <Text allowFontScaling={false} style={{ width: 10 * u, color: C.amber, fontWeight: '800', fontSize: 2.8 * u }}>Toplam</Text>
+              {g.totals.map((t, i) => <Text key={i} allowFontScaling={false} style={{ flex: 1, textAlign: 'right', color: C.amber, fontWeight: '800', fontSize: 3.4 * u }}>{fmt(t)}</Text>)}
             </View>
             <View style={{ marginTop: 2 * u, alignItems: 'center' }}>
               <Btn u={u} label="Kapat" onPress={() => setScoreOpen(false)} />
