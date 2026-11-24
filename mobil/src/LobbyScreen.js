@@ -82,7 +82,7 @@ function Dlg({ u, visible, children, wide }) {
 const H2 = ({ u, children }) => <Text allowFontScaling={false} style={{ color: C.amber, fontWeight: '900', fontSize: 4 * u, textAlign: 'center' }}>{children}</Text>;
 const Sub = ({ u, children, style }) => <Text allowFontScaling={false} style={[{ color: C.muted, fontSize: 2.1 * u, textAlign: 'center', marginTop: 0.6 * u }, style]}>{children}</Text>;
 
-export default function LobbyScreen({ u, ins, set, saveSet, onStart, openSettings, flash }) {
+export default function LobbyScreen({ u, ins, set, saveSet, onStart, openSettings, flash, onLogout }) {
   const [, setTick] = useState(0);
   const re = () => setTick(t => t + 1);
   const [view, setView] = useState('home');
@@ -97,6 +97,7 @@ export default function LobbyScreen({ u, ins, set, saveSet, onStart, openSetting
   const [adPlay, setAdPlay] = useState(null);   // deneme reklamı: kalan saniye
   const [prof, setProf] = useState(false);
   const [ptab, setPtab] = useState('stat');
+  const [logoutAsk, setLogoutAsk] = useState(false);
   const [tcat, setTcat] = useState('oyun');
   const [rename, setRename] = useState(null);
   const [create, setCreate] = useState(null);     // { bet, mode, team, hands, hard, pen }
@@ -440,10 +441,24 @@ export default function LobbyScreen({ u, ins, set, saveSet, onStart, openSetting
                 );
               })()}
             </ScrollView>
-            <Btn u={u} pri label="Kapat" style={{ marginTop: 1.6 * u, minHeight: 7.4 * u }} onPress={() => setProf(false)} />
+            <View style={{ flexDirection: 'row', gap: 1.2 * u, marginTop: 1.6 * u }}>
+              <Btn u={u} pri label="Kapat" style={{ flex: 3, minHeight: 7.4 * u }} onPress={() => setProf(false)} />
+              <Btn u={u} label="Çıkış Yap" style={{ flex: 1, minHeight: 7.4 * u, borderColor: 'rgba(255,107,94,0.6)' }} onPress={() => setLogoutAsk(true)} />
+            </View>
           </View>
         </View>
       </Modal>
+
+      {/* çıkış onayı */}
+      <Dlg u={u} visible={logoutAsk}>
+        <H2 u={u}>Çıkış Yap</H2>
+        <Sub u={u}>Giriş ekranına dönülecek. Oradan başka bir hesapla (Apple, Facebook, Email) ya da misafir olarak girebilirsin.</Sub>
+        <Sub u={u} style={{ color: C.ink }}>Misafir hesabındaki çiplerin ve ilerlemen bu telefonda saklı kalır, silinmez.</Sub>
+        <View style={[styles.mrow, { marginTop: 2 * u }]}>
+          <Btn u={u} pri label="Çıkış Yap" onPress={() => { setLogoutAsk(false); setProf(false); onLogout && onLogout(); }} />
+          <Btn u={u} label="Vazgeç" onPress={() => setLogoutAsk(false)} />
+        </View>
+      </Dlg>
 
       {/* oyun süresi ödülleri */}
       <Dlg u={u} visible={ptOpen} wide>

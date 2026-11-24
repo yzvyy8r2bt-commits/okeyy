@@ -956,7 +956,8 @@ function Root() {
   return (
     <>
       <StatusBar hidden />
-      <LobbyScreen u={u} ins={ins} set={set} saveSet={saveSet} onStart={start} flash={flash} openSettings={() => setSetOpen(true)} />
+      <LobbyScreen u={u} ins={ins} set={set} saveSet={saveSet} onStart={start} flash={flash} openSettings={() => setSetOpen(true)}
+        onLogout={() => { AsyncStorage.removeItem(LOGIN_KEY).catch(() => {}); setScreen('login'); }} />
       <SettingsModal u={u} visible={setOpen} set={set} saveSet={saveSet} onClose={() => setSetOpen(false)} onRules={() => { setSetOpen(false); setRulesOpen('rules'); }} onHowto={() => { setSetOpen(false); setRulesOpen('howto'); }} />
       <RulesModal u={u} visible={!!rulesOpen} howto={rulesOpen === 'howto'} onClose={() => { const h = rulesOpen === 'howto'; setRulesOpen(false); if (h) setSetOpen(true); }} />
     </>

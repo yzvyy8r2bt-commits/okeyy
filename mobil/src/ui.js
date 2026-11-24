@@ -16,7 +16,7 @@ export function Btn({ u, label, onPress, pri, sm, disabled, style }) {
     <Pressable disabled={disabled} onPress={onPress} style={({ pressed }) => [
       styles.btn, { minHeight: (sm ? 6.6 : 7.4) * u, paddingHorizontal: (sm ? 1.6 : 2 * 1) * u, borderRadius: 1.6 * u },
       pri && [styles.btnPri, { borderBottomWidth: 0.4 * u }], disabled && { opacity: 0.36 }, pressed && { transform: [{ translateY: 1 }], opacity: 0.85 }, style]}>
-      <Text allowFontScaling={false} style={[styles.btnTxt, { fontSize: (sm ? 2.8 : 2.9) * u }, pri && { color: C.amberInk }]}>{label}</Text>
+      <Text allowFontScaling={false} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={[styles.btnTxt, { fontSize: (sm ? 2.8 : 2.9) * u }, pri && { color: C.amberInk }]}>{label}</Text>
     </Pressable>
   );
 }
