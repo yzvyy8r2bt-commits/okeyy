@@ -192,11 +192,11 @@ function DizBtn({ u, label, h, onPress }) {
     </Pressable>
   );
 }
-function Corner({ u, tile, hot, cref, style, drag }) {
+function Corner({ u, tile, hot, cref, style, drag, over }) {
   const w = 9 * u, h = 11 * u;
   return (
     <DrawSource drag={drag}>
-      <View ref={cref} collapsable={false} style={[{ alignItems: 'center', borderRadius: 1.4 * u, padding: 0.3 * u }, hot && { backgroundColor: 'rgba(255,187,51,0.22)' }, style]}>
+      <View ref={cref} collapsable={false} style={[{ alignItems: 'center', borderRadius: 1.4 * u, padding: 0.3 * u }, hot && { backgroundColor: 'rgba(255,187,51,0.22)' }, over && { backgroundColor: 'rgba(255,187,51,0.5)', borderWidth: 0.35 * u, borderColor: '#ffbb33', transform: [{ scale: 1.08 }] }, style]}>
         {tile ? <TileFace tile={tile} w={w} h={h} fs={6.4 * u} glow={false} /> : <EmptyTile w={w} h={h} r={0.9 * u} />}
       </View>
     </DrawSource>
@@ -228,12 +228,12 @@ function Mat({ u, title, limit, side, children, style }) {
     </View>
   );
 }
-function MeldView({ u, m, ms, setRef }) {
+function MeldView({ u, m, ms, setRef, over }) {
   const ref = useRef(null);
   useEffect(() => { setRef(m.id, ref); return () => setRef(m.id, null); }, [m.id]);
   const w = 4.7 * u * ms, h = 6.5 * u * ms;
   return (
-    <View ref={ref} collapsable={false} style={[styles.meld, { padding: 0.35 * u * ms, gap: 0.15 * u * ms, borderRadius: 0.9 * u }]}>
+    <View ref={ref} collapsable={false} style={[styles.meld, { padding: 0.35 * u * ms, gap: 0.15 * u * ms, borderRadius: 0.9 * u, borderWidth: 0.3 * u, borderColor: 'transparent' }, over && { borderColor: '#ffbb33', backgroundColor: 'rgba(255,187,51,0.3)' }]}>
       {m.items.map((it, k) => <TileFace key={k} tile={it.t} w={w} h={h} fs={3.7 * u * ms} />)}
     </View>
   );
@@ -503,6 +503,29 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
     if (!ref || !ref.current) return res(null);
     ref.current.measureInWindow((x, y, w, h) => res({ x, y, w, h }));
   });
+  // sürüklenen taş ıstakadan çıkınca: üstüne geldiği per ya da Attığın köşesi parlar
+  const [over, setOver] = useState(null);
+  const overRef = useRef(null);
+  const hovRects = useRef(null);
+  const setOv = (v) => { if (overRef.current !== v) { overRef.current = v; setOver(v); } };
+  const onHoverOut = useCallback((lx, ly) => {
+    if (lx === null || lx === undefined) { hovRects.current = null; setOv(null); return; }
+    const hr = hovRects.current;
+    if (!hr) {          // ilk çıkışta yerleri bir kez ölç
+      hovRects.current = 'busy';
+      const ids = Object.keys(meldRefs.current);
+      Promise.all([measure(rackRef), measure(atRef), ...ids.map(id => measure(meldRefs.current[id]))]).then(([rk, at, ...rs]) => {
+        hovRects.current = { rk, at, melds: ids.map((id, k) => [id, rs[k]]) };
+      });
+      return;
+    }
+    if (hr === 'busy' || !hr.rk) return;
+    const x = hr.rk.x + lx, y = hr.rk.y + ly;
+    const grow = r => r && { x: r.x - 2 * u, y: r.y - 2 * u, w: r.w + 4 * u, h: r.h + 4 * u };
+    if (inRect(grow(hr.at), x, y)) { setOv('at'); return; }
+    for (const [id, r] of hr.melds) if (inRect(grow(r), x, y)) { setOv(id); return; }
+    setOv(null);
+  }, [u]);
   // ıstakadan bırakılan taş: Attığın köşesi → at, Yan köşesi → geri bırak, per → işle
   const onDropOut = useCallback(async (tile, lx, ly) => {
     const g = G(), P = g.players[0];
@@ -678,7 +701,7 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
         </View>
         <Mat u={u} title="SERİ PERLER" limit={kat ? String(GM.seriesNeed()) : null} side="left" style={{ flex: 1, zIndex: 3 }}>
           <ScrollView contentContainerStyle={[styles.melds, { padding: 1.2 * u, paddingTop: 3.4 * u, rowGap: u * ms, columnGap: 1.2 * u * ms }]}>
-            {series.length ? series.map(m => <MeldView key={m.id} u={u} m={m} ms={ms} setRef={setMeldRef} />)
+            {series.length ? series.map(m => <MeldView key={m.id} u={u} m={m} ms={ms} setRef={setMeldRef} over={over === String(m.id)} />)
               : <Text allowFontScaling={false} style={[styles.emptyNote, { fontSize: 2.6 * u }]}>Masada henüz açılmış seri per yok.</Text>}
           </ScrollView>
         </Mat>
@@ -692,8 +715,18 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
           </CenterBox>
         </View>
         <Mat u={u} title="ÇİFTLER" limit={kat ? String(GM.pairsNeed()) : null} side="right" style={{ width: 34 * u, zIndex: 3 }}>
-          <ScrollView contentContainerStyle={[styles.melds, { padding: 0.9 * u, paddingTop: 3.4 * u, gap: 0.8 * u * ms }]}>
-            {pairs.map(m => <MeldView key={m.id} u={u} m={m} ms={ms} setRef={setMeldRef} />)}
+          {/* çiftler üç sütunda: her sütun yukarıdan aşağı dolar */}
+          <View pointerEvents="none" style={{ position: 'absolute', top: 3 * u, bottom: u, left: '33.3%', width: 1, backgroundColor: 'rgba(255,255,255,0.14)' }} />
+          <View pointerEvents="none" style={{ position: 'absolute', top: 3 * u, bottom: u, left: '66.6%', width: 1, backgroundColor: 'rgba(255,255,255,0.14)' }} />
+          <ScrollView contentContainerStyle={{ flexDirection: 'row', paddingTop: 3.4 * u, paddingBottom: 0.8 * u }}>
+            {[0, 1, 2].map(c => {
+              const cap = Math.max(7, Math.ceil(pairs.length / 3));
+              return (
+                <View key={c} style={{ width: '33.33%', alignItems: 'center', gap: 0.8 * u * ms }}>
+                  {pairs.slice(c * cap, (c + 1) * cap).map(m => <MeldView key={m.id} u={u} m={m} ms={ms} setRef={setMeldRef} over={over === String(m.id)} />)}
+                </View>
+              );
+            })}
           </ScrollView>
         </Mat>
         <View style={[styles.col, { width: 17.5 * u, gap: 0.8 * u, paddingBottom: 6.5 * u }]}>
@@ -714,7 +747,7 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
         </View>
         <View style={{ width: rackW, gap: 0.5 * u, zIndex: 10 }}>
           <View style={[styles.srow, { gap: 1.2 * u }]}>
-            <View style={[styles.meplate, { height: 6 * u, borderRadius: 3 * u, paddingLeft: 0.6 * u, paddingRight: 1.4 * u, gap: 0.9 * u, maxWidth: 34 * u }, g.turn === 0 && g.phase !== 'over' && styles.plateOn]}>
+            <View style={[styles.meplate, { height: 6 * u, borderRadius: 3 * u, paddingLeft: 0.6 * u, paddingRight: 1.4 * u, gap: 0.9 * u, flexShrink: 0 }, g.turn === 0 && g.phase !== 'over' && styles.plateOn]}>
               <Avatar u={u} i={0} name={P.name} size={4.8} />
               <Text allowFontScaling={false} numberOfLines={1} style={[styles.nm, { fontSize: 2.4 * u }]}>{L.wallet().name}</Text>
               {stateChips(u, P)}
@@ -738,11 +771,11 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
           </View>
           <View ref={rackRef} collapsable={false}>
             <Rack slots={P.slots} geom={geom} ver={rackVer} marks={marks} freshId={g.freshId} gbId={gbId} hwIds={hwIds}
-              myTurn={g.turn === 0 && g.phase !== 'over'} onDrop={onDrop} onDropOut={onDropOut} onGost={onGost} />
+              myTurn={g.turn === 0 && g.phase !== 'over'} onDrop={onDrop} onDropOut={onDropOut} onGost={onGost} onHoverOut={onHoverOut} />
           </View>
         </View>
         <View style={{ width: 17.5 * u, alignItems: 'center', marginTop: -7.5 * u, alignSelf: 'stretch' }}>
-          <Corner u={u} cref={atRef} tile={lastOf(0)} hot={disc} />
+          <Corner u={u} cref={atRef} tile={lastOf(0)} hot={disc} over={over === 'at'} />
           {!hard ? <DizBtn u={u} label={'ÇİFT\nDİZ'} h={geom.height} onPress={() => { GM.hArrange('cift'); bumpRack(); tick(); }} /> : null}
         </View>
       </View>

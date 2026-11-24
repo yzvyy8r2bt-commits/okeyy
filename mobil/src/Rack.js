@@ -39,7 +39,7 @@ export function slotAt(g, cx, cy) {
 
 const ND = true;   // animasyonlar telefonun kendi çizim katmanında (JavaScript'i beklemez)
 
-function DraggableTileBase({ tile, slot, geom, ver, mark, fresh, gb, hw, onDrop, onDropOut, onGost }) {
+function DraggableTileBase({ tile, slot, geom, ver, mark, fresh, gb, hw, hover, onDrop, onDropOut, onGost }) {
   const p0 = slotXY(geom, slot);
   const pos = useRef(new Animated.ValueXY(p0)).current;
   const lift = useRef(new Animated.Value(0)).current;
@@ -48,7 +48,7 @@ function DraggableTileBase({ tile, slot, geom, ver, mark, fresh, gb, hw, onDrop,
   const [up, setUp] = useState(false);
   const dragging = useRef(false);
   const slotRef = useRef(slot); slotRef.current = slot;
-  const cb = useRef({ onDrop, onDropOut, onGost }); cb.current = { onDrop, onDropOut, onGost };
+  const cb = useRef({ onDrop, onDropOut, onGost, hover }); cb.current = { onDrop, onDropOut, onGost, hover };
   const gbRef = useRef(gb); gbRef.current = gb;
   // okey: basılı tutunca ters döner (beyaz yüz); 0,6 sn tutulursa ters kalır (web ile aynı)
   const [back, setBack] = useState(!!tile.mark);
@@ -90,6 +90,7 @@ function DraggableTileBase({ tile, slot, geom, ver, mark, fresh, gb, hw, onDrop,
         pr.t2 = setTimeout(() => { if (!pr.moved) { tile.mark = !tile.mark; pr.marked = true; } }, 600);
       }
       pos.stopAnimation();
+      cb.current.hover && cb.current.hover.begin();
       st.current = { ...cur.current };
       setUp(true);
       Animated.timing(lift, { toValue: 1, duration: 60, useNativeDriver: ND }).start();
@@ -105,6 +106,10 @@ function DraggableTileBase({ tile, slot, geom, ver, mark, fresh, gb, hw, onDrop,
       const x = st.current.x + e.translationX, y = st.current.y + e.translationY;
       cur.current = { x, y };
       pos.setValue(cur.current);
+      if (pr.moved && cb.current.hover) {   // taşın gideceği yer belli olsun
+        const cx = x + geom.cellW / 2, cy = y + geom.tileH / 2;
+        cb.current.hover.at(slotAt(geom, cx, cy), cx, cy);
+      }
     })
     .onEnd(() => {
       const { x, y } = cur.current;
@@ -120,6 +125,7 @@ function DraggableTileBase({ tile, slot, geom, ver, mark, fresh, gb, hw, onDrop,
     })
     .onFinalize(() => {
       dragging.current = false;
+      cb.current.hover && cb.current.hover.end();
       const pr = press.current; clearPress();
       if (pr.peeked && tile.wild) { if (!tile.mark) flipTo(false); }
       pr.peeked = false; pr.marked = false;
@@ -153,8 +159,29 @@ const DraggableTile = React.memo(DraggableTileBase, (a, b) =>
   a.tile === b.tile && a.slot === b.slot && a.geom === b.geom && a.ver === b.ver &&
   a.mark === b.mark && a.fresh === b.fresh && a.gb === b.gb && a.hw === b.hw);
 
-export default function Rack({ slots, geom, ver, marks, freshId, gbId, hwIds, myTurn, onDrop, onDropOut, onGost }) {
+export default function Rack({ slots, geom, ver, marks, freshId, gbId, hwIds, myTurn, onDrop, onDropOut, onGost, onHoverOut }) {
   const g = geom;
+  // sürüklerken taşın bırakılacağı yuva parlar
+  const hlPos = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
+  const hlOp = useRef(new Animated.Value(0)).current;
+  const gRef = useRef(g); gRef.current = g;
+  const outRef = useRef(onHoverOut); outRef.current = onHoverOut;
+  const hover = useRef(null);
+  if (!hover.current) {
+    const h = { cur: -1, out: false };
+    h.begin = () => { h.cur = -1; h.out = false; };
+    h.at = (hit, cx, cy) => {
+      if (hit) {
+        if (h.out) { h.out = false; outRef.current && outRef.current(null); }
+        if (hit.to !== h.cur) { h.cur = hit.to; hlPos.setValue(slotXY(gRef.current, hit.to)); hlOp.setValue(1); }
+      } else {
+        if (h.cur !== -1) { h.cur = -1; hlOp.setValue(0); }
+        h.out = true; outRef.current && outRef.current(cx, cy);
+      }
+    };
+    h.end = () => { h.cur = -1; hlOp.setValue(0); if (h.out) { h.out = false; outRef.current && outRef.current(null); } };
+    hover.current = h;
+  }
   const rows = [0, 1].map(r => (
     <View key={'r' + r} style={[styles.row, { left: g.ox, right: g.ox, top: g.oy + r * (g.rowH + g.rowGap), height: g.rowH, borderRadius: g.u }]} />
   ));
@@ -169,7 +196,7 @@ export default function Rack({ slots, geom, ver, marks, freshId, gbId, hwIds, my
     tiles.push(
       <DraggableTile key={t.id} tile={t} slot={i} geom={g} ver={ver}
         mark={marks.meld.has(t.id) ? 'meld' : marks.pair.has(t.id) ? 'pair' : null}
-        fresh={t.id === freshId} gb={t.id === gbId} hw={!!(hwIds && hwIds.has(t.id))} onDrop={onDrop} onDropOut={onDropOut} onGost={onGost} />,
+        fresh={t.id === freshId} gb={t.id === gbId} hw={!!(hwIds && hwIds.has(t.id))} hover={hover.current} onDrop={onDrop} onDropOut={onDropOut} onGost={onGost} />,
     );
   });
   return (
@@ -177,6 +204,8 @@ export default function Rack({ slots, geom, ver, marks, freshId, gbId, hwIds, my
       <View style={[styles.rim, { height: 0.35 * g.u, borderTopLeftRadius: 2.2 * g.u, borderTopRightRadius: 2.2 * g.u }]} />
       {rows}
       {holes}
+      <Animated.View pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0, width: g.cellW, height: g.tileH + 0.6 * g.u, borderRadius: 0.8 * g.u,
+        borderWidth: 0.35 * g.u, borderColor: '#ffbb33', backgroundColor: 'rgba(255,187,51,0.28)', opacity: hlOp, transform: hlPos.getTranslateTransform() }} />
       {tiles}
     </View>
   );
