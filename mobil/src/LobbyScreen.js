@@ -6,6 +6,7 @@ import { C, Btn, Toggle, Coin, NUM_FONT } from './ui';
 import * as L from './lobby';
 
 const GOLD = '#ffe39a';
+const pfB = u => ({ color: C.ink, fontFamily: NUM_FONT, fontWeight: '800', fontSize: 2.8 * u });
 const cLbl = u => ({ color: C.muted, fontWeight: '800', fontSize: 2.2 * u, letterSpacing: 0.15 * u, marginBottom: 0.6 * u });
 
 function Av({ u, name, size, sm }) {
@@ -92,6 +93,8 @@ export default function LobbyScreen({ u, ins, set, saveSet, onStart, openSetting
   const [msg, setMsg] = useState(null);
   const [gift, setGift] = useState(false);
   const [prof, setProf] = useState(false);
+  const [ptab, setPtab] = useState('stat');
+  const [tcat, setTcat] = useState('oyun');
   const [rename, setRename] = useState(null);
   const [create, setCreate] = useState(null);     // { bet, mode, team, hands, hard, pen }
   const [wait, setWait] = useState(null);         // { t, cfg, left }
@@ -291,39 +294,130 @@ export default function LobbyScreen({ u, ins, set, saveSet, onStart, openSetting
           })}
         </View>
         <View style={styles.mrow}>
-          {ready ? <Btn u={u} pri label={'+' + L.chipFmt(L.DAILY_STREAK[day - 1]) + ' çip al'} onPress={() => { const r = L.takeGift(); setGift(false); if (r) say('Günlük hediye (' + r.day + '. gün): +' + L.chipFmt(r.amt) + ' çip'); }} />
+          {ready ? <Btn u={u} pri label={'+' + L.chipFmt(L.DAILY_STREAK[day - 1]) + ' çip al'} onPress={() => { const r = L.takeGift(); setGift(false); if (r) say('Günlük hediye (' + r.day + '. gün): +' + L.chipFmt(r.amt) + ' çip' + (r.msgs && r.msgs.length ? ' · ' + r.msgs[0] : '')); }} />
             : <Btn u={u} disabled label="Yarın yine gel" />}
           <Btn u={u} label="Kapat" onPress={() => setGift(false)} />
         </View>
       </Dlg>
 
-      {/* profil */}
-      <Dlg u={u} visible={prof} wide>
-        <View style={{ flexDirection: 'row', gap: 3 * u, alignItems: 'center' }}>
-          <Av u={u} name={w.name} size={14} />
-          <View style={{ flex: 1, gap: 0.9 * u }}>
-            <View style={styles.pfRow}><Text allowFontScaling={false} style={[styles.pfK, { fontSize: 2 * u, width: 14 * u }]}>İsim</Text><Text allowFontScaling={false} style={[styles.pfV, { fontSize: 2.6 * u }]}>{w.name}</Text><Btn u={u} sm label="Değiştir" onPress={() => setRename(w.name)} /></View>
-            <View style={styles.pfRow}><Text allowFontScaling={false} style={[styles.pfK, { fontSize: 2 * u, width: 14 * u }]}>Çip</Text><Coin s={2.4 * u} /><Text allowFontScaling={false} style={[styles.pfV, { fontSize: 2.6 * u, color: GOLD }]}>{L.chipFmt(w.chips)}</Text></View>
-            <View style={styles.pfRow}>
-              <Text allowFontScaling={false} style={[styles.pfK, { fontSize: 2 * u, width: 14 * u }]}>Seviye</Text>
-              <Text allowFontScaling={false} style={[styles.pfV, { fontSize: 2.6 * u, marginRight: u }]}>{lv.lv}</Text>
-              <View style={{ flex: 1, height: 1.2 * u, borderRadius: u, backgroundColor: 'rgba(255,255,255,0.12)', overflow: 'hidden' }}><View style={{ width: Math.round(lv.rest * 100 / lv.need) + '%', height: '100%', backgroundColor: C.amber }} /></View>
-              <Text allowFontScaling={false} style={{ color: C.muted, fontSize: 1.9 * u, marginLeft: u }}>{lv.rest}/{lv.need} DP</Text>
+      {/* profil — web'deki düzen: kart, sekmeler (İstatistikler · Görevler · Seviye) */}
+      <Modal visible={prof} transparent animationType="fade" supportedOrientations={['landscape']}>
+        <View style={styles.modalBg}>
+          <View style={[styles.modal, { width: '76%', maxHeight: '96%', borderRadius: 2.4 * u, padding: 2.4 * u }]}>
+            <View style={{ flexDirection: 'row', gap: 2 * u }}>
+              <View style={[styles.pfCard, { flex: 1.6, borderRadius: 2 * u, padding: 1.6 * u, gap: 2 * u }]}>
+                <View style={{ width: 16 * u, height: 16 * u, borderRadius: 2 * u, backgroundColor: '#f7a624', alignItems: 'center', justifyContent: 'center' }}>
+                  <Text allowFontScaling={false} style={{ fontFamily: NUM_FONT, fontWeight: '800', fontSize: 9 * u, color: C.amberInk }}>{w.name[0].toLocaleUpperCase('tr-TR')}</Text>
+                </View>
+                <View style={{ flex: 1, gap: 0.6 * u }}>
+                  {[
+                    ['İSİM', <><Text allowFontScaling={false} style={pfB(u)}>{w.name}</Text><Btn u={u} sm label="Değiştir" style={{ marginLeft: 'auto', minHeight: 4 * u }} onPress={() => setRename(w.name)} /></>],
+                    ['ÇİP', <><Coin s={2.6 * u} /><Text allowFontScaling={false} style={pfB(u)}>{L.chipFmt(w.chips)}</Text></>],
+                    ['SEVİYE', <><Text allowFontScaling={false} style={[pfB(u), { marginRight: u }]}>{lv.lv}</Text>
+                      <View style={{ flex: 1, height: 1.2 * u, borderRadius: u, backgroundColor: 'rgba(255,255,255,0.12)', overflow: 'hidden' }}><View style={{ width: Math.round(lv.rest * 100 / lv.need) + '%', height: '100%', backgroundColor: C.amber }} /></View>
+                      <Text allowFontScaling={false} style={{ color: C.muted, fontSize: 1.7 * u, marginLeft: u }}>{lv.rest}/{lv.need}</Text></>],
+                    ['BAŞLANGIÇ', <Text allowFontScaling={false} style={pfB(u)}>{w.since}</Text>],
+                  ].map(([k, v]) => (
+                    <View key={k} style={[styles.pfRow2, { borderRadius: u, paddingHorizontal: 1.2 * u, minHeight: 4.8 * u }]}>
+                      <Text allowFontScaling={false} style={{ width: 14 * u, color: '#b9a6ff', fontWeight: '800', fontSize: 1.9 * u, letterSpacing: 0.1 * u }}>{k}</Text>
+                      {v}
+                    </View>
+                  ))}
+                </View>
+              </View>
+              <View style={{ flex: 1, flexDirection: 'row', flexWrap: 'wrap', gap: 0.8 * u, alignContent: 'flex-start' }}>
+                {[['stat', 'İstatistikler'], ['tasks', 'Görevler'], ['level', 'Seviye']].map(([id, t]) => (
+                  <Btn key={id} u={u} pri={ptab === id} label={t} onPress={() => setPtab(id)} style={{ width: '31.5%', paddingHorizontal: 0.4 * u }} />
+                ))}
+                {['Sıralamalar', 'Hediye Yolla', 'Arkadaşlar'].map(t => (
+                  <View key={t} style={[styles.soon, { width: '31.5%', minHeight: 7 * u, borderRadius: 1.6 * u }]}>
+                    <Text allowFontScaling={false} numberOfLines={1} adjustsFontSizeToFit style={{ color: C.ink, fontWeight: '800', fontSize: 2.3 * u }}>{t}</Text>
+                    <Text allowFontScaling={false} style={{ color: C.muted, fontWeight: '600', fontSize: 1.5 * u }}>Online sürümde</Text>
+                  </View>
+                ))}
+              </View>
             </View>
-            <View style={styles.pfRow}><Text allowFontScaling={false} style={[styles.pfK, { fontSize: 2 * u, width: 14 * u }]}>Başlangıç</Text><Text allowFontScaling={false} style={[styles.pfV, { fontSize: 2.6 * u }]}>{w.since}</Text></View>
+            <ScrollView style={{ marginTop: 1.4 * u, flexGrow: 0 }}>
+              {ptab === 'stat' ? (
+                <View style={{ flexDirection: 'row', gap: 1.2 * u }}>
+                  {[['OYNADIĞI OYUN', w.st.games], ['KAZANDIĞI OYUN', w.st.wins], ['GALİBİYET YÜZDESİ', '%' + pct], ['EN BÜYÜK KAZANÇ', L.chipShort(w.st.best)]].map(([k, v]) => (
+                    <View key={k} style={[styles.pfStat, { flex: 1, borderRadius: 1.4 * u, padding: 1.2 * u }]}>
+                      <Text allowFontScaling={false} numberOfLines={1} adjustsFontSizeToFit style={{ color: '#b9a6ff', fontWeight: '800', fontSize: 1.8 * u, letterSpacing: 0.08 * u }}>{k}</Text>
+                      <Text allowFontScaling={false} style={{ color: C.ink, fontFamily: NUM_FONT, fontWeight: '800', fontSize: 5 * u }}>{v}</Text>
+                    </View>
+                  ))}
+                </View>
+              ) : ptab === 'level' ? (
+                <View style={[styles.pfCard, { borderRadius: 2 * u, padding: 2 * u, gap: 2.4 * u, alignItems: 'center' }]}>
+                  <View style={{ width: 16 * u, height: 16 * u, alignItems: 'center', justifyContent: 'center' }}>
+                    <Text allowFontScaling={false} style={{ position: 'absolute', fontSize: 16 * u, lineHeight: 17 * u, color: C.amber }}>★</Text>
+                    <Text allowFontScaling={false} style={{ fontFamily: NUM_FONT, fontWeight: '800', fontSize: 5 * u, color: C.amberInk, marginTop: 1.6 * u }}>{lv.lv}</Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text allowFontScaling={false} style={{ color: C.ink, fontSize: 2.4 * u, marginBottom: u }}>Seviye atlamak için <Text style={{ color: C.good, fontWeight: '800' }}>{lv.need - lv.rest} deneyim puanına (DP)</Text> daha ihtiyacın var.</Text>
+                    <View style={{ height: 2.2 * u, borderRadius: 99, backgroundColor: 'rgba(255,255,255,0.12)', overflow: 'hidden' }}><View style={{ width: Math.round(lv.rest * 100 / lv.need) + '%', height: '100%', backgroundColor: '#4f8cff' }} /></View>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 0.6 * u }}>
+                      <Text allowFontScaling={false} style={{ color: C.ink, fontWeight: '700', fontSize: 2 * u }}>Seviye {lv.lv}</Text>
+                      <Text allowFontScaling={false} style={{ color: C.ink, fontWeight: '700', fontSize: 2 * u }}>{lv.rest} / {lv.need} DP</Text>
+                      <Text allowFontScaling={false} style={{ color: C.ink, fontWeight: '700', fontSize: 2 * u }}>Seviye {lv.lv + 1}</Text>
+                    </View>
+                    <Text allowFontScaling={false} style={{ color: C.muted, fontSize: 1.9 * u, marginTop: u }}>DP görevlerden gelir: kolay görevler az, zor görevler çok DP verir ve her aşamada ödül büyür. Her oyun +5, kazanılan oyun +10 DP. Her seviye bir öncekinden 100 DP daha zordur.</Text>
+                  </View>
+                  <View style={{ alignItems: 'center', gap: 0.6 * u }}>
+                    <Text allowFontScaling={false} style={{ color: C.muted, fontSize: 1.8 * u }}>Seviye ödülü</Text>
+                    <Coin s={5 * u} />
+                    <Text allowFontScaling={false} style={{ color: GOLD, fontFamily: NUM_FONT, fontWeight: '800', fontSize: 3.2 * u }}>{L.chipFmt(L.lvReward(lv.lv + 1))}</Text>
+                  </View>
+                </View>
+              ) : (() => {
+                const st = L.tstate();
+                const total = L.CHAINS.reduce((a, c) => a + c[3].length, 0), done = L.CHAINS.reduce((a, c) => a + (st.stage[c[0]] || 0), 0);
+                return (
+                  <View>
+                    <Text allowFontScaling={false} style={{ color: C.muted, fontSize: 2.1 * u, marginBottom: 0.8 * u }}>Tamamlanan aşama: <Text style={{ color: C.ink, fontWeight: '800' }}>{done} / {total}</Text></Text>
+                    <View style={{ flexDirection: 'row', gap: 0.8 * u, marginBottom: u }}>
+                      {L.TASK_CATS.map(c => {
+                        const ch = L.CHAINS.filter(x => x[1] === c.id), d = ch.reduce((a, x) => a + (st.stage[x[0]] || 0), 0), t = ch.reduce((a, x) => a + x[3].length, 0);
+                        return (
+                          <Pressable key={c.id} onPress={() => setTcat(c.id)} style={{ flex: 1, borderRadius: 1.2 * u, paddingVertical: 1.1 * u, alignItems: 'center', backgroundColor: tcat === c.id ? C.amber : 'rgba(255,255,255,0.08)' }}>
+                            <Text allowFontScaling={false} numberOfLines={1} adjustsFontSizeToFit style={{ fontFamily: NUM_FONT, fontWeight: '800', fontSize: 2 * u, color: tcat === c.id ? C.amberInk : 'rgba(255,255,255,0.6)', letterSpacing: 0.1 * u }}>{c.name.toLocaleUpperCase('tr-TR')} <Text style={{ fontSize: 1.5 * u }}>{d}/{t}</Text></Text>
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: u }}>
+                      {L.CHAINS.filter(c => c[1] === tcat).map(ch => {
+                        const k = st.stage[ch[0]] || 0, n = ch[3].length, all = k >= n, tgt = ch[3][Math.min(k, n - 1)];
+                        const v = Math.min(L.chainVal(ch), tgt), r = L.stageReward(ch[4], Math.min(k, n - 1));
+                        const bg = all ? '#1f6f53' : k >= Math.ceil(n * 0.66) ? '#9a7410' : k >= Math.ceil(n * 0.33) ? '#5d6676' : '#7a4a1e';
+                        return (
+                          <View key={ch[0]} style={{ width: '23.9%', backgroundColor: bg, borderRadius: 1.4 * u, padding: u, alignItems: 'center', gap: 0.4 * u, borderWidth: all ? 2 : 1, borderColor: all ? C.good : 'rgba(255,255,255,0.15)' }}>
+                            <Text allowFontScaling={false} numberOfLines={1} adjustsFontSizeToFit style={{ color: '#fff', fontFamily: NUM_FONT, fontWeight: '800', fontSize: 2.2 * u }}>{ch[6]} <Text style={{ color: '#ffe39a' }}>{all ? '★' : L.ROMAN[k]}</Text></Text>
+                            <Text allowFontScaling={false} style={{ fontSize: 4.2 * u, lineHeight: 5 * u }}>{ch[5]}</Text>
+                            <Text allowFontScaling={false} numberOfLines={2} style={{ color: 'rgba(255,255,255,0.85)', fontSize: 1.55 * u, textAlign: 'center', minHeight: 3.8 * u }}>{all ? 'Bu görevin tüm aşamalarını bitirdin!' : ch[7].replace('{n}', L.chipShort(tgt))}</Text>
+                            <View style={{ flexDirection: 'row', gap: 0.3 * u }}>{ch[3].map((_, j) => <View key={j} style={{ width: 1.1 * u, height: 1.1 * u, borderRadius: u, backgroundColor: j < k ? '#ffe39a' : 'rgba(0,0,0,0.35)' }} />)}</View>
+                            {all ? <Text allowFontScaling={false} style={{ color: '#fff', fontWeight: '700', fontSize: 1.6 * u }}>Ustalaştın ✓</Text> : (
+                              <>
+                                <View style={{ alignSelf: 'stretch', height: 0.9 * u, borderRadius: 9, backgroundColor: 'rgba(0,0,0,0.35)', overflow: 'hidden' }}><View style={{ width: Math.round(v * 100 / tgt) + '%', height: '100%', backgroundColor: C.good }} /></View>
+                                <Text allowFontScaling={false} numberOfLines={1} adjustsFontSizeToFit style={{ color: '#fff', fontWeight: '700', fontSize: 1.6 * u }}>{L.chipShort(v)} / {L.chipShort(tgt)} · {L.DIFF[ch[4]].name}</Text>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.35)', paddingHorizontal: 0.9 * u, paddingVertical: 0.4 * u, borderRadius: u }}>
+                                  <Coin s={1.8 * u} /><Text allowFontScaling={false} style={{ color: '#fff', fontFamily: NUM_FONT, fontWeight: '800', fontSize: 1.9 * u }}>{L.chipShort(r.chip)} · +{r.dp} DP</Text>
+                                </View>
+                              </>
+                            )}
+                          </View>
+                        );
+                      })}
+                    </View>
+                    <Text allowFontScaling={false} style={{ color: C.muted, fontSize: 1.9 * u, marginTop: u }}>Her görevin birkaç aşaması var; hedef büyüdükçe ödül de büyür. Zor görevler daha çok deneyim puanı (DP) verir.</Text>
+                  </View>
+                );
+              })()}
+            </ScrollView>
+            <Btn u={u} pri label="Kapat" style={{ marginTop: 1.6 * u, minHeight: 7.4 * u }} onPress={() => setProf(false)} />
           </View>
         </View>
-        <View style={{ flexDirection: 'row', gap: u, marginTop: 2 * u }}>
-          {[['Oynadığı oyun', w.st.games], ['Kazandığı oyun', w.st.wins], ['Galibiyet yüzdesi', '%' + pct], ['En büyük kazanç', L.chipShort(w.st.best)]].map(([k, v]) => (
-            <View key={k} style={[styles.dg, { flex: 1, borderRadius: 1.4 * u, paddingVertical: 1.4 * u }]}>
-              <Text allowFontScaling={false} style={{ color: C.muted, fontSize: 1.8 * u }}>{k}</Text>
-              <Text allowFontScaling={false} style={{ color: C.ink, fontFamily: NUM_FONT, fontWeight: '800', fontSize: 3.6 * u }}>{v}</Text>
-            </View>
-          ))}
-        </View>
-        <Sub u={u}>Her oyun +5, kazanılan oyun +10 deneyim puanı (DP). Seviye atlayınca seviye × 1.000 çip ödül.</Sub>
-        <View style={[styles.mrow, { marginTop: 1.6 * u }]}><Btn u={u} pri label="Kapat" onPress={() => setProf(false)} /></View>
-      </Dlg>
+      </Modal>
 
       {/* isim değiştir */}
       <Dlg u={u} visible={rename !== null}>
@@ -479,6 +573,10 @@ const styles = StyleSheet.create({
   mrow: { flexDirection: 'row', justifyContent: 'center', gap: 10 },
   dg: { alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', backgroundColor: 'rgba(0,0,0,0.3)' },
   pfRow: { flexDirection: 'row', alignItems: 'center' },
+  pfCard: { flexDirection: 'row', backgroundColor: 'rgba(0,0,0,0.28)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  pfRow2: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.35)' },
+  pfStat: { alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.4)' },
+  soon: { alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.14)', backgroundColor: 'rgba(255,255,255,0.06)', opacity: 0.55 },
   pfK: { color: C.muted },
   pfV: { color: C.ink, fontWeight: '800', marginRight: 10 },
 });

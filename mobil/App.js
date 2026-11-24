@@ -398,6 +398,7 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
   const [rackVer, setRackVer] = useState(0);
   const [toasts, setToasts] = useState([]);
   const [statusMsg, setStatusMsg] = useState(null);
+  const [statusKind, setStatusKind] = useState('bad');
   const [handEnd, setHandEnd] = useState(null);
   const [scoreOpen, setScoreOpen] = useState(false);
   const [setOpen, setSetOpen] = useState(false);
@@ -419,8 +420,8 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
   const toast = useCallback((msg, kind) => {
     if (!msg) return;
     // ortadaki bildirim kutusu kaldırıldı: sadece uyarılar ıstakanın üstündeki durum satırında görünür
-    if (kind !== 'bad') return;
-    clearTimeout(stT.current); setStatusMsg(msg);
+    if (kind !== 'bad' && kind !== 'task') return;
+    clearTimeout(stT.current); setStatusMsg(msg); setStatusKind(kind);
     stT.current = setTimeout(() => setStatusMsg(null), 4500);
   }, []);
   const feedback = useCallback((r) => {
@@ -441,7 +442,10 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
       banner: () => {},   // büyük duyurular kaldırıldı (cezalar oyuncu kutularında görünür)
       sfx: (k) => { sfx(k); if (k === 'penalty') warn(); },
       wait: (ms) => sleep(ms),
-      ev: (name, d) => { if (name === 'penalty' && d && d.amt >= 101) giftReact('penalty', d.i); else if (name === 'finish' && d) giftReact('win', d.i); },
+      ev: (name, d) => {
+        if (name === 'penalty' && d && d.amt >= 101) giftReact('penalty', d.i); else if (name === 'finish' && d) giftReact('win', d.i);
+        L.taskEv(name, d).forEach(m => toast(m, 'task'));   // görevler
+      },
       handEnd: (rec, last) => { setTimeout(() => setHandEnd({ rec, last }), 900); },
       turn: () => { if (G() && G().turn === 0) { bump(); sfx('turn'); } },   // sıra sende: ayrı ses
     });
@@ -566,6 +570,7 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
     const why = giftBlock(giftOf(i), cat, it[2]);
     if (why) { toast(why === 'Kalıcı hediyesi var' ? 'Bu oyuncunun üzerinde kalıcı hediye var. Sadece Kalıcı bölümünden hediye gönderebilirsin.' : 'Oyuncunun üzerindeki hediyeden daha pahalı bir hediye seçmelisin.', 'bad'); return; }
     L.addChips(-it[2]); setGiftFor(null);
+    L.bump('gift_sent'); L.checkTasks().forEach(m => toast(m, 'task'));
     putGift(i, it, cat); sfx('tap');
     toast(nameOf(i) + ' oyuncusuna ' + it[0] + ' gönderdin', 'info');
     if (Math.random() < 0.35) setTimeout(() => botGift(i, cat.id === 'takil' ? 'takil' : 'kahve'), 2200 + Math.random() * 1500);
@@ -603,6 +608,7 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
     const gg = G(), r = L.payouts(gg.totals, table.bet, !!gg.cfg.team), win = r.pay[0], net = win - table.bet;
     L.addChips(win);
     const up = L.recordGame(net > 0, net);
+    L.taskGame(L.SALONS[table.salon].id, net > 0, gg.cfg);
     setSettle({ r, net, up });
   };
   const ms = 0.74;
@@ -685,7 +691,7 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
             ) : null}
             <ClockPill u={u} who="me" style={{ alignSelf: 'center' }} />
             <View style={{ flex: 1, alignItems: statusMsg ? 'flex-start' : 'flex-end' }}>
-              {statusMsg ? <Text allowFontScaling={false} numberOfLines={2} style={{ color: '#ffc0b9', fontWeight: '700', fontSize: 2.3 * u }}>{statusMsg}</Text>
+              {statusMsg ? <Text allowFontScaling={false} numberOfLines={2} style={{ color: statusKind === 'task' ? '#7ef0b5' : '#ffc0b9', fontWeight: '700', fontSize: 2.3 * u }}>{statusMsg}</Text>
                 : <Text allowFontScaling={false} style={{ color: C.amber, fontFamily: NUM_FONT, fontWeight: '700', fontSize: 2.6 * u, letterSpacing: 0.1 * u }}>Toplam {fmt(g.totals[0])}{penMine ? ' · Bu el ceza +' + penMine : ''}</Text>}
             </View>
             <View style={{ flexDirection: 'row', gap: 0.7 * u }}>

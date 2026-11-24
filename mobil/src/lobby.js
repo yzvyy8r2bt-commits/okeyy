@@ -88,7 +88,8 @@ export function takeGift() {
   if (!giftReady()) return null;
   const day = nextGiftDay(), amt = DAILY_STREAK[day - 1], w = wallet();
   w.gs = day; w.gift = today(); addChips(amt);
-  return { day, amt };
+  bump('gift'); const msgs = checkTasks();
+  return { day, amt, msgs };
 }
 
 // ---------- masalar (botlar oturuyor) ----------
@@ -174,4 +175,107 @@ export function payouts(totals, bet, team) {
   seconds.forEach(i => { pay[i] = Math.round(bet / seconds.length); });
   cut(order[0], pot - bet);
   return { pay, fee };
+}
+
+// ---------- görevler (web sürümüyle aynı zincirler ve ödüller) ----------
+export const TASK_CATS = [
+  { id: 'oyun', name: 'Oyun' }, { id: 'acma', name: 'El Açma' }, { id: 'bitirme', name: 'Bitirme' },
+  { id: 'okey', name: 'Okey & Gösterge' }, { id: 'salon', name: 'Salonlar' }, { id: 'usta', name: 'Ustalık' }
+];
+// [kimlik, kategori, sayaç, hedefler, zorluk (1 kolay · 2 orta · 3 zor), simge, başlık, açıklama ({n} = hedef)]
+export const CHAINS = [
+  ['masa', 'oyun', 'games', [1, 5, 10, 25, 50, 100, 250, 500, 1000], 1, '☕', 'Kahvehane Sakini', '{n} oyun bitir.'],
+  ['kazan', 'oyun', 'wins', [1, 3, 10, 25, 50, 100, 250, 500], 2, '🏅', 'Galibiyet Defteri', '{n} oyun kazan.'],
+  ['seri', 'oyun', 'streak', [2, 3, 5, 7, 10], 3, '🔥', 'Durdurulamaz', 'Üst üste {n} oyun kazan.'],
+  ['takim', 'oyun', 'wins_esli', [1, 5, 10, 25, 50, 100], 2, '🤝', 'Can Yoldaşı', 'Eşli oyunda {n} kez kazan.'],
+  ['katla', 'oyun', 'wins_kat', [1, 5, 15, 40, 100, 250], 2, '📈', 'Katla Katla', 'Katlamalı oyunda {n} kez kazan.'],
+  ['klasik', 'oyun', 'wins_klasik', [1, 5, 15, 40, 100, 250], 2, '🎴', 'Eski Usul', 'Klasik 101\'de {n} kez kazan.'],
+  ['yardimsiz', 'oyun', 'wins_hard', [1, 5, 15, 40, 100], 3, '🐺', 'Gözü Kapalı', 'Yardımsız modda {n} kez kazan.'],
+  ['acan', 'acma', 'open_seri', [10, 20, 30, 50, 100, 250, 500, 1000], 1, '🃏', 'Per Ustası', '{n} kez seri el aç.'],
+  ['ciftac', 'acma', 'open_cift', [5, 10, 20, 40, 80, 150, 300], 1, '👯', 'İkiz Taşlar', '{n} kez çift aç.'],
+  ['yuzelli', 'acma', 'open150', [1, 5, 15, 40, 100, 250], 2, '💯', 'Yüz Elli Hanesi', '150 ve üzeri puanla {n} kez el aç.'],
+  ['ikiyuz', 'acma', 'open200', [1, 3, 10, 25, 50], 3, '🚀', 'İki Yüz Hanesi', '200 ve üzeri puanla {n} kez el aç.'],
+  ['yedicift', 'acma', 'open_cift7', [1, 5, 15, 40, 100], 2, '7️⃣', 'Yedi Kardeş', '7 ve üzeri çiftle {n} kez aç.'],
+  ['rekor', 'acma', 'record', [1, 5, 15, 40, 100], 2, '🏆', 'Tahtanın Rekoru', '{n} kez rekor ödülü al.'],
+  ['isle', 'acma', 'process', [50, 100, 250, 500, 1000, 2500, 5000], 1, '🧱', 'Taş Döşeyen', 'Perlere toplam {n} taş işle.'],
+  ['bitir', 'bitirme', 'finish', [1, 5, 10, 25, 50, 100, 250], 1, '✋', 'Son Taş', '{n} el bitir.'],
+  ['dugun', 'bitirme', 'finish_cift', [1, 5, 10, 25, 50, 100], 2, '💍', 'Çiftle Veda', 'Çift açıp {n} el bitir.'],
+  ['okeyat', 'bitirme', 'finish_okey', [1, 3, 10, 25, 50], 3, '🌟', 'Okeyle Veda', 'Okey atarak {n} el bitir.'],
+  ['kafa', 'bitirme', 'finish_kafa', [1, 3, 10, 25], 3, '💥', 'Kafadan Bitir', 'Kimse açmadan {n} kez kafa at.'],
+  ['okeykafa', 'bitirme', 'finish_okeykafa', [1, 3, 10], 3, '⚡', 'Şimşek Kafa', 'Kafa atarken okeyle {n} kez bitir.'],
+  ['avci', 'okey', 'swap', [1, 3, 10, 25, 50, 100, 250], 2, '🎯', 'Okey Kapan', 'Masadan {n} kez okey çal.'],
+  ['gosterge', 'okey', 'gost', [1, 3, 10, 25, 50, 100], 1, '👁', 'Göz Kulak', '{n} kez "Gösterge bende" de.'],
+  ['cayci', 'salon', 'g_cayci', [5, 10, 25, 50, 100], 1, '🫖', 'Çay Ocağı', 'Çaycı salonunda {n} oyun oyna.'],
+  ['kahveci', 'salon', 'g_kahveci', [5, 10, 25, 50, 100, 250], 1, '☕', 'Türk Kahvesi', 'Kahveci salonunda {n} oyun oyna.'],
+  ['ustasalon', 'salon', 'g_usta', [5, 10, 25, 50, 100], 2, '🎩', 'Ustaların Masası', 'Usta salonunda {n} oyun oyna.'],
+  ['efsane', 'salon', 'w_efsane', [1, 5, 10, 25, 50], 3, '🔥', 'Altın Masa', 'Efsane salonunda {n} oyun kazan.'],
+  ['kral', 'salon', 'w_kral', [1, 3, 10, 25], 3, '🦁', 'Tahtın Sahibi', 'Kral salonunda {n} oyun kazan.'],
+  ['kazanc', 'usta', 'won', [10000, 50000, 100000, 500000, 1000000, 10000000, 100000000], 2, '💰', 'Çip Kesesi', 'Masalardan toplam {n} çip kazan.'],
+  ['seviye', 'usta', 'level', [5, 10, 20, 30, 50], 3, '⭐', 'Merdiven', '{n}. seviyeye ulaş.'],
+  ['comert', 'usta', 'gift_sent', [1, 5, 25, 100, 500], 1, '💝', 'Gönlü Zengin', 'Masadakilere {n} hediye gönder.'],
+  ['gunluk', 'usta', 'gift', [1, 7, 30, 100, 365], 1, '🎁', 'Her Sabah Bir Çay', '{n} kez günlük hediye al.']
+];
+export const DIFF = { 1: { dp: 20, chip: 1000, name: 'Kolay' }, 2: { dp: 40, chip: 2500, name: 'Orta' }, 3: { dp: 80, chip: 5000, name: 'Zor' } };
+export const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
+// aşama k (0'dan): DP ve çip her aşamada büyür
+export function stageReward(diff, k) {
+  const d = DIFF[diff];
+  return { dp: Math.round(d.dp * Math.pow(1.6, k) / 5) * 5, chip: Math.round(d.chip * Math.pow(1.8, k) / 500) * 500 };
+}
+export function tstate() { const st = wallet().st; if (!st.c) st.c = {}; if (!st.stage) st.stage = {}; return st; }
+export function bump(key, n) { const st = tstate(); st.c[key] = (st.c[key] || 0) + (n || 1); }
+function setMax(key, v) { const st = tstate(); st.c[key] = Math.max(st.c[key] || 0, v); }
+export function chainVal(ch) { const st = tstate(); return ch[2] === 'level' ? levelInfo(st.xp).lv : ch[2] === 'won' ? (st.won || 0) : (st.c[ch[2]] || 0); }
+export function checkTasks() {
+  const msgs = [];
+  const st = tstate();
+  let guard = 0, again = true;
+  while (again && guard++ < 20) {               // seviye görevi DP ile tetiklenebilir: birkaç tur dön
+    again = false;
+    for (const ch of CHAINS) {
+      let k = st.stage[ch[0]] || 0;
+      while (k < ch[3].length && chainVal(ch) >= ch[3][k]) {
+        const r = stageReward(ch[4], k);
+        st.stage[ch[0]] = ++k;
+        addChips(r.chip); addXP(r.dp); again = true;
+        msgs.push('Görev: ' + ch[6] + ' ' + ROMAN[k - 1] + ' tamamlandı · +' + r.dp + ' DP · +' + chipFmt(r.chip) + ' çip');
+      }
+    }
+  }
+  saveWallet();
+  return msgs;
+}
+
+// oyun içi olaylar (sadece masadaki sen) — web ile aynı
+export function taskEv(name, d) {
+  if (!d || d.i !== 0) return [];
+  if (name === 'open') {
+    if (d.kind === 'cift') { bump('open_cift'); if (d.val >= 7) bump('open_cift7'); }
+    else { bump('open_seri'); if (d.val >= 150) bump('open150'); if (d.val >= 200) bump('open200'); }
+  }
+  else if (name === 'swap' && !d.gost) bump('swap');
+  else if (name === 'gost') bump('gost');
+  else if (name === 'record') bump('record');
+  else if (name === 'process') bump('process');
+  else if (name === 'finish') {
+    bump('finish');
+    if (d.cift) bump('finish_cift');
+    if (d.okey) bump('finish_okey');
+    if (d.elden) bump('finish_kafa');
+    if (d.elden && d.okey) bump('finish_okeykafa');
+  } else return [];
+  return checkTasks();
+}
+// oyun sonu
+export function taskGame(salonId, win, cfg) {
+  const st = tstate();
+  bump('games'); bump('g_' + salonId);
+  if (win) {
+    bump('wins'); bump('w_' + salonId);
+    if (cfg.team) bump('wins_esli');
+    bump(cfg.mode === 'katlamali' ? 'wins_kat' : 'wins_klasik');
+    if (cfg.hard) bump('wins_hard');
+    st.streak = (st.streak || 0) + 1; setMax('streak', st.streak);
+  } else st.streak = 0;
+  return checkTasks();
 }
