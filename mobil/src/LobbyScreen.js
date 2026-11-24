@@ -358,7 +358,7 @@ export default function LobbyScreen({ u, ins, set, saveSet, onStart, openSetting
                 const v = filter.pen[k];
                 const next = v === undefined ? true : v ? false : undefined;
                 return (
-                  <Pressable key={k} onPress={() => setFilter({ ...filter, pen: { ...filter.pen, [k]: next } })}
+                  <Pressable key={k} onPress={() => setFilter({ ...filter, pen: { ...filter.pen, [k]: next, ...(k === 'herTas' && next === true ? { yanAc: true } : {}) } })}
                     style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 7.2 * u, paddingHorizontal: 1.8 * u, marginBottom: 0.8 * u, borderRadius: 1.4 * u, borderWidth: 1,
                       borderColor: v === undefined ? 'rgba(255,255,255,0.14)' : v ? 'rgba(126,240,181,0.6)' : 'rgba(255,120,120,0.5)',
                       backgroundColor: v === undefined ? 'rgba(0,0,0,0.35)' : v ? 'rgba(40,140,90,0.25)' : 'rgba(140,40,40,0.22)' }}>
