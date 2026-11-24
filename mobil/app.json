@@ -2,25 +2,27 @@
   "expo": {
     "name": "Kahve Usulü 101 Okey",
     "slug": "kahve-usulu-101-okey",
-    "version": "0.1.0",
+    "version": "1.0.0",
     "orientation": "landscape",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
     "backgroundColor": "#170a2e",
     "ios": {
       "bundleIdentifier": "com.kahveusulu.okey101",
-      "supportsTablet": true,
+      "supportsTablet": false,
       "requireFullScreen": true,
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
-      }
+      },
+      "buildNumber": "1"
     },
     "android": {
       "package": "com.kahveusulu.okey101",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#2c1252"
-      }
+      },
+      "versionCode": 1
     },
     "plugins": [
       "expo-screen-orientation",

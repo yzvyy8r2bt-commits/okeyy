@@ -1,11 +1,8 @@
 // Ses efektleri: web sürümündeki sentez seslerinden üretilmiş kısa dosyalar
 import { createAudioPlayer, setAudioModeAsync } from 'expo-audio';
 
-// Snack .wav dosyalarını kod sanıyor; bu yüzden sesler şimdilik GitHub'dan yükleniyor
-// (mağaza sürümünde uygulamanın içine gömülecek)
-const BASE = 'https://raw.githubusercontent.com/yzvyy8r2bt-commits/okeyy/main/mobil/assets/sfx/';
-const SRC = {};
-for (const k of ['tap', 'place', 'draw', 'discard', 'open', 'penalty', 'win', 'okey', 'turn']) SRC[k] = { uri: BASE + k + '.wav' };
+import { SFX } from './media';
+const SRC = SFX;
 export const SOUND = { on: true };
 const P = {};
 let ready = false;

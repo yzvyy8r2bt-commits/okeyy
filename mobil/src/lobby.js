@@ -43,8 +43,6 @@ export async function loadWallet() {
   if (!w || typeof w.chips !== 'number') w = fresh();
   if (!w.st) w.st = fresh().st;
   if (!w.name) w.name = 'Oyuncu';
-  // DENEME: geliştirici için tek seferlik 10 milyon çip (mağazaya göndermeden önce silinecek)
-  if (!w.test10m) { w.chips += 10000000; w.test10m = 1; }
   W.w = w;
   saveWalletNow(w);
   return w;

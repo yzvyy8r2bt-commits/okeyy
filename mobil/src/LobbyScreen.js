@@ -4,6 +4,7 @@ import { View, Text, Pressable, StyleSheet, ScrollView, Modal, TextInput } from 
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { C, Btn, Toggle, Coin, NUM_FONT } from './ui';
 import * as L from './lobby';
+import { FEATURES } from './config';
 
 const GOLD = '#ffe39a';
 const pfB = u => ({ color: C.ink, fontFamily: NUM_FONT, fontWeight: '800', fontSize: 2.8 * u });
@@ -181,7 +182,7 @@ export default function LobbyScreen({ u, ins, set, saveSet, onStart, openSetting
             </View>
           </View>
         ) : <>
-        <Btn u={u} sm label={adBtn.label} disabled={adBtn.dis} onPress={() => setAdOpen(true)} style={{ paddingHorizontal: 1.4 * u }} />
+        {FEATURES.ads ? <Btn u={u} sm label={adBtn.label} disabled={adBtn.dis} onPress={() => setAdOpen(true)} style={{ paddingHorizontal: 1.4 * u }} /> : null}
         <Pressable onPress={() => setPtOpen(true)} style={({ pressed }) => [styles.ptBtn, { minHeight: 6.6 * u, borderRadius: 1.6 * u, paddingHorizontal: 1.2 * u, gap: 0.8 * u }, pressed && { opacity: 0.85 }]}>
           <Text allowFontScaling={false} style={{ fontSize: 2.6 * u }}>⏱</Text>
           <View style={{ gap: 0.4 * u }}>
@@ -367,7 +368,7 @@ export default function LobbyScreen({ u, ins, set, saveSet, onStart, openSetting
                 {[['stat', 'İstatistikler'], ['tasks', 'Görevler'], ['level', 'Seviye']].map(([id, t]) => (
                   <Btn key={id} u={u} pri={ptab === id} label={t} onPress={() => setPtab(id)} style={{ width: '31.5%', paddingHorizontal: 0.4 * u }} />
                 ))}
-                {['Sıralamalar', 'Hediye Yolla', 'Arkadaşlar'].map(t => (
+                {(FEATURES.onlineTabs ? ['Sıralamalar', 'Hediye Yolla', 'Arkadaşlar'] : []).map(t => (
                   <View key={t} style={[styles.soon, { width: '31.5%', minHeight: 7 * u, borderRadius: 1.6 * u }]}>
                     <Text allowFontScaling={false} numberOfLines={1} adjustsFontSizeToFit style={{ color: C.ink, fontWeight: '800', fontSize: 2.3 * u }}>{t}</Text>
                     <Text allowFontScaling={false} style={{ color: C.muted, fontWeight: '600', fontSize: 1.5 * u }}>Online sürümde</Text>

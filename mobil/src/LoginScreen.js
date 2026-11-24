@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, Pressable, StyleSheet, Animated, Easing } from 'react-native';
 import { NUM_FONT } from './ui';
 import { tick, bump } from './feel';
+import { FEATURES } from './config';
 
 // tavandan sarkan ampuller: [x %, ip uzunluğu (u), gecikme]
 const BULBS = [[4, 8, 0], [13, 20, 400], [22, 6, 900], [31, 15, 200], [69, 14, 700], [78, 5, 300], [87, 19, 1100], [96, 9, 500]];
@@ -108,14 +109,14 @@ export default function LoginScreen({ u, ins, onGuest, onOffline, onHelp }) {
 
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: 18 * u }}>
         <Logo u={u} />
-        <Pressable onPress={() => { bump(); onOffline(); }} style={({ pressed }) => [{ marginTop: 4.5 * u, flexDirection: 'row', alignItems: 'center', gap: 1.2 * u, height: 8 * u, paddingHorizontal: 4 * u, borderRadius: 4 * u,
+        {FEATURES.onlineLogin ? <Pressable onPress={() => { bump(); onOffline(); }} style={({ pressed }) => [{ marginTop: 4.5 * u, flexDirection: 'row', alignItems: 'center', gap: 1.2 * u, height: 8 * u, paddingHorizontal: 4 * u, borderRadius: 4 * u,
           backgroundColor: '#14806a', borderWidth: 0.4 * u, borderColor: '#0a4a3d', borderBottomWidth: 0.9 * u }, pressed && { transform: [{ scale: 0.96 }] }]}>
           <Text allowFontScaling={false} style={{ fontSize: 3.6 * u }}>📴</Text>
           <View>
             <Text allowFontScaling={false} style={{ color: '#fff', fontFamily: NUM_FONT, fontWeight: '800', fontSize: 3.2 * u, letterSpacing: 0.15 * u }}>ÇEVRİMDIŞI OYNA</Text>
             <Text allowFontScaling={false} style={{ color: 'rgba(255,255,255,0.8)', fontWeight: '700', fontSize: 1.7 * u }}>Çipsiz · bütün salonlar ve masalar açık</Text>
           </View>
-        </Pressable>
+        </Pressable> : null}
       </View>
 
       {msg ? (
@@ -124,12 +125,19 @@ export default function LoginScreen({ u, ins, onGuest, onOffline, onHelp }) {
         </View>
       ) : null}
 
+      {FEATURES.onlineLogin ? (
       <View style={{ position: 'absolute', left: padX + 6 * u, right: padX + 6 * u, bottom: Math.max(ins.bottom, 5.5 * u), flexDirection: 'row', gap: 2.4 * u }}>
         <LoginBtn u={u} bg="#26262b" edge="#0d0d10" icon="" iconBox={<AppleMark u={u} />} label="APPLE İLE GİRİŞ YAP" onPress={() => soon('Apple ile giriş')} />
         <LoginBtn u={u} bg="#1f7fe0" edge="#0f4f99" icon="f" label="FACEBOOK İLE BAĞLAN" onPress={() => soon('Facebook ile giriş')} />
         <LoginBtn u={u} bg="#8a3ddb" edge="#55208f" icon="@" label="EMAİL İLE BAĞLAN" onPress={() => soon('Email ile giriş')} />
         <LoginBtn u={u} bg="#f39a12" edge="#a85d00" label="MİSAFİR GİRİŞİ" onPress={() => { bump(); onGuest(); }} />
       </View>
+      ) : (
+      <View style={{ position: 'absolute', left: padX + 24 * u, right: padX + 24 * u, bottom: Math.max(ins.bottom, 5.5 * u), flexDirection: 'row', gap: 3 * u }}>
+        <LoginBtn u={u} bg="#14806a" edge="#0a4a3d" icon="📴" iconBox={<Text allowFontScaling={false} style={{ fontSize: 4 * u }}>📴</Text>} label="ÇEVRİMDIŞI OYNA" onPress={() => { bump(); onOffline(); }} />
+        <LoginBtn u={u} bg="#f39a12" edge="#a85d00" label="MİSAFİR GİRİŞİ" onPress={() => { bump(); onGuest(); }} />
+      </View>
+      )}
     </View>
   );
 }

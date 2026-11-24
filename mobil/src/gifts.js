@@ -3,9 +3,8 @@ import React from 'react';
 import { Image, Text } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GIFT_CATS } from './giftData';
-// Web'deki SVG hediye çizimleri birebir resme çevrildi (assets/gifts). Snack resimleri pakete koyamadığı için
-// şimdilik GitHub'dan yükleniyor; mağaza sürümünde uygulamanın içine gömülecek.
-const GIMG = 'https://raw.githubusercontent.com/yzvyy8r2bt-commits/okeyy/main/mobil/assets/gifts/';
+// Web'deki SVG hediye çizimleri birebir resme çevrildi (assets/gifts), uygulamanın içine gömülü
+import { GIFT_IMG } from './media';
 const SLUG = {"Çay": "cay", "Türk Kahvesi": "turk-kahvesi", "Ayran": "ayran", "Gazoz": "gazoz", "Salep": "salep", "Limonata": "limonata", "Maden Suyu": "maden-suyu", "Boza": "boza", "Şalgam": "salgam", "Ihlamur": "ihlamur", "Menengiç Kahvesi": "menengic-kahvesi", "Simit": "simit", "Lokum": "lokum", "Tost": "tost", "Kumpir": "kumpir", "Baklava": "baklava", "Dondurma": "dondurma", "Gül": "gul", "Nazar Boncuğu": "nazar-boncugu", "Dört Yapraklı Yonca": "dort-yaprakli-yonca", "Kalp": "kalp", "Pırlanta": "pirlanta", "Yüzük": "yuzuk", "Terlik": "terlik", "Domates": "domates", "Biberon": "biberon", "Kaplumbağa": "kaplumbaga", "Mendil": "mendil", "Salyangoz": "salyangoz", "Palyaço": "palyaco", "Uyku": "uyku", "Taç": "tac", "Fötr Şapka": "fotr-sapka", "Güneş Gözlüğü": "gunes-gozlugu", "Kupa": "kupa", "Madalya": "madalya", "Yıldız": "yildiz", "Tespih": "tespih", "Kol Saati": "kol-saati", "Altın Kolye": "altin-kolye", "Papyon": "papyon", "Çiçek Buketi": "cicek-buketi", "Sarı-Kırmızı Forma": "sari-kirmizi-forma", "Sarı-Lacivert Forma": "sari-lacivert-forma", "Siyah-Beyaz Forma": "siyah-beyaz-forma", "Bordo-Mavi Forma": "bordo-mavi-forma", "Kırmızı-Yeşil Forma": "kirmizi-yesil-forma", "Kırmızı-Beyaz Forma": "kirmizi-beyaz-forma", "Yeşil-Beyaz Forma": "yesil-beyaz-forma", "Gelinlik": "gelinlik", "Damatlık": "damatlik", "Altın Semaver": "altin-semaver", "Elmas Okey Taşı": "elmas-okey-tasi", "Kahvehane Tapusu": "kahvehane-tapusu", "Elmas Bardakta Çay": "elmas-bardakta-cay", "Lüks Otomobil": "luks-otomobil", "Lüks Yat": "luks-yat"};
 export { GIFT_CATS };
 
@@ -49,7 +48,7 @@ export function botLv(name) { let h = 0; for (const c of name) h = (h * 31 + c.c
 
 export function GiftIcon({ name, size }) {
   const sl = SLUG[name];
-  if (sl) return <Image source={{ uri: GIMG + sl + '.png' }} style={{ width: size, height: size }} resizeMode="contain" />;
+  if (sl && GIFT_IMG[sl]) return <Image source={GIFT_IMG[sl]} style={{ width: size, height: size }} resizeMode="contain" />;
   const it = GIFT_CATS.flatMap(c => c.items).find(x => x[0] === name);
   return <Text allowFontScaling={false} style={{ fontSize: size * 0.78, lineHeight: size, textAlign: 'center', width: size }}>{it ? it[1] : '🎁'}</Text>;
 }
