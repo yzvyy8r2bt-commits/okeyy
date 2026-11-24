@@ -455,7 +455,6 @@ function hDraw(src) {
     const prev = G.players[3];
     if (!prev.discards.length) return fail('Yandan alınacak taş yok. ' + prev.name + ' henüz taş atmadı.');
     const top = prev.discards[prev.discards.length - 1];
-    if (G.players[0].sideReturned) return fail('Yandan aldığın taşı geri bıraktın; bu turda desteden çekmelisin.');
     const t = takeSide(0);
     logEv(0, 'yandan aldı: ' + tileName(t));
     H.sfx('draw'); H.render();

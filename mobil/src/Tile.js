@@ -20,7 +20,7 @@ function FakeIcon({ s }) {
 }
 
 // w,h: taş boyutu; fs: rakam yazı boyutu
-export default function TileFace({ tile, w, h, fs, mark, glow, gb, blank }) {
+export default function TileFace({ tile, w, h, fs, mark, glow, gb, blank, hw }) {
   fs = fs || w * 0.7;
   const lip = Math.max(1.5, h * 0.045);
   const r = Math.max(3, w * 0.12);
@@ -41,6 +41,11 @@ export default function TileFace({ tile, w, h, fs, mark, glow, gb, blank }) {
           </>
         )}
         {gb ? <Text style={[styles.gb, { fontSize: fs * 0.26 }]}>G</Text> : null}
+        {hw && !blank ? (
+          <View style={{ position: 'absolute', left: '5%', top: '3%', width: fs * 0.36, height: fs * 0.36, borderRadius: fs, backgroundColor: '#ff4d3d', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#fff' }}>
+            <Text allowFontScaling={false} style={{ color: '#fff', fontWeight: '900', fontSize: fs * 0.26, lineHeight: fs * 0.32 }}>!</Text>
+          </View>
+        ) : null}
       </View>
       {mark ? <View style={[styles.mark, { bottom: h * 0.08, backgroundColor: mark === 'meld' ? '#19c47a' : '#e98a0c' }]} /> : null}
     </View>

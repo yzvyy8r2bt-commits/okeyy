@@ -537,7 +537,7 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
     tap: () => { const g = G(); if (g && g.turn === 0 && g.phase === 'draw') feedback(GM.hDraw(src)); },
     start: (x, y) => {
       const g = G(); if (!g || g.turn !== 0 || g.phase !== 'draw') return;
-      if (src === 'side' && (g.players[0].sideReturned || !g.players[3].discards.length)) return;
+      if (src === 'side' && !g.players[3].discards.length) return;
       const t = src === 'side' ? g.players[3].discards[g.players[3].discards.length - 1] : null;
       ghostPos.setValue({ x: x - geom.cellW / 2, y: y - geom.tileH * 0.8 });
       ghostRef.current = { src, tile: t };
@@ -612,11 +612,14 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
   }
   const disc = g.turn === 0 && g.phase === 'discard';
   const canDraw = g.turn === 0 && g.phase === 'draw';
-  const canSide = canDraw && !P.sideReturned;
+  const canSide = canDraw;
   const lastOf = i => { const d = g.players[i].discards; return d[d.length - 1]; };
+  const prevOf = i => { const d = g.players[i].discards; return d[d.length - 2]; };   // sürüklerken alttaki taş görünür
   const an = E.rackAnalysis(P.slots);
   const hard = !!g.cfg.hard;
   const marks = hard ? { meld: new Set(), pair: new Set() } : { meld: an.meldIds, pair: an.pairIds };
+  // yardımlı: işlek taşlar (atarsan 101 ceza) kırmızı ünlemle görünür
+  const hwIds = !hard && g.table.length ? new Set(GM.handOf(P).filter(t => E.isWrongDiscard(t, g.table)).map(t => t.id)) : null;
   const pd = P.pend;
   const kat = g.cfg.mode === 'katlamali';
   const gbId = GM.canAnnounce(P) ? (GM.handOf(P).find(GM.isGostTwin) || {}).id : null;
@@ -702,7 +705,7 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
       {/* ---- benim bölümüm ---- */}
       <View style={[styles.me, { marginTop: 0.8 * u }]}>
         <View style={{ width: 17.5 * u, alignItems: 'center', marginTop: -7.5 * u, alignSelf: 'stretch' }}>
-          <Corner u={u} cref={yanRef} tile={lastOf(3)} hot={canSide && !!lastOf(3)} drag={sideDrag} />
+          <Corner u={u} cref={yanRef} tile={ghost && ghost.src === 'side' ? prevOf(3) : lastOf(3)} hot={canSide && !!lastOf(3)} drag={sideDrag} />
           {disc && P.sideTile && !P.sideUsed ? (
             <Btn u={u} label="Geri Bırak" onPress={() => feedback(GM.hReturnSide())}
               style={{ marginTop: 0.8 * u, width: 15.5 * u, paddingHorizontal: 0.6 * u, backgroundColor: 'rgba(255,187,51,0.18)', borderColor: 'rgba(255,187,51,0.7)' }} />
@@ -734,7 +737,7 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
             </View>
           </View>
           <View ref={rackRef} collapsable={false}>
-            <Rack slots={P.slots} geom={geom} ver={rackVer} marks={marks} freshId={g.freshId} gbId={gbId}
+            <Rack slots={P.slots} geom={geom} ver={rackVer} marks={marks} freshId={g.freshId} gbId={gbId} hwIds={hwIds}
               myTurn={g.turn === 0 && g.phase !== 'over'} onDrop={onDrop} onDropOut={onDropOut} onGost={onGost} />
           </View>
         </View>
