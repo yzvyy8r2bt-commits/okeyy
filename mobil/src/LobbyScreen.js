@@ -92,6 +92,9 @@ export default function LobbyScreen({ u, ins, set, saveSet, onStart, openSetting
   const [fOpen, setFOpen] = useState(false);
   const [msg, setMsg] = useState(null);
   const [gift, setGift] = useState(false);
+  const [ptOpen, setPtOpen] = useState(false);
+  const [adOpen, setAdOpen] = useState(false);
+  const [adPlay, setAdPlay] = useState(null);   // deneme reklamı: kalan saniye
   const [prof, setProf] = useState(false);
   const [ptab, setPtab] = useState('stat');
   const [tcat, setTcat] = useState('oyun');
@@ -103,6 +106,21 @@ export default function LobbyScreen({ u, ins, set, saveSet, onStart, openSetting
 
   const say = (m, bad) => { clearTimeout(msgT.current); setMsg({ m, bad }); msgT.current = setTimeout(() => setMsg(null), 3500); };
   useEffect(() => { if (flash) say(flash.m, flash.bad); }, [flash]);
+
+  // reklam bekleme süresi geri saysın (lobi ve reklam penceresi)
+  useEffect(() => { const id = setInterval(() => setTick(t => t + 1), adOpen ? 1000 : 30000); return () => clearInterval(id); }, [adOpen]);
+  useEffect(() => {
+    if (adPlay === null || adPlay <= 0) return;
+    const id = setTimeout(() => setAdPlay(x => (x === null ? null : x - 1)), 1000);
+    return () => clearTimeout(id);
+  }, [adPlay]);
+  const adBtn = (() => {
+    const wt = L.adWait(), left = L.adLeft();
+    if (!left) return { label: '▶ Reklam: yarın', dis: true };
+    if (wt) return { label: '▶ ' + Math.ceil(wt / 60000) + ' dk sonra' };
+    return { label: '▶ Reklam · +' + L.chipShort(L.AD_REWARD) };
+  })();
+  const pt = L.ptState(), ptG = L.PT_GOALS[pt.got], ptPct = ptG ? Math.min(100, Math.round(pt.sec * 100 / ptG[0])) : 100;
 
   // masaya oturunca 10 sn bekleme (bu sürede çip düşmeden kalkılabilir)
   useEffect(() => {
@@ -153,6 +171,14 @@ export default function LobbyScreen({ u, ins, set, saveSet, onStart, openSetting
         <Text allowFontScaling={false} style={{ color: C.ink, fontFamily: NUM_FONT, fontWeight: '700', fontSize: 3.2 * u, letterSpacing: 0.6 * u }}>OKEY</Text>
       </View>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: u }}>
+        <Btn u={u} sm label={adBtn.label} disabled={adBtn.dis} onPress={() => setAdOpen(true)} style={{ paddingHorizontal: 1.4 * u }} />
+        <Pressable onPress={() => setPtOpen(true)} style={({ pressed }) => [styles.ptBtn, { minHeight: 6.6 * u, borderRadius: 1.6 * u, paddingHorizontal: 1.2 * u, gap: 0.8 * u }, pressed && { opacity: 0.85 }]}>
+          <Text allowFontScaling={false} style={{ fontSize: 2.6 * u }}>⏱</Text>
+          <View style={{ gap: 0.4 * u }}>
+            <Text allowFontScaling={false} style={{ color: C.ink, fontWeight: '700', fontSize: 1.6 * u }}>{ptG ? L.ptLabel(ptG[0]) + ' → +' + L.chipShort(ptG[1]) : 'Hepsi alındı'}</Text>
+            <View style={{ height: 0.7 * u, borderRadius: 9, backgroundColor: 'rgba(255,255,255,0.15)', overflow: 'hidden' }}><View style={{ width: ptPct + '%', height: '100%', backgroundColor: C.good }} /></View>
+          </View>
+        </Pressable>
         <View style={[styles.chips, { borderRadius: 3 * u, paddingVertical: u, paddingHorizontal: 1.6 * u }]}>
           <Coin s={3 * u} />
           <Text allowFontScaling={false} style={{ fontFamily: NUM_FONT, fontWeight: '800', fontSize: 3 * u, color: GOLD }}>{L.chipFmt(w.chips)}</Text>
@@ -419,6 +445,74 @@ export default function LobbyScreen({ u, ins, set, saveSet, onStart, openSetting
         </View>
       </Modal>
 
+      {/* oyun süresi ödülleri */}
+      <Dlg u={u} visible={ptOpen} wide>
+        <Text allowFontScaling={false} style={{ color: C.amber, fontFamily: NUM_FONT, fontWeight: '800', fontSize: 5 * u, letterSpacing: 0.2 * u }}>OYUN SÜRESİ ÖDÜLLERİ</Text>
+        <Text allowFontScaling={false} style={{ color: C.muted, fontSize: 2.2 * u, marginTop: 0.4 * u }}>Toplam oyun süren: <Text style={{ color: C.amber, fontWeight: '800' }}>{L.ptFmt(pt.sec)}</Text>. Süre sadece masada oyun oynarken işler; oyun bitince durur, yeni oyunda kaldığı yerden devam eder. Son ödülden sonra hepsi en baştan yeniden başlar.{(pt.round || 1) > 1 ? ' (' + pt.round + '. tur)' : ''}</Text>
+        <ScrollView style={{ marginTop: 1.4 * u, flexGrow: 0 }}>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 0.8 * u }}>
+            {L.PT_GOALS.map((g, k) => {
+              const done = k < pt.got, cur = k === pt.got, pc = cur ? ptPct : done ? 100 : 0;
+              return (
+                <View key={k} style={{ width: '49.4%', flexDirection: 'row', alignItems: 'center', gap: u, minHeight: 5.2 * u, paddingHorizontal: 1.2 * u, borderRadius: u, backgroundColor: 'rgba(0,0,0,0.3)', borderWidth: cur ? 0.4 * u : 0, borderColor: C.amber }}>
+                  <Text allowFontScaling={false} style={{ width: 13 * u, color: done ? C.muted : C.ink, fontWeight: '700', fontSize: 2.2 * u }}>{L.ptLabel(g[0])}</Text>
+                  <View style={{ flex: 1, height: 1 * u, borderRadius: 9, backgroundColor: 'rgba(255,255,255,0.12)', overflow: 'hidden' }}><View style={{ width: pc + '%', height: '100%', backgroundColor: done ? '#b07a2a' : C.amber }} /></View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', width: 10 * u, opacity: done ? 0.6 : 1 }}><Coin s={2.2 * u} /><Text allowFontScaling={false} style={{ color: C.ink, fontFamily: NUM_FONT, fontWeight: '800', fontSize: 2.1 * u }}>{L.chipShort(g[1])}</Text></View>
+                  <Text allowFontScaling={false} style={{ width: 8 * u, textAlign: 'right', color: C.good, fontWeight: '700', fontSize: 1.8 * u }}>{done ? 'Alındı ✓' : cur ? pc + '%' : ''}</Text>
+                </View>
+              );
+            })}
+          </View>
+        </ScrollView>
+        <Btn u={u} pri label="Kapat" style={{ marginTop: 1.6 * u, minHeight: 7.4 * u }} onPress={() => setPtOpen(false)} />
+      </Dlg>
+
+      {/* reklam izle */}
+      <Dlg u={u} visible={adOpen && adPlay === null}>
+        <H2 u={u}>Reklam İzle, Çip Kazan</H2>
+        <Sub u={u}>Reklamı sonuna kadar izlersen <Text style={{ color: C.ink, fontWeight: '800' }}>{L.chipFmt(L.AD_REWARD)} çip</Text> kazanırsın. Günde en fazla {L.AD_DAILY} reklam, iki reklam arası {L.AD_COOL / 60000} dakika.</Sub>
+        <View style={{ flexDirection: 'row', gap: 1.2 * u, marginVertical: 2 * u }}>
+          <View style={[styles.adCnt, { borderRadius: 1.4 * u, padding: 1.4 * u }]}>
+            <Text allowFontScaling={false} style={{ color: C.muted, fontSize: 1.8 * u }}>Bugün izlenen</Text>
+            <Text allowFontScaling={false} style={{ color: C.ink, fontFamily: NUM_FONT, fontWeight: '800', fontSize: 3.6 * u }}>{L.adState().n} / {L.AD_DAILY}</Text>
+          </View>
+          <View style={[styles.adCnt, { borderRadius: 1.4 * u, padding: 1.4 * u }]}>
+            <Text allowFontScaling={false} style={{ color: C.muted, fontSize: 1.8 * u }}>Kazanılan</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}><Coin s={3 * u} /><Text allowFontScaling={false} style={{ color: GOLD, fontFamily: NUM_FONT, fontWeight: '800', fontSize: 3.6 * u }}>{L.chipFmt(L.adState().n * L.AD_REWARD)}</Text></View>
+          </View>
+        </View>
+        <View style={styles.mrow}>
+          {!L.adLeft() ? <Btn u={u} disabled label="Bugünkü hakkın bitti" />
+            : L.adWait() ? <Btn u={u} disabled label={Math.ceil(L.adWait() / 1000) + ' sn sonra'} />
+            : <Btn u={u} pri label="▶ Reklamı İzle" onPress={() => setAdPlay(L.AD_LEN)} />}
+          <Btn u={u} label="Kapat" onPress={() => setAdOpen(false)} />
+        </View>
+      </Dlg>
+
+      {/* deneme reklamı (mağaza sürümünde gerçek reklam gelecek) */}
+      <Modal visible={adPlay !== null} transparent animationType="fade" supportedOrientations={['landscape']}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.92)', alignItems: 'center', justifyContent: 'center' }}>
+          <View style={[styles.modal, { width: '62%', borderRadius: 2.4 * u, padding: 2.4 * u, alignItems: 'center', gap: 1.4 * u }]}>
+            <Text allowFontScaling={false} style={{ color: C.muted, fontSize: 1.8 * u }}>Deneme reklamı · mağaza sürümünde gerçek reklam gelecek</Text>
+            <Text allowFontScaling={false} style={{ fontSize: 10 * u, lineHeight: 12 * u }}>☕</Text>
+            <Text allowFontScaling={false} style={{ color: C.amber, fontFamily: NUM_FONT, fontWeight: '800', fontSize: 4.4 * u }}>Kahve Usulü 101 Okey</Text>
+            <Text allowFontScaling={false} style={{ color: C.ink, fontSize: 2.4 * u }}>Arkadaşlarını davet et, masayı birlikte kurun!</Text>
+            <View style={{ alignSelf: 'stretch', height: 1.2 * u, borderRadius: 9, backgroundColor: 'rgba(255,255,255,0.12)', overflow: 'hidden' }}>
+              <View style={{ width: Math.round(((L.AD_LEN - (adPlay || 0)) * 100) / L.AD_LEN) + '%', height: '100%', backgroundColor: C.amber }} />
+            </View>
+            <View style={{ alignSelf: 'stretch', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Text allowFontScaling={false} style={{ color: C.ink, fontWeight: '700', fontSize: 2.4 * u }}>{adPlay > 0 ? adPlay + ' sn' : 'Tamamlandı'}</Text>
+              <Btn u={u} sm pri={adPlay === 0} label={adPlay > 0 ? 'Kapat' : 'Ödülü Al'} onPress={() => {
+                const ok = adPlay === 0;
+                setAdPlay(null); setAdOpen(false);
+                if (!ok) { say('Reklamı sonuna kadar izlemedin, ödül verilmedi.', true); return; }
+                L.adClaim(); say('Reklam ödülü: +' + L.chipFmt(L.AD_REWARD) + ' çip');
+              }} />
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       {/* isim değiştir */}
       <Dlg u={u} visible={rename !== null}>
         <H2 u={u}>İsim Değiştir</H2>
@@ -553,7 +647,7 @@ export default function LobbyScreen({ u, ins, set, saveSet, onStart, openSetting
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#1d0b3a' },
   top: { flexDirection: 'row', alignItems: 'center' },
-  brand: { flex: 1, flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center' },
+  brand: { flex: 1, minWidth: 0, overflow: 'hidden', flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center' },
   chips: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.4)', borderWidth: 1, borderColor: 'rgba(255,201,60,0.45)' },
   salons: { flex: 1, flexDirection: 'row', minHeight: 0 },
   salon: { flex: 1, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.14)', alignItems: 'flex-start' },
@@ -573,6 +667,8 @@ const styles = StyleSheet.create({
   mrow: { flexDirection: 'row', justifyContent: 'center', gap: 10 },
   dg: { alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', backgroundColor: 'rgba(0,0,0,0.3)' },
   pfRow: { flexDirection: 'row', alignItems: 'center' },
+  ptBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.08)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.14)' },
+  adCnt: { flex: 1, alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.3)' },
   pfCard: { flexDirection: 'row', backgroundColor: 'rgba(0,0,0,0.28)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
   pfRow2: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.35)' },
   pfStat: { alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.4)' },

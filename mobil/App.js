@@ -1,7 +1,7 @@
 // Kahve Usulü 101 Okey — App Store / Play Store sürümü (Expo)
 // Masa düzeni web sürümüyle birebir: tüm ölçüler u = ekran yüksekliği / 100
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, Pressable, StyleSheet, ScrollView, useWindowDimensions, Modal, Animated } from 'react-native';
+import { View, Text, Pressable, StyleSheet, ScrollView, useWindowDimensions, Modal, Animated, AppState } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import * as ScreenOrientation from 'expo-screen-orientation';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -426,6 +426,17 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
     if (kind !== 'bad' && kind !== 'task') return;
     clearTimeout(stT.current); setStatusMsg(msg); setStatusKind(kind);
     stT.current = setTimeout(() => setStatusMsg(null), 4500);
+  }, []);
+  // oyun süresi ödülleri: sadece masada, oyun sürerken, uygulama öndeyken ve oyuncu kendisi oynarken işler
+  useEffect(() => {
+    let last = Date.now();
+    const id = setInterval(() => {
+      const now = Date.now(), dt = Math.min(5, (now - last) / 1000); last = now;
+      const gg = G();
+      if (!gg || gg.phase === 'over' || AppState.currentState !== 'active' || (CLK.tOut || 0) >= 2) return;
+      L.ptTick(dt).forEach(m => toast(m, 'task'));
+    }, 1000);
+    return () => { clearInterval(id); L.saveWallet(); };
   }, []);
   const feedback = useCallback((r) => {
     if (!r) return;

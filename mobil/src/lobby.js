@@ -279,3 +279,43 @@ export function taskGame(salonId, win, cfg) {
   } else st.streak = 0;
   return checkTasks();
 }
+
+// ---------- oyun süresi ödülleri (web ile aynı): sadece masada oyun oynarken süre işler ----------
+export const PT_GOALS = [
+  [60, 1000], [600, 2000], [1800, 5000], [3600, 10000], [7200, 25000], [14400, 50000], [25200, 75000],
+  [36000, 100000], [43200, 150000], [86400, 250000], [129600, 375000], [172800, 500000], [345600, 750000],
+  [604800, 1000000], [1209600, 2000000], [2592000, 5000000]
+];
+export function ptLabel(s) {
+  if (s < 3600) return (s / 60) + ' dakika';
+  if (s < 604800) return (s / 3600) + ' saat';
+  if (s === 604800) return '1 hafta'; if (s === 1209600) return '2 hafta'; if (s === 2592000) return '1 ay';
+  return (s / 86400) + ' gün';
+}
+export function ptFmt(s) { s = Math.floor(s); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60; return h ? h + ' sa ' + m + ' dk' : m ? m + ' dk ' + x + ' sn' : x + ' sn'; }
+export function ptState() { const w = wallet(); if (!w.pt) w.pt = { sec: 0, got: 0 }; return w.pt; }
+let ptSaveN = 0;
+// her saniye çağrılır (masada, oyun sürerken); kazanılan ödüllerin mesajlarını döndürür
+export function ptTick(dt) {
+  const p = ptState(), msgs = []; p.sec += dt;
+  while (p.got < PT_GOALS.length && p.sec >= PT_GOALS[p.got][0]) {
+    const g = PT_GOALS[p.got]; p.got++;
+    addChips(g[1]);
+    msgs.push('Oyun süresi ödülü: ' + ptLabel(g[0]) + ' oynadın · +' + chipFmt(g[1]) + ' çip');
+    if (p.got >= PT_GOALS.length) {             // tüm hedefler bitti: en baştan yeniden başlar
+      p.sec = 0; p.got = 0; p.round = (p.round || 1) + 1;
+      msgs.push('Tüm süre ödüllerini topladın! Ödüller ' + p.round + '. tur için en baştan başladı.');
+      break;
+    }
+  }
+  if (msgs.length || ++ptSaveN % 15 === 0) saveWallet();
+  return msgs;
+}
+
+// ---------- ödüllü reklam (web ile aynı kurallar; şimdilik deneme reklamı, mağaza sürümünde AdMob) ----------
+export const AD_REWARD = 5000, AD_DAILY = 5, AD_COOL = 3 * 60 * 1000, AD_LEN = 15;
+const todayKey = () => { const d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); };
+export function adState() { const w = wallet(); if (!w.ad || w.ad.day !== todayKey()) w.ad = { day: todayKey(), n: 0, last: 0 }; return w.ad; }
+export function adLeft() { return Math.max(0, AD_DAILY - adState().n); }
+export function adWait() { return Math.max(0, adState().last + AD_COOL - Date.now()); }
+export function adClaim() { const s = adState(); s.n++; s.last = Date.now(); addChips(AD_REWARD); saveWallet(); }
