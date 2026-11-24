@@ -581,7 +581,7 @@ function hOpen(prefer, strict) {
   return { ok: true, msg, kind: pl.kind };
 }
 // Seçili taşları işle. meldId verilmezse uygun ilk pere işler.
-function hProcess(tileIds, meldId) {
+function hProcess(tileIds, meldId, side) {   // side: 'lo' (sol uç) / 'hi' (sağ uç) — taşın bırakıldığı taraf
   const e = humanTurnErr('discard'); if (e) return e;
   const P = G.players[0];
   const snap0 = takeSnap(P);
@@ -597,7 +597,7 @@ function hProcess(tileIds, meldId) {
     for (const m of melds) {
       if (m.kind !== 'series') continue;
       const o = extOpts(P, m, t);
-      if (o) { processTile(0, t, m, o[0]); count++; done = true; logEv(0, tileName(t) + ' işledi'); break; }
+      if (o) { processTile(0, t, m, (side && o.find(x => x.side === side)) || o[0]); count++; done = true; logEv(0, tileName(t) + ' işledi'); break; }
       if (extendOptions(m, t)) blocked = true;
     }
     if (!done && blocked) lastErr = LIMIT_MSG;

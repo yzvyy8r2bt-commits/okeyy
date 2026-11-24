@@ -546,9 +546,16 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
         const ms = 0.74, step = (4.7 + 0.15) * u * ms, r = rects[k];
         const idx = Math.max(0, Math.min(m.items.length - 1, Math.floor((x - r.x - 0.35 * u * ms) / step)));
         const it = m.items[idx];
-        if (it && (it.t.wild || it.t.gost)) { const sr = GM.hSwap(tile.id, m.id, idx); if (sr && sr.ok) { feedback(sr); return; } }
-        if (P.opened && P.openKind === 'cift' && m.kind === 'pair') feedback(GM.hProcessPairs([tile.id]));
-        else feedback(GM.hProcess([tile.id], m.id));
+        // 1) tam okeyin (göstergenin) üstüne bırakıldıysa: okeyi al
+        if (it && (it.t.wild || it.t.gost) && E.canSwapAt(m, idx, tile)) { feedback(GM.hSwap(tile.id, m.id, idx)); return; }
+        if (P.opened && P.openKind === 'cift' && m.kind === 'pair') { feedback(GM.hProcessPairs([tile.id])); return; }
+        // 2) pere işlenebiliyorsa: bırakılan tarafa (sol yarı → sol uç, sağ yarı → sağ uç)
+        const side = x < r.x + r.w / 2 ? 'lo' : 'hi';
+        if (m.kind === 'series' && E.extendOptions(m, tile)) { feedback(GM.hProcess([tile.id], m.id, side)); return; }
+        // 3) işlenemiyor ama bu perdeki okeyi tutuyorsa: okeyi al (parmak tam okeyin üstünde olmasa da)
+        const si = E.findSwapIdx(m, tile);
+        if (P.opened && si >= 0) { feedback(GM.hSwap(tile.id, m.id, si)); return; }
+        feedback(GM.hProcess([tile.id], m.id, side));
         return;
       }
     }
