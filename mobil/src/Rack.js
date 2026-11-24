@@ -1,7 +1,7 @@
 // Istaka: 2 sıra x 15 yuva. Dokunmayı telefonun yerel jest sistemi (gesture-handler)
 // yakalar; taşın konumu React'i yeniden çizmeden doğrudan güncellenir.
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { View, StyleSheet, Animated } from 'react-native';
+import { View, StyleSheet, Animated, Easing } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { tick } from './feel';
 import TileFace from './Tile';
@@ -68,8 +68,8 @@ function DraggableTileBase({ tile, slot, geom, ver, mark, fresh, gb, gbShow, hw,
     const p = slotXY(geom, slotRef.current);
     cur.current = p;
     (spring
-      ? Animated.spring(pos, { toValue: p, friction: 7, tension: 160, useNativeDriver: ND })
-      : Animated.timing(pos, { toValue: p, duration: 140, useNativeDriver: ND })).start();
+      ? Animated.spring(pos, { toValue: p, friction: 9, tension: 340, useNativeDriver: ND })
+      : Animated.timing(pos, { toValue: p, duration: 85, easing: Easing.out(Easing.quad), useNativeDriver: ND })).start();
   };
 
   // yuva değişince (dizme, araya sokma, kayma) yumuşakça yerine git
@@ -93,7 +93,7 @@ function DraggableTileBase({ tile, slot, geom, ver, mark, fresh, gb, gbShow, hw,
       cb.current.hover && cb.current.hover.begin();
       st.current = { ...cur.current };
       setUp(true);
-      Animated.timing(lift, { toValue: 1, duration: 60, useNativeDriver: ND }).start();
+      Animated.timing(lift, { toValue: 1, duration: 35, useNativeDriver: ND }).start();
       tick();
     })
     .onUpdate((e) => {
@@ -129,7 +129,7 @@ function DraggableTileBase({ tile, slot, geom, ver, mark, fresh, gb, gbShow, hw,
       const pr = press.current; clearPress();
       if (pr.peeked && tile.wild) { if (!tile.mark) flipTo(false); }
       pr.peeked = false; pr.marked = false;
-      Animated.timing(lift, { toValue: 0, duration: 110, useNativeDriver: ND }).start(() => setUp(false));
+      Animated.timing(lift, { toValue: 0, duration: 70, useNativeDriver: ND }).start(() => setUp(false));
     }), [geom, tile]);
 
   const style = {
