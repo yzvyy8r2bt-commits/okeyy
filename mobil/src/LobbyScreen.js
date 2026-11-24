@@ -443,7 +443,7 @@ export default function LobbyScreen({ u, ins, set, saveSet, onStart, openSetting
             </ScrollView>
             <View style={{ flexDirection: 'row', gap: 1.2 * u, marginTop: 1.6 * u }}>
               <Btn u={u} pri label="Kapat" style={{ flex: 3, minHeight: 7.4 * u }} onPress={() => setProf(false)} />
-              <Btn u={u} label="Çıkış Yap" style={{ flex: 1, minHeight: 7.4 * u, borderColor: 'rgba(255,107,94,0.6)' }} onPress={() => setLogoutAsk(true)} />
+              <Btn u={u} label="Çıkış Yap" style={{ flex: 1, minHeight: 7.4 * u, borderColor: 'rgba(255,107,94,0.6)' }} onPress={() => { setProf(false); setTimeout(() => setLogoutAsk(true), 450); }} />
             </View>
           </View>
         </View>
@@ -455,7 +455,7 @@ export default function LobbyScreen({ u, ins, set, saveSet, onStart, openSetting
         <Sub u={u}>Giriş ekranına dönülecek. Oradan başka bir hesapla (Apple, Facebook, Email) ya da misafir olarak girebilirsin.</Sub>
         <Sub u={u} style={{ color: C.ink }}>Misafir hesabındaki çiplerin ve ilerlemen bu telefonda saklı kalır, silinmez.</Sub>
         <View style={[styles.mrow, { marginTop: 2 * u }]}>
-          <Btn u={u} pri label="Çıkış Yap" onPress={() => { setLogoutAsk(false); setProf(false); onLogout && onLogout(); }} />
+          <Btn u={u} pri label="Çıkış Yap" onPress={() => { setLogoutAsk(false); setTimeout(() => onLogout && onLogout(), 400); }} />
           <Btn u={u} label="Vazgeç" onPress={() => setLogoutAsk(false)} />
         </View>
       </Dlg>
