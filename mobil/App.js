@@ -103,7 +103,7 @@ function ClockPill({ u, who, style }) {
 // Türkçe bulunma eki: Mehmet'te, Ayşe'de, Hasan'da, Kemal'de
 function locName(n) {
   const v = (n.toLocaleLowerCase('tr-TR').match(/[aeıioöuü]/g) || ['e']).pop();
-  const back = 'aıou'.includes(v);
+  const back = 'aıou'.includes(v) && !/(al|el)$/i.test(n);   // Kemal'de, Celal'de, Cemal'de (istisna)
   const hard = 'fstkçşhp'.includes(n.slice(-1).toLocaleLowerCase('tr-TR'));
   return n + "'" + (hard ? 't' : 'd') + (back ? 'a' : 'e');
 }
