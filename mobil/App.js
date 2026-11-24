@@ -800,22 +800,22 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
       <Modal visible={!!handEnd} transparent animationType="fade" supportedOrientations={['landscape']}>
         <View style={styles.modalBg}>
           {handEnd ? (
-            <View style={[styles.modal, { borderRadius: 2.4 * u, padding: 3 * u }]}>
-              <Text allowFontScaling={false} style={[styles.modalT, { fontSize: 4.2 * u }]}>{handEnd.rec.title}</Text>
-              {handEnd.rec.tags.length ? <Text allowFontScaling={false} style={{ color: C.muted, textAlign: 'center', fontSize: 2.3 * u, marginBottom: u }}>{handEnd.rec.tags.join(' · ')}</Text> : null}
+            <View style={[styles.modal, { width: '94%', maxHeight: '96%', borderRadius: 2.4 * u, paddingVertical: 2 * u, paddingHorizontal: 2.6 * u }]}>
+              <Text allowFontScaling={false} numberOfLines={1} adjustsFontSizeToFit style={[styles.modalT, { fontSize: 4.8 * u }]}>{handEnd.rec.title}</Text>
+              {handEnd.rec.tags.length ? <Text allowFontScaling={false} style={{ color: C.muted, textAlign: 'center', fontSize: 3.6 * u, marginBottom: 0.6 * u }}>{handEnd.rec.tags.join(' · ')}</Text> : null}
               {g.players.map((p, i) => {
                 const r = handEnd.rec.per[i];
                 return (
-                  <View key={i} style={[styles.resRow, { paddingVertical: 0.9 * u }]}>
-                    <Text allowFontScaling={false} style={[styles.resName, { fontSize: 2.6 * u, width: 18 * u }, i === handEnd.rec.winner && { color: C.amber }]}>{i === 0 ? L.wallet().name : p.name}</Text>
-                    <Text allowFontScaling={false} numberOfLines={1} style={{ flex: 1, color: C.muted, fontSize: 2 * u }}>{r.notes.join(', ')}</Text>
-                    <Text allowFontScaling={false} style={{ color: '#fff', width: 12 * u, textAlign: 'right', fontWeight: '700', fontSize: 2.6 * u }}>{r.total > 0 ? '+' + r.total : fmt(r.total)}</Text>
-                    <Text allowFontScaling={false} style={{ color: C.amber, width: 12 * u, textAlign: 'right', fontWeight: '800', fontSize: 2.6 * u }}>{fmt(g.totals[i])}</Text>
+                  <View key={i} style={[styles.resRow, { paddingVertical: 0.7 * u }]}>
+                    <Text allowFontScaling={false} numberOfLines={1} adjustsFontSizeToFit style={[styles.resName, { fontSize: 4 * u, width: 22 * u }, i === handEnd.rec.winner && { color: C.amber }]}>{i === 0 ? L.wallet().name : p.name}</Text>
+                    <Text allowFontScaling={false} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.7} style={{ flex: 1, color: '#d9cdf2', fontSize: 4 * u, lineHeight: 4.6 * u }}>{r.notes.join(', ')}</Text>
+                    <Text allowFontScaling={false} style={{ color: '#fff', width: 15 * u, textAlign: 'right', fontWeight: '700', fontSize: 4 * u }}>{r.total > 0 ? '+' + r.total : fmt(r.total)}</Text>
+                    <Text allowFontScaling={false} style={{ color: C.amber, width: 15 * u, textAlign: 'right', fontWeight: '800', fontSize: 4 * u }}>{fmt(g.totals[i])}</Text>
                   </View>
                 );
               })}
-              <Text allowFontScaling={false} style={{ color: C.muted, fontSize: 1.9 * u, marginTop: u, textAlign: 'center' }}>El {g.hands.length} / {g.cfg.hands} · Az puan kazanır</Text>
-              <View style={{ marginTop: 2 * u, alignItems: 'center' }}>
+              <Text allowFontScaling={false} style={{ color: C.muted, fontSize: 3.4 * u, marginTop: 0.6 * u, textAlign: 'center' }}>El {g.hands.length} / {g.cfg.hands} · Az puan kazanır</Text>
+              <View style={{ marginTop: 1.2 * u, alignItems: 'center' }}>
                 <Btn u={u} pri label={handEnd.last ? 'Sonucu Gör' : 'Sonraki El'} onPress={nextHand} />
               </View>
             </View>
