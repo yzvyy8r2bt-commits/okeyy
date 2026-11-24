@@ -52,7 +52,7 @@ export async function loadWallet() {
 function saveWalletNow(w) { AsyncStorage.setItem(WKEY, JSON.stringify(w)).catch(() => {}); }
 export const wallet = () => W.w || (W.w = fresh());
 export function saveWallet() { AsyncStorage.setItem(WKEY, JSON.stringify(wallet())).catch(() => {}); }
-export function addChips(n) { const w = wallet(); w.chips = Math.max(0, Math.round(w.chips + n)); saveWallet(); }
+export function addChips(n) { if (MODE.offline) return; const w = wallet(); w.chips = Math.max(0, Math.round(w.chips + n)); saveWallet(); }
 
 // Seviye: n'den n+1'e geçmek için n×100 DP; seviye atlayınca seviye×1000 çip
 export function levelInfo(xp) { let lv = 1, need = 100, rest = xp; while (rest >= need) { rest -= need; lv++; need = lv * 100; } return { lv, rest, need }; }
@@ -67,6 +67,7 @@ export function addXP(n) {
 }
 // oyun sonu: her oyun +5 DP, kazanılan oyun +10 DP
 export function recordGame(win, gain) {
+  if (MODE.offline) return null;
   const s = wallet().st; s.games++;
   if (win) s.wins++;
   if (gain > 0) { s.won += gain; s.best = Math.max(s.best, gain); }
@@ -75,10 +76,12 @@ export function recordGame(win, gain) {
 }
 
 export const salonEntry = s => s.min * ENTRY_MULT;
-export const tooRich = s => !!s.maxIn && wallet().chips > s.maxIn;
-export const canEnter = s => wallet().chips >= salonEntry(s) && !tooRich(s);
+// çevrimdışı oyun: çip yok, bütün salon ve masalar açık, ilerleme (istatistik, görev, seviye) sayılmaz
+export const MODE = { offline: false };
+export const tooRich = s => !MODE.offline && !!s.maxIn && wallet().chips > s.maxIn;
+export const canEnter = s => MODE.offline || (wallet().chips >= salonEntry(s) && !tooRich(s));
 export const enterMsg = s => (tooRich(s) ? s.name + ' salonuna en fazla ' + chipFmt(s.maxIn) + ' çiple girilebilir. Daha üst bir salonda oyna.' : s.name + ' salonuna girmek için en az ' + chipFmt(salonEntry(s)) + ' çip gerekir.');
-export const canSit = bet => wallet().chips >= bet * ENTRY_MULT;
+export const canSit = bet => MODE.offline || wallet().chips >= bet * ENTRY_MULT;
 
 // ---------- günlük hediye (7 günlük seri) ----------
 export const giftReady = () => wallet().gift !== today();
@@ -248,6 +251,7 @@ export function checkTasks() {
 
 // oyun içi olaylar (sadece masadaki sen) — web ile aynı
 export function taskEv(name, d) {
+  if (MODE.offline) return [];
   if (!d || d.i !== 0) return [];
   if (name === 'open') {
     if (d.kind === 'cift') { bump('open_cift'); if (d.val >= 7) bump('open_cift7'); }
@@ -268,6 +272,7 @@ export function taskEv(name, d) {
 }
 // oyun sonu
 export function taskGame(salonId, win, cfg) {
+  if (MODE.offline) return [];
   const st = tstate();
   bump('games'); bump('g_' + salonId);
   if (win) {
@@ -297,6 +302,7 @@ export function ptState() { const w = wallet(); if (!w.pt) w.pt = { sec: 0, got:
 let ptSaveN = 0;
 // her saniye çağrılır (masada, oyun sürerken); kazanılan ödüllerin mesajlarını döndürür
 export function ptTick(dt) {
+  if (MODE.offline) return [];
   const p = ptState(), msgs = []; p.sec += dt;
   while (p.got < PT_GOALS.length && p.sec >= PT_GOALS[p.got][0]) {
     const g = PT_GOALS[p.got]; p.got++;

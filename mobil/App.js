@@ -614,11 +614,11 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
     } else if (kind === 'win' && who === 0 && Math.random() < 0.5) setTimeout(() => botGift(1 + Math.floor(Math.random() * 3), Math.random() < 0.5 ? 'kahve' : 'gonul'), 1500);
   }, [botGift]);
   const sendGift = (i, cat, it) => {
-    if (L.wallet().chips < it[2]) { toast('Bu hediye için yeterli çipin yok.', 'bad'); return; }
+    if (!L.MODE.offline && L.wallet().chips < it[2]) { toast('Bu hediye için yeterli çipin yok.', 'bad'); return; }
     const why = giftBlock(giftOf(i), cat, it[2]);
     if (why) { toast(why === 'Kalıcı hediyesi var' ? 'Bu oyuncunun üzerinde kalıcı hediye var. Sadece Kalıcı bölümünden hediye gönderebilirsin.' : 'Oyuncunun üzerindeki hediyeden daha pahalı bir hediye seçmelisin.', 'bad'); return; }
     L.addChips(-it[2]); setGiftFor(null);
-    L.bump('gift_sent'); L.checkTasks().forEach(m => toast(m, 'task'));
+    if (!L.MODE.offline) { L.bump('gift_sent'); L.checkTasks().forEach(m => toast(m, 'task')); }
     putGift(i, it, cat); sfx('tap');
     toast(nameOf(i) + ' oyuncusuna ' + it[0] + ' gönderdin', 'info');
     if (Math.random() < 0.35) setTimeout(() => botGift(i, cat.id === 'takil' ? 'takil' : 'kahve'), 2200 + Math.random() * 1500);
@@ -826,6 +826,17 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
               <View style={[styles.modal, { borderRadius: 2.4 * u, padding: 3 * u }]}>
                 <Text allowFontScaling={false} style={[styles.modalT, { fontSize: 4.2 * u }]}>Oyun Bitti</Text>
                 <Text allowFontScaling={false} style={{ color: C.muted, textAlign: 'center', fontSize: 2.3 * u }}>{mine}</Text>
+                {L.MODE.offline ? (
+                  <View style={{ marginVertical: 1.4 * u }}>
+                    {[0, 1, 2, 3].sort((a, b) => g.totals[a] - g.totals[b]).map((i, k) => (
+                      <View key={i} style={[styles.resRow, { paddingVertical: 0.7 * u }, i === 0 && { backgroundColor: 'rgba(255,187,51,0.1)' }]}>
+                        <Text allowFontScaling={false} style={[styles.resName, { fontSize: 2.4 * u, flex: 1 }]}>{k + 1}. {i === 0 ? L.wallet().name : g.players[i].name}</Text>
+                        <Text allowFontScaling={false} style={{ color: C.ink, fontWeight: '800', fontSize: 2.4 * u }}>{g.totals[i]} puan</Text>
+                      </View>
+                    ))}
+                    <Text allowFontScaling={false} style={{ color: C.muted, textAlign: 'center', fontSize: 1.9 * u, marginTop: u }}>Çevrimdışı oyun: çip kazanılmaz, kaybedilmez.</Text>
+                  </View>
+                ) : <>
                 <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', marginVertical: 1.4 * u }}>
                   <Coin s={4 * u} />
                   <Text allowFontScaling={false} style={{ fontFamily: NUM_FONT, fontWeight: '800', fontSize: 4.4 * u, color: settle.net > 0 ? C.good : settle.net < 0 ? '#ff8a7a' : C.ink }}>{settle.net > 0 ? '+' + L.chipFmt(settle.net) : settle.net < 0 ? '−' + L.chipFmt(-settle.net) : '±0'} çip</Text>
@@ -840,6 +851,7 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
                 ))}
                 {settle.up ? <Text allowFontScaling={false} style={{ color: C.amber, textAlign: 'center', fontSize: 2.4 * u, fontWeight: '800', marginTop: u }}>SEVİYE {settle.up.lv} · Seviye ödülü: +{L.chipFmt(settle.up.reward)} çip</Text> : null}
                 <Text allowFontScaling={false} style={{ color: C.muted, textAlign: 'center', fontSize: 1.9 * u, marginTop: u }}>{g.cfg.team ? 'Kazanan takım ortadaki çipleri paylaşır. Kazananların payından %7 masa ücreti kesilir.' : 'Birinci, ortadaki çiplerin kalanını alır ve kazancından %7 masa ücreti kesilir. İkinci, yatırdığı çipi geri alır.'}</Text>
+                </>}
                 <View style={{ flexDirection: 'row', justifyContent: 'center', gap: u, marginTop: 2 * u }}>
                   <Btn u={u} pri label="Aynı Masada Tekrar" onPress={() => { setSettle(null); onAgain(); }} />
                   <Btn u={u} label="Lobiye Dön" onPress={() => { setSettle(null); leave(null); }} />
@@ -914,18 +926,18 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
           {table ? (
             <View style={[styles.modal, { borderRadius: 2.4 * u, padding: 3 * u }]}>
               <Text allowFontScaling={false} style={[styles.modalT, { fontSize: 4.2 * u }]}>Masa</Text>
-              <Text allowFontScaling={false} style={{ color: C.muted, textAlign: 'center', fontSize: 2.2 * u }}>Bahis {L.chipFmt(table.bet)} çip · {L.tableTags(table).join(' · ')}</Text>
+              <Text allowFontScaling={false} style={{ color: C.muted, textAlign: 'center', fontSize: 2.2 * u }}>{L.MODE.offline ? 'Çevrimdışı · çipsiz' : 'Bahis ' + L.chipFmt(table.bet) + ' çip'} · {L.tableTags(table).join(' · ')}</Text>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 0.6 * u, marginTop: u }}>
                 {L.modeList(table.pen).map(([n, on]) => (
                   <Text key={n} allowFontScaling={false} style={{ fontSize: 1.9 * u, fontWeight: '700', color: on ? '#7ef0b5' : '#ff9a9a', borderWidth: 1, borderColor: on ? 'rgba(126,240,181,0.55)' : 'rgba(255,120,120,0.45)', borderRadius: u, paddingHorizontal: u, paddingVertical: 0.4 * u }}>{on ? '✓ ' : '✕ '}{n}</Text>
                 ))}
               </View>
-              <Text allowFontScaling={false} style={{ color: C.muted, textAlign: 'center', fontSize: 2.1 * u, marginTop: 1.4 * u }}>Oyun bitmeden masadan kalkarsan ortaya koyduğun {L.chipFmt(table.bet)} çip geri gelmez.</Text>
+              <Text allowFontScaling={false} style={{ color: C.muted, textAlign: 'center', fontSize: 2.1 * u, marginTop: 1.4 * u }}>{L.MODE.offline ? 'Masadan kalkarsan oyun biter.' : 'Oyun bitmeden masadan kalkarsan ortaya koyduğun ' + L.chipFmt(table.bet) + ' çip geri gelmez.'}</Text>
               <View style={{ flexDirection: 'row', justifyContent: 'center', gap: u, marginTop: 2 * u }}>
                 <Btn u={u} pri label="Oyuna Dön" onPress={() => setMenuOpen(false)} />
                 <Btn u={u} label="Ayarlar" onPress={() => { setMenuOpen(false); setSetOpen(true); }} />
                 <Btn u={u} label="Kurallar" onPress={() => { setMenuOpen(false); setRulesOpen('rules'); }} />
-                <Btn u={u} label="Masadan Kalk" style={{ backgroundColor: 'rgba(255,107,94,0.25)', borderColor: 'rgba(255,107,94,0.6)' }} onPress={() => { setMenuOpen(false); L.recordGame(false, 0); leave({ m: 'Masadan kalktın: ' + L.chipFmt(table.bet) + ' çip gitti', bad: true }); }} />
+                <Btn u={u} label="Masadan Kalk" style={{ backgroundColor: 'rgba(255,107,94,0.25)', borderColor: 'rgba(255,107,94,0.6)' }} onPress={() => { setMenuOpen(false); L.recordGame(false, 0); leave(L.MODE.offline ? { m: 'Masadan kalktın' } : { m: 'Masadan kalktın: ' + L.chipFmt(table.bet) + ' çip gitti', bad: true }); }} />
               </View>
             </View>
           ) : null}
@@ -977,7 +989,7 @@ function Root() {
   useEffect(() => {
     ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE).catch(() => {});
     Promise.all([AsyncStorage.getItem(SET_KEY).catch(() => null), L.loadWallet().catch(() => null), loadPerm().catch(() => null), AsyncStorage.getItem(LOGIN_KEY).catch(() => null)]).then(([v, , , lg]) => {
-      if (lg) setScreen('lobby');
+      if (lg) { L.MODE.offline = lg === 'offline'; setScreen('lobby'); }
       let st = DEF_SET;
       try { if (v) st = { ...DEF_SET, ...JSON.parse(v) }; } catch (e) { /* bozuk kayıt */ }
       FEEL.vibrate = st.vibrate !== false; SOUND.on = st.sound !== false;
@@ -993,7 +1005,8 @@ function Root() {
       <>
         <StatusBar hidden />
         <LoginScreen u={u} ins={ins} onHelp={() => setRulesOpen('howto')}
-          onGuest={() => { AsyncStorage.setItem(LOGIN_KEY, 'guest').catch(() => {}); setScreen('lobby'); }} />
+          onGuest={() => { L.MODE.offline = false; AsyncStorage.setItem(LOGIN_KEY, 'guest').catch(() => {}); setScreen('lobby'); }}
+          onOffline={() => { L.MODE.offline = true; AsyncStorage.setItem(LOGIN_KEY, 'offline').catch(() => {}); setScreen('lobby'); }} />
         <RulesModal u={u} visible={!!rulesOpen} howto={rulesOpen === 'howto'} onClose={() => setRulesOpen(false)} />
       </>
     );

@@ -172,6 +172,15 @@ export default function LobbyScreen({ u, ins, set, saveSet, onStart, openSetting
         <Text allowFontScaling={false} style={{ color: C.ink, fontFamily: NUM_FONT, fontWeight: '700', fontSize: 3.2 * u, letterSpacing: 0.6 * u }}>OKEY</Text>
       </View>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: u }}>
+        {L.MODE.offline ? (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 0.8 * u, minHeight: 6.6 * u, paddingHorizontal: 1.8 * u, borderRadius: 1.6 * u, backgroundColor: '#14806a', borderWidth: 1, borderColor: '#3fd0a8' }}>
+            <Text allowFontScaling={false} style={{ fontSize: 2.6 * u }}>📴</Text>
+            <View>
+              <Text allowFontScaling={false} style={{ color: '#fff', fontFamily: NUM_FONT, fontWeight: '800', fontSize: 2.4 * u }}>ÇEVRİMDIŞI</Text>
+              <Text allowFontScaling={false} style={{ color: 'rgba(255,255,255,0.8)', fontSize: 1.5 * u, fontWeight: '700' }}>Çipsiz · her yer açık</Text>
+            </View>
+          </View>
+        ) : <>
         <Btn u={u} sm label={adBtn.label} disabled={adBtn.dis} onPress={() => setAdOpen(true)} style={{ paddingHorizontal: 1.4 * u }} />
         <Pressable onPress={() => setPtOpen(true)} style={({ pressed }) => [styles.ptBtn, { minHeight: 6.6 * u, borderRadius: 1.6 * u, paddingHorizontal: 1.2 * u, gap: 0.8 * u }, pressed && { opacity: 0.85 }]}>
           <Text allowFontScaling={false} style={{ fontSize: 2.6 * u }}>⏱</Text>
@@ -185,6 +194,7 @@ export default function LobbyScreen({ u, ins, set, saveSet, onStart, openSetting
           <Text allowFontScaling={false} style={{ fontFamily: NUM_FONT, fontWeight: '800', fontSize: 3 * u, color: GOLD }}>{L.chipFmt(w.chips)}</Text>
         </View>
         <Btn u={u} sm pri={L.giftReady()} label={L.giftReady() ? 'Günlük Hediye · ' + L.nextGiftDay() + '. gün' : 'Hediye Alındı'} onPress={() => setGift(true)} />
+        </>}
         <Btn u={u} sm label="Ayarlar" onPress={openSettings} />
       </View>
     </View>
@@ -246,7 +256,8 @@ export default function LobbyScreen({ u, ins, set, saveSet, onStart, openSetting
           {seat(0, { bottom: 0.8 * u, alignSelf: 'center' })}
           <View style={[styles.mid, { gap: 0.6 * u }]}>
             <View style={[styles.bet, { borderRadius: 2 * u, paddingVertical: 0.5 * u, paddingHorizontal: 1.2 * u }]}>
-              <Coin s={2.6 * u} /><Text allowFontScaling={false} style={{ fontFamily: NUM_FONT, fontWeight: '800', fontSize: 2.8 * u, color: GOLD }}>{L.chipShort(t.bet)}</Text>
+              {L.MODE.offline ? <Text allowFontScaling={false} style={{ fontFamily: NUM_FONT, fontWeight: '800', fontSize: 2.6 * u, color: '#7ef0c8' }}>Çipsiz</Text>
+                : <><Coin s={2.6 * u} /><Text allowFontScaling={false} style={{ fontFamily: NUM_FONT, fontWeight: '800', fontSize: 2.8 * u, color: GOLD }}>{L.chipShort(t.bet)}</Text></>}
             </View>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 0.4 * u }}>
               {L.tableTags(t).concat(t.pen.gosterge ? ['Gösterge'] : []).map(x => (
@@ -585,15 +596,17 @@ export default function LobbyScreen({ u, ins, set, saveSet, onStart, openSetting
           {create ? (
             <View style={[styles.modal, { width: '70%', maxHeight: '96%', borderRadius: 2.4 * u, paddingHorizontal: 3 * u, paddingVertical: 2.4 * u }]}>
               <Text allowFontScaling={false} style={{ color: C.amber, fontFamily: NUM_FONT, fontWeight: '800', fontSize: 6.4 * u, letterSpacing: 0.3 * u }}>MASA AÇ · {cs.name.toLocaleUpperCase('tr-TR')}</Text>
-              <Text allowFontScaling={false} style={{ color: C.muted, fontSize: 2.6 * u, marginBottom: 1.4 * u }}>Bahis: herkes ortaya koyar, en düşük puanlı oyuncu ortadakini alır.</Text>
+              <Text allowFontScaling={false} style={{ color: C.muted, fontSize: 2.6 * u, marginBottom: 1.4 * u }}>{L.MODE.offline ? 'Çevrimdışı masa: çip yok, istediğin gibi kur.' : 'Bahis: herkes ortaya koyar, en düşük puanlı oyuncu ortadakini alır.'}</Text>
               <ScrollView>
                 <View style={{ flexDirection: 'row', gap: 2.4 * u }}>
                   <View style={{ flex: 1 }}>
+                    {L.MODE.offline ? null : <>
                     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                       <Text allowFontScaling={false} style={cLbl(u)}>BAHİS</Text>
                       <View style={{ flexDirection: 'row', alignItems: 'center' }}><Coin s={2.8 * u} /><Text allowFontScaling={false} style={{ fontFamily: NUM_FONT, fontWeight: '800', fontSize: 3.2 * u, color: GOLD }}>{L.chipFmt(create.bet)}</Text></View>
                     </View>
                     <BetSlider u={u} min={cs.min} max={maxOk} step={cs.step} value={create.bet} onChange={v => setCreate(c => c && ({ ...c, bet: v }))} />
+                    </>}
                     <Text allowFontScaling={false} style={[cLbl(u), { marginTop: 1.2 * u }]}>OYUN</Text>
                     <SegFull u={u} opts={[['klasik', 'Klasik 101'], ['katlamali', 'Katlamalı 101']]} val={create.mode} onPick={v => setCreate({ ...create, mode: v })} />
                     <Text allowFontScaling={false} style={[cLbl(u), { marginTop: 1.2 * u }]}>BİÇİM</Text>
@@ -642,12 +655,13 @@ export default function LobbyScreen({ u, ins, set, saveSet, onStart, openSetting
                 </View>
               ))}
             </View>
+            {L.MODE.offline ? <Sub u={u}>Çevrimdışı oyun · çip yok</Sub> : <>
             <View style={[styles.bet, { borderRadius: 2 * u, paddingVertical: 0.6 * u, paddingHorizontal: 1.6 * u }]}>
               <Coin s={3.4 * u} /><Text allowFontScaling={false} style={{ fontFamily: NUM_FONT, fontWeight: '800', fontSize: 3.6 * u, color: GOLD }}>{L.chipFmt(wait.t.bet)}</Text>
             </View>
-            <Sub u={u} style={{ maxWidth: '92%' }}>{L.payInfo(wait.t)}</Sub>
+            <Sub u={u} style={{ maxWidth: '92%' }}>{L.payInfo(wait.t)}</Sub></>}
             <Text allowFontScaling={false} style={{ fontFamily: NUM_FONT, fontWeight: '800', fontSize: 7 * u, color: C.amber, marginTop: u }}>{wait.left}</Text>
-            <Sub u={u}>Oyun {wait.left} saniye içinde başlıyor. Başlayınca bahsin ortaya konur.</Sub>
+            <Sub u={u}>Oyun {wait.left} saniye içinde başlıyor.{L.MODE.offline ? '' : ' Başlayınca bahsin ortaya konur.'}</Sub>
             <View style={[styles.mrow, { marginTop: 1.6 * u }]}>
               <Btn u={u} pri label="Hemen Başlat" onPress={start} />
               <Btn u={u} label="Masadan Kalk" onPress={() => { setWait(null); say('Masadan kalktın, çipin gitmedi'); }} />
