@@ -266,7 +266,7 @@ function StPick({ u, title, val, onPrev, onNext }) {
       <Text allowFontScaling={false} style={{ color: C.muted, fontSize: 2 * u, textAlign: 'center', marginBottom: 0.4 * u }}>{title}</Text>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 0.8 * u }}>
         <Btn u={u} sm label="‹" onPress={onPrev} />
-        <View style={{ flex: 1, height: 5.2 * u, borderRadius: u, backgroundColor: 'rgba(0,0,0,0.45)', alignItems: 'center', justifyContent: 'center' }}>
+        <View style={{ flex: 1, height: 6.6 * u, borderRadius: u, backgroundColor: 'rgba(0,0,0,0.45)', alignItems: 'center', justifyContent: 'center' }}>
           <Text allowFontScaling={false} style={{ color: C.ink, fontFamily: NUM_FONT, fontWeight: '800', fontSize: 3 * u }}>{val}</Text>
         </View>
         <Btn u={u} sm label="›" onPress={onNext} />
@@ -443,7 +443,7 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
       wait: (ms) => sleep(ms),
       ev: (name, d) => { if (name === 'penalty' && d && d.amt >= 101) giftReact('penalty', d.i); else if (name === 'finish' && d) giftReact('win', d.i); },
       handEnd: (rec, last) => { setTimeout(() => setHandEnd({ rec, last }), 900); },
-      turn: () => { if (G() && G().turn === 0) bump(); },
+      turn: () => { if (G() && G().turn === 0) { bump(); sfx('turn'); } },   // sıra sende: ayrı ses
     });
     bumpRack();
   }, []);

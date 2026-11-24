@@ -32,8 +32,8 @@ function SegFull({ u, opts, val, onPick }) {
   return (
     <View style={[styles.seg, { borderRadius: 1.4 * u, padding: 0.5 * u, flexDirection: 'row' }]}>
       {opts.map(([v, label]) => (
-        <Pressable key={String(v)} onPress={() => onPick(v)} style={[{ flex: 1, height: 5.4 * u, borderRadius: 1.1 * u, alignItems: 'center', justifyContent: 'center' }, val === v && { backgroundColor: C.amber }]}>
-          <Text allowFontScaling={false} numberOfLines={1} style={{ fontSize: 2.5 * u, fontWeight: '800', color: val === v ? C.amberInk : C.ink }}>{label}</Text>
+        <Pressable key={String(v)} onPress={() => onPick(v)} style={[{ flex: 1, height: 6.6 * u, borderRadius: 1.2 * u, alignItems: 'center', justifyContent: 'center' }, val === v && { backgroundColor: C.amber }]}>
+          <Text allowFontScaling={false} numberOfLines={1} style={{ fontSize: 2.8 * u, fontWeight: '800', color: val === v ? C.amberInk : C.ink }}>{label}</Text>
         </Pressable>
       ))}
     </View>
@@ -359,11 +359,11 @@ export default function LobbyScreen({ u, ins, set, saveSet, onStart, openSetting
                 const next = v === undefined ? true : v ? false : undefined;
                 return (
                   <Pressable key={k} onPress={() => setFilter({ ...filter, pen: { ...filter.pen, [k]: next } })}
-                    style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 5.2 * u, paddingHorizontal: 1.4 * u, marginBottom: 0.6 * u, borderRadius: 1.2 * u, borderWidth: 1,
+                    style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 7.2 * u, paddingHorizontal: 1.8 * u, marginBottom: 0.8 * u, borderRadius: 1.4 * u, borderWidth: 1,
                       borderColor: v === undefined ? 'rgba(255,255,255,0.14)' : v ? 'rgba(126,240,181,0.6)' : 'rgba(255,120,120,0.5)',
                       backgroundColor: v === undefined ? 'rgba(0,0,0,0.35)' : v ? 'rgba(40,140,90,0.25)' : 'rgba(140,40,40,0.22)' }}>
-                    <Text allowFontScaling={false} style={{ color: C.ink, fontWeight: '800', fontSize: 2.4 * u }}>{n}</Text>
-                    <Text allowFontScaling={false} style={{ fontWeight: '800', fontSize: 2.1 * u, color: v === undefined ? C.muted : v ? '#7ef0b5' : '#ff9a9a' }}>{v === undefined ? 'Fark etmez' : v ? '✓ Olsun' : '✕ Olmasın'}</Text>
+                    <Text allowFontScaling={false} style={{ color: C.ink, fontWeight: '800', fontSize: 3 * u }}>{n}</Text>
+                    <Text allowFontScaling={false} style={{ fontWeight: '800', fontSize: 2.5 * u, color: v === undefined ? C.muted : v ? '#7ef0b5' : '#ff9a9a' }}>{v === undefined ? 'Fark etmez' : v ? '✓ Olsun' : '✕ Olmasın'}</Text>
                   </Pressable>
                 );
               })}
