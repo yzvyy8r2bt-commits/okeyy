@@ -832,36 +832,36 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
               : g.totals[0] === best ? 'Tebrikler, oyunu sen kazandın!' : g.players[order[0]].name + ' oyunu kazandı.';
             const po = [0, 1, 2, 3].sort((a, b) => settle.r.pay[b] - settle.r.pay[a]);
             return (
-              <View style={[styles.modal, { borderRadius: 2.4 * u, padding: 3 * u }]}>
+              <View style={[styles.modal, { width: '86%', maxHeight: '96%', borderRadius: 2.4 * u, paddingVertical: 2.2 * u, paddingHorizontal: 2.6 * u }]}>
                 <Text allowFontScaling={false} style={[styles.modalT, { fontSize: 4.2 * u }]}>Oyun Bitti</Text>
-                <Text allowFontScaling={false} style={{ color: C.muted, textAlign: 'center', fontSize: 2.3 * u }}>{mine}</Text>
+                <Text allowFontScaling={false} style={{ color: C.muted, textAlign: 'center', fontSize: 3.2 * u }}>{mine}</Text>
                 {L.MODE.offline ? (
                   <View style={{ marginVertical: 1.4 * u }}>
                     {[0, 1, 2, 3].sort((a, b) => g.totals[a] - g.totals[b]).map((i, k) => (
                       <View key={i} style={[styles.resRow, { paddingVertical: 0.7 * u }, i === 0 && { backgroundColor: 'rgba(255,187,51,0.1)' }]}>
-                        <Text allowFontScaling={false} style={[styles.resName, { fontSize: 2.4 * u, flex: 1 }]}>{k + 1}. {i === 0 ? L.wallet().name : g.players[i].name}</Text>
-                        <Text allowFontScaling={false} style={{ color: C.ink, fontWeight: '800', fontSize: 2.4 * u }}>{g.totals[i]} puan</Text>
+                        <Text allowFontScaling={false} style={[styles.resName, { fontSize: 3.4 * u, flex: 1 }]}>{k + 1}. {i === 0 ? L.wallet().name : g.players[i].name}</Text>
+                        <Text allowFontScaling={false} style={{ color: C.ink, fontWeight: '800', fontSize: 3.4 * u }}>{g.totals[i]} puan</Text>
                       </View>
                     ))}
-                    <Text allowFontScaling={false} style={{ color: C.muted, textAlign: 'center', fontSize: 1.9 * u, marginTop: u }}>Çevrimdışı oyun: çip kazanılmaz, kaybedilmez.</Text>
+                    <Text allowFontScaling={false} style={{ color: C.muted, textAlign: 'center', fontSize: 2.8 * u, marginTop: u }}>Çevrimdışı oyun: çip kazanılmaz, kaybedilmez.</Text>
                   </View>
                 ) : <>
                 <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', marginVertical: 1.4 * u }}>
                   <Coin s={4 * u} />
                   <Text allowFontScaling={false} style={{ fontFamily: NUM_FONT, fontWeight: '800', fontSize: 4.4 * u, color: settle.net > 0 ? C.good : settle.net < 0 ? '#ff8a7a' : C.ink }}>{settle.net > 0 ? '+' + L.chipFmt(settle.net) : settle.net < 0 ? '−' + L.chipFmt(-settle.net) : '±0'} çip</Text>
-                  <Text allowFontScaling={false} style={{ color: C.muted, fontSize: 2.2 * u, marginLeft: 1.4 * u }}>Bakiye: {L.chipFmt(L.wallet().chips)}</Text>
+                  <Text allowFontScaling={false} style={{ color: C.muted, fontSize: 3 * u, marginLeft: 1.4 * u }}>Bakiye: {L.chipFmt(L.wallet().chips)}</Text>
                 </View>
                 {po.map(i => (
                   <View key={i} style={[styles.resRow, { paddingVertical: 0.7 * u }, i === 0 && { backgroundColor: 'rgba(255,187,51,0.1)' }]}>
-                    <Text allowFontScaling={false} style={[styles.resName, { fontSize: 2.4 * u, flex: 1 }]}>{i === 0 ? L.wallet().name : g.players[i].name}</Text>
-                    <Text allowFontScaling={false} style={{ color: C.muted, fontSize: 1.9 * u, marginRight: 2 * u }}>{settle.r.fee[i] ? 'masa ücreti −' + L.chipFmt(settle.r.fee[i]) : settle.r.pay[i] && settle.r.pay[i] <= table.bet ? 'bahis iadesi' : ''}</Text>
-                    <Text allowFontScaling={false} style={{ color: settle.r.pay[i] ? C.good : C.muted, fontWeight: '800', fontSize: 2.4 * u, width: 14 * u, textAlign: 'right' }}>{settle.r.pay[i] ? '+' + L.chipFmt(settle.r.pay[i]) : '0'}</Text>
+                    <Text allowFontScaling={false} style={[styles.resName, { fontSize: 3.4 * u, flex: 1 }]}>{i === 0 ? L.wallet().name : g.players[i].name}</Text>
+                    <Text allowFontScaling={false} style={{ color: C.muted, fontSize: 2.8 * u, marginRight: 2 * u }}>{settle.r.fee[i] ? 'masa ücreti −' + L.chipFmt(settle.r.fee[i]) : settle.r.pay[i] && settle.r.pay[i] <= table.bet ? 'bahis iadesi' : ''}</Text>
+                    <Text allowFontScaling={false} style={{ color: settle.r.pay[i] ? C.good : C.muted, fontWeight: '800', fontSize: 3.4 * u, width: 20 * u, textAlign: 'right' }}>{settle.r.pay[i] ? '+' + L.chipFmt(settle.r.pay[i]) : '0'}</Text>
                   </View>
                 ))}
-                {settle.up ? <Text allowFontScaling={false} style={{ color: C.amber, textAlign: 'center', fontSize: 2.4 * u, fontWeight: '800', marginTop: u }}>SEVİYE {settle.up.lv} · Seviye ödülü: +{L.chipFmt(settle.up.reward)} çip</Text> : null}
-                <Text allowFontScaling={false} style={{ color: C.muted, textAlign: 'center', fontSize: 1.9 * u, marginTop: u }}>{g.cfg.team ? 'Kazanan takım ortadaki çipleri paylaşır. Kazananların payından %7 masa ücreti kesilir.' : 'Birinci, ortadaki çiplerin kalanını alır ve kazancından %7 masa ücreti kesilir. İkinci, yatırdığı çipi geri alır.'}</Text>
+                {settle.up ? <Text allowFontScaling={false} style={{ color: C.amber, textAlign: 'center', fontSize: 3.2 * u, fontWeight: '800', marginTop: u }}>SEVİYE {settle.up.lv} · Seviye ödülü: +{L.chipFmt(settle.up.reward)} çip</Text> : null}
+                <Text allowFontScaling={false} style={{ color: C.muted, textAlign: 'center', fontSize: 2.7 * u, marginTop: u }}>{g.cfg.team ? 'Kazanan takım ortadaki çipleri paylaşır. Kazananların payından %7 masa ücreti kesilir.' : 'Birinci, ortadaki çiplerin kalanını alır ve kazancından %7 masa ücreti kesilir. İkinci, yatırdığı çipi geri alır.'}</Text>
                 </>}
-                <View style={{ flexDirection: 'row', justifyContent: 'center', gap: u, marginTop: 2 * u }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'center', gap: u, marginTop: 1.4 * u }}>
                   <Btn u={u} pri label="Aynı Masada Tekrar" onPress={() => { setSettle(null); onAgain(); }} />
                   <Btn u={u} label="Lobiye Dön" onPress={() => { setSettle(null); leave(null); }} />
                   <Btn u={u} label="Yazboz" onPress={() => setScoreOpen(true)} />
