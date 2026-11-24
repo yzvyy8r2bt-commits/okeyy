@@ -182,6 +182,16 @@ function DrawSource({ drag, children }) {
   return <GestureDetector gesture={gesture}>{children}</GestureDetector>;
 }
 // köşe kutusu: atılan taş (9u × 11u)
+// ıstakanın yanındaki boy boy dizme düğmesi (yardımlı oyun)
+function DizBtn({ u, label, h, onPress }) {
+  return (
+    <Pressable onPress={onPress} style={({ pressed }) => [{ position: 'absolute', bottom: 0, width: 13 * u, height: h, borderRadius: 1.8 * u,
+      backgroundColor: 'rgba(255,255,255,0.08)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)', borderBottomWidth: 0.5 * u, borderBottomColor: 'rgba(0,0,0,0.4)',
+      alignItems: 'center', justifyContent: 'center' }, pressed && { opacity: 0.8, transform: [{ translateY: 1 }] }]}>
+      <Text allowFontScaling={false} style={{ color: C.ink, fontFamily: NUM_FONT, fontWeight: '800', fontSize: 3.4 * u, textAlign: 'center', lineHeight: 4.2 * u, letterSpacing: 0.15 * u }}>{label}</Text>
+    </Pressable>
+  );
+}
 function Corner({ u, tile, hot, cref, style, drag }) {
   const w = 9 * u, h = 11 * u;
   return (
@@ -691,12 +701,13 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
 
       {/* ---- benim bölümüm ---- */}
       <View style={[styles.me, { marginTop: 0.8 * u }]}>
-        <View style={{ width: 17.5 * u, alignItems: 'center', marginTop: -7.5 * u }}>
+        <View style={{ width: 17.5 * u, alignItems: 'center', marginTop: -7.5 * u, alignSelf: 'stretch' }}>
           <Corner u={u} cref={yanRef} tile={lastOf(3)} hot={canSide && !!lastOf(3)} drag={sideDrag} />
           {disc && P.sideTile && !P.sideUsed ? (
             <Btn u={u} label="Geri Bırak" onPress={() => feedback(GM.hReturnSide())}
               style={{ marginTop: 0.8 * u, width: 15.5 * u, paddingHorizontal: 0.6 * u, backgroundColor: 'rgba(255,187,51,0.18)', borderColor: 'rgba(255,187,51,0.7)' }} />
           ) : null}
+          {!hard ? <DizBtn u={u} label={'SERİ\nDİZ'} h={geom.height - (disc && P.sideTile && !P.sideUsed ? 9 * u : 0)} onPress={() => { GM.hArrange('seri'); bumpRack(); tick(); }} /> : null}
         </View>
         <View style={{ width: rackW, gap: 0.5 * u, zIndex: 10 }}>
           <View style={[styles.srow, { gap: 1.2 * u }]}>
@@ -716,8 +727,6 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
                 : <Text allowFontScaling={false} style={{ color: C.amber, fontFamily: NUM_FONT, fontWeight: '700', fontSize: 2.6 * u, letterSpacing: 0.1 * u }}>Toplam {fmt(g.totals[0])}{penMine ? ' · Bu el ceza +' + penMine : ''}</Text>}
             </View>
             <View style={{ flexDirection: 'row', gap: 0.7 * u }}>
-              {!hard ? <Btn u={u} sm label="Seri Diz" onPress={() => { GM.hArrange('seri'); bumpRack(); tick(); }} style={{ paddingHorizontal: 1.1 * u }} /> : null}
-              {!hard ? <Btn u={u} sm label="Çift Diz" onPress={() => { GM.hArrange('cift'); bumpRack(); tick(); }} style={{ paddingHorizontal: 1.1 * u }} /> : null}
               <Btn u={u} pri label={seriLbl} disabled={!(seriOn && !(pd && pd.kind !== 'seri'))} onPress={() => feedback(!P.opened ? GM.hOpen('seri', true) : GM.hLay())} />
               <Btn u={u} pri label={ciftLbl} disabled={!(ciftOn && !(pd && pd.kind !== 'cift'))} onPress={() => feedback(!P.opened ? GM.hOpen('cift', true) : GM.hProcessPairs([]))} />
               {P.opened && !hard ? <Btn u={u} label="Tümünü İşle" disabled={!disc} onPress={() => feedback(GM.hProcessAll())} /> : null}
@@ -729,8 +738,9 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
               myTurn={g.turn === 0 && g.phase !== 'over'} onDrop={onDrop} onDropOut={onDropOut} onGost={onGost} />
           </View>
         </View>
-        <View style={{ width: 17.5 * u, alignItems: 'center', marginTop: -7.5 * u }}>
+        <View style={{ width: 17.5 * u, alignItems: 'center', marginTop: -7.5 * u, alignSelf: 'stretch' }}>
           <Corner u={u} cref={atRef} tile={lastOf(0)} hot={disc} />
+          {!hard ? <DizBtn u={u} label={'ÇİFT\nDİZ'} h={geom.height} onPress={() => { GM.hArrange('cift'); bumpRack(); tick(); }} /> : null}
         </View>
       </View>
 
