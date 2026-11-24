@@ -350,7 +350,7 @@ export default function LobbyScreen({ u, ins, set, saveSet, onStart, openSetting
                 </View>
                 <View style={{ flex: 1, gap: 0.6 * u }}>
                   {[
-                    ['İSİM', <><Text allowFontScaling={false} style={pfB(u)}>{w.name}</Text><Btn u={u} sm label="Değiştir" style={{ marginLeft: 'auto', minHeight: 4 * u }} onPress={() => setRename(w.name)} /></>],
+                    ['İSİM', <><Text allowFontScaling={false} style={pfB(u)}>{w.name}</Text><Text allowFontScaling={false} style={{ marginLeft: 'auto', color: C.muted, fontSize: 1.7 * u }}>Misafir</Text></>],
                     ['ÇİP', <><Coin s={2.6 * u} /><Text allowFontScaling={false} style={pfB(u)}>{L.chipFmt(w.chips)}</Text></>],
                     ['SEVİYE', <><Text allowFontScaling={false} style={[pfB(u), { marginRight: u }]}>{lv.lv}</Text>
                       <View style={{ flex: 1, height: 1.2 * u, borderRadius: u, backgroundColor: 'rgba(255,255,255,0.12)', overflow: 'hidden' }}><View style={{ width: Math.round(lv.rest * 100 / lv.need) + '%', height: '100%', backgroundColor: C.amber }} /></View>

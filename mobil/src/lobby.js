@@ -20,6 +20,8 @@ export const MODE_CHIPS = [
   ['pen.gosterge', 'Gösterge', 'Eşi elinde olan başta basılı tutup söyler, çiftte joker olur'],
 ];
 
+// misafir kimliği: C + 6 rakam (ör. C372748)
+export function guestName() { return 'C' + String(Math.floor(100000 + Math.random() * 900000)); }
 export function chipFmt(n) { return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }
 export function chipShort(n) {
   const f = (v) => (Math.round(v * 10) / 10).toString().replace('.', ',');
@@ -35,14 +37,15 @@ export const W = { w: null };
 const WKEY = 'okey101.wallet';
 function fresh() {
   const d = new Date();
-  return { chips: START_CHIPS, gift: '', gs: 0, name: 'Oyuncu', since: d.getDate() + '.' + (d.getMonth() + 1) + '.' + d.getFullYear(), st: { games: 0, wins: 0, won: 0, best: 0, xp: 0 } };
+  return { chips: START_CHIPS, gift: '', gs: 0, name: guestName(), since: d.getDate() + '.' + (d.getMonth() + 1) + '.' + d.getFullYear(), st: { games: 0, wins: 0, won: 0, best: 0, xp: 0 } };
 }
 export async function loadWallet() {
   let w = null;
   try { w = JSON.parse((await AsyncStorage.getItem(WKEY)) || 'null'); } catch (e) { w = null; }
   if (!w || typeof w.chips !== 'number') w = fresh();
   if (!w.st) w.st = fresh().st;
-  if (!w.name) w.name = 'Oyuncu';
+  // misafir adı değiştirilemez ve herkese ayrı verilir (ör. C372748)
+  if (!/^C\d{6}$/.test(w.name || '')) w.name = guestName();
   W.w = w;
   saveWalletNow(w);
   return w;
