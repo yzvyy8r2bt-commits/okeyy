@@ -356,11 +356,11 @@ function RulesModal({ u, visible, onClose, howto }) {
 function TableInfo({ u, g }) {
   // sadece masanın dört özelliği; oyun modları masa menüsünde (Ayarlar) görünür
   const c = g.cfg;
-  const boxes = [[c.team ? 'EŞLİ' : 'TEK'], [c.hands + ' EL'], [c.hard ? 'YARDIMSIZ' : 'YARDIMLI'], [c.mode === 'katlamali' ? 'KATLAMALI' : 'KLASİK', c.mode === 'katlamali']];
+  const boxes = [[c.team ? 'EŞLİ' : 'TEK'], [c.hands + ' EL'], [c.hard ? 'YARDIMSIZ' : 'YARDIMLI', false, !c.hard], [c.mode === 'katlamali' ? 'KATLAMALI' : 'KLASİK', c.mode === 'katlamali']];
   return (
     <View pointerEvents="none" style={{ flex: 1, minHeight: 0, justifyContent: 'center', gap: 0.6 * u }}>
-      {boxes.map(([t, red]) => (
-        <View key={t} style={{ height: 3.4 * u, borderRadius: 0.9 * u, backgroundColor: red ? '#8e1f2c' : 'rgba(6,10,30,0.75)', borderWidth: 1, borderColor: red ? '#c0394a' : 'rgba(255,255,255,0.12)', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 0.5 * u }}>
+      {boxes.map(([t, red, green]) => (
+        <View key={t} style={{ height: 3.4 * u, borderRadius: 0.9 * u, backgroundColor: red ? '#8e1f2c' : green ? '#17734a' : 'rgba(6,10,30,0.75)', borderWidth: 1, borderColor: red ? '#c0394a' : green ? '#3fd08c' : 'rgba(255,255,255,0.12)', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 0.5 * u }}>
           <Text allowFontScaling={false} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={{ color: '#fff', fontFamily: NUM_FONT, fontWeight: '800', fontSize: 2.3 * u }}>{t}</Text>
         </View>
       ))}
@@ -417,6 +417,7 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
   const ghostPos = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
   const meldRefs = useRef({});
   const stT = useRef(null);
+  const helped = useRef(null);   // yardımlı: bu el için ıstaka dizildi mi
 
   const rerender = useCallback(() => setTick(t => t + 1), []);
   const bumpRack = useCallback(() => { setRackVer(v => v + 1); setTick(t => t + 1); }, []);
@@ -593,6 +594,12 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
   const g = G();
   if (!g) return <View style={styles.root} />;
   const P = g.players[0];
+  // yardımlı oyun: okey taşları ters durur (çekilen okey de), el başında ıstaka seri dizili gelir
+  if (!g.cfg.hard && g.phase !== 'over') {
+    P.slots.forEach(t => { if (t && t.wild && !t._am) { t.mark = true; t._am = true; } });
+    const hk = g.epoch + ':' + g.hands.length;
+    if (helped.current !== hk && !P.opened) { helped.current = hk; GM.hArrange('seri'); }
+  }
   const disc = g.turn === 0 && g.phase === 'discard';
   const canDraw = g.turn === 0 && g.phase === 'draw';
   const canSide = canDraw && !P.sideReturned;
@@ -709,6 +716,8 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
                 : <Text allowFontScaling={false} style={{ color: C.amber, fontFamily: NUM_FONT, fontWeight: '700', fontSize: 2.6 * u, letterSpacing: 0.1 * u }}>Toplam {fmt(g.totals[0])}{penMine ? ' · Bu el ceza +' + penMine : ''}</Text>}
             </View>
             <View style={{ flexDirection: 'row', gap: 0.7 * u }}>
+              {!hard ? <Btn u={u} sm label="Seri Diz" onPress={() => { GM.hArrange('seri'); bumpRack(); tick(); }} style={{ paddingHorizontal: 1.1 * u }} /> : null}
+              {!hard ? <Btn u={u} sm label="Çift Diz" onPress={() => { GM.hArrange('cift'); bumpRack(); tick(); }} style={{ paddingHorizontal: 1.1 * u }} /> : null}
               <Btn u={u} pri label={seriLbl} disabled={!(seriOn && !(pd && pd.kind !== 'seri'))} onPress={() => feedback(!P.opened ? GM.hOpen('seri', true) : GM.hLay())} />
               <Btn u={u} pri label={ciftLbl} disabled={!(ciftOn && !(pd && pd.kind !== 'cift'))} onPress={() => feedback(!P.opened ? GM.hOpen('cift', true) : GM.hProcessPairs([]))} />
               {P.opened && !hard ? <Btn u={u} label="Tümünü İşle" disabled={!disc} onPress={() => feedback(GM.hProcessAll())} /> : null}

@@ -52,6 +52,8 @@ function DraggableTileBase({ tile, slot, geom, ver, mark, fresh, gb, onDrop, onD
   const gbRef = useRef(gb); gbRef.current = gb;
   // okey: basılı tutunca ters döner (beyaz yüz); 0,6 sn tutulursa ters kalır (web ile aynı)
   const [back, setBack] = useState(!!tile.mark);
+  // yeni el / yeni taş: taşın ters durumu kayıttan gelsin (aynı numaralı taş yeni elde başka taş olabilir)
+  useEffect(() => { if (!press.current.peeked) setBack(!!tile.mark); }, [tile, ver]);
   const flipV = useRef(new Animated.Value(1)).current;
   const press = useRef({ moved: false, peeked: false, t1: null, t2: null });
   const flipTo = (on) => {
