@@ -100,6 +100,36 @@ function ClockPill({ u, who, style }) {
 }
 
 // ---------- küçük parçalar ----------
+// Türkçe bulunma eki: Mehmet'te, Ayşe'de, Hasan'da, Kemal'de
+function locName(n) {
+  const v = (n.toLocaleLowerCase('tr-TR').match(/[aeıioöuü]/g) || ['e']).pop();
+  const back = 'aıou'.includes(v);
+  const hard = 'fstkçşhp'.includes(n.slice(-1).toLocaleLowerCase('tr-TR'));
+  return n + "'" + (hard ? 't' : 'd') + (back ? 'a' : 'e');
+}
+// masanın ortasında kısa, büyük duyuru (ör. Gösterge Mehmet'te)
+function BigFlash({ u, msg }) {
+  const a = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (!msg) return;
+    a.setValue(0);
+    Animated.sequence([
+      Animated.spring(a, { toValue: 1, friction: 6, tension: 180, useNativeDriver: true }),
+      Animated.delay(900),
+      Animated.timing(a, { toValue: 0, duration: 220, useNativeDriver: true }),
+    ]).start();
+  }, [msg]);
+  if (!msg) return null;
+  return (
+    <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, top: 18 * u, alignItems: 'center', zIndex: 50 }}>
+      <Animated.View style={{ opacity: a, transform: [{ scale: a.interpolate({ inputRange: [0, 1], outputRange: [0.6, 1] }) }],
+        paddingHorizontal: 5 * u, paddingVertical: 2.2 * u, borderRadius: 3 * u, backgroundColor: 'rgba(20,8,40,0.92)', borderWidth: 0.5 * u, borderColor: C.amber,
+        shadowColor: '#ffbb33', shadowOpacity: 0.6, shadowRadius: 3 * u, shadowOffset: { width: 0, height: 0 }, elevation: 12 }}>
+        <Text allowFontScaling={false} style={{ color: C.amber, fontFamily: NUM_FONT, fontWeight: '800', fontSize: 7.5 * u, letterSpacing: 0.2 * u, textAlign: 'center' }}>{msg.t}</Text>
+      </Animated.View>
+    </View>
+  );
+}
 function Chip({ u, kind, children }) {
   const bg = kind === 'ok' ? 'rgba(79,224,163,0.2)' : kind === 'gold' ? 'rgba(255,187,51,0.2)' : kind === 'bad' ? 'rgba(255,107,94,0.22)' : 'rgba(255,255,255,0.12)';
   const col = kind === 'ok' ? '#92f0c6' : kind === 'gold' ? C.amber : kind === 'bad' ? '#ffaaa2' : C.ink;
@@ -414,6 +444,7 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
   const [toasts, setToasts] = useState([]);
   const [statusMsg, setStatusMsg] = useState(null);
   const [statusKind, setStatusKind] = useState('bad');
+  const [big, setBig] = useState(null);   // masanın ortasındaki büyük duyuru
   const [handEnd, setHandEnd] = useState(null);
   const [scoreOpen, setScoreOpen] = useState(false);
   const [setOpen, setSetOpen] = useState(false);
@@ -471,6 +502,7 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
       wait: (ms) => sleep(ms),
       ev: (name, d) => {
         if (name === 'penalty' && d && d.amt >= 101) giftReact('penalty', d.i); else if (name === 'finish' && d) giftReact('win', d.i);
+        if (name === 'gost' && d) setBig({ t: d.i === 0 ? 'Gösterge bende!' : 'Gösterge ' + locName(G().players[d.i].name), k: Date.now() });
         L.taskEv(name, d).forEach(m => toast(m, 'task'));   // görevler
       },
       handEnd: (rec, last) => { setTimeout(() => setHandEnd({ rec, last }), 900); },
@@ -684,6 +716,7 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
     <View style={[styles.root, { paddingTop: pad.t, paddingRight: pad.r, paddingBottom: pad.b, paddingLeft: pad.l }]}>
       <StatusBar hidden />
       <View pointerEvents="none" style={styles.glowBg} />
+      <BigFlash u={u} msg={big} />
 
       {/* ---- üst şerit ---- */}
       <View style={[styles.top, { height: 8.2 * u, gap: 1.5 * u }]}>

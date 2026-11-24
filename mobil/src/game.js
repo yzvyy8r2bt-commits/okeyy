@@ -99,7 +99,7 @@ function announceGost(i) {
   const t = handOf(P).find(isGostTwin);
   t.gost = true; P.gostSaid = true; H.ev('gost', { i });
   logEv(i, 'Gösterge bende');
-  H.toast((P.human ? 'Gösterge bende! ' + tileName(t) + ' çiftte her taşla eşleşir.' : P.name + ': Gösterge bende'), 'alert');
+  H.toast((P.human ? 'Gösterge bende! ' + tileName(t) + ' çiftte her taşla eşleşir.' : P.name + ': Gösterge bende'), 'info');   // büyük duyuru masanın ortasında (H.ev gost)
   H.render();
   return { ok: true, msg: 'Gösterge bende' };
 }
