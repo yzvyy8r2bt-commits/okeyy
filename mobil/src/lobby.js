@@ -43,9 +43,13 @@ export async function loadWallet() {
   if (!w || typeof w.chips !== 'number') w = fresh();
   if (!w.st) w.st = fresh().st;
   if (!w.name) w.name = 'Oyuncu';
+  // DENEME: geliştirici için tek seferlik 10 milyon çip (mağazaya göndermeden önce silinecek)
+  if (!w.test10m) { w.chips += 10000000; w.test10m = 1; }
   W.w = w;
+  saveWalletNow(w);
   return w;
 }
+function saveWalletNow(w) { AsyncStorage.setItem(WKEY, JSON.stringify(w)).catch(() => {}); }
 export const wallet = () => W.w || (W.w = fresh());
 export function saveWallet() { AsyncStorage.setItem(WKEY, JSON.stringify(wallet())).catch(() => {}); }
 export function addChips(n) { const w = wallet(); w.chips = Math.max(0, Math.round(w.chips + n)); saveWallet(); }
