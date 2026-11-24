@@ -100,6 +100,25 @@ function ClockPill({ u, who, style }) {
 }
 
 // ---------- küçük parçalar ----------
+// oyun süresi ödülü: oynarken sıradaki ödül ve kalan süre görünür (kendi kendine her saniye yenilenir)
+function PtPill({ u }) {
+  const [, setT] = useState(0);
+  useEffect(() => { const id = setInterval(() => setT(t => t + 1), 1000); return () => clearInterval(id); }, []);
+  const p = L.ptState(), gl = L.PT_GOALS[p.got];
+  if (!gl) return null;
+  const left = Math.max(0, Math.ceil(gl[0] - p.sec)), pct = Math.min(100, (p.sec * 100) / gl[0]);
+  const h = Math.floor(left / 3600), m = Math.floor((left % 3600) / 60), sc = left % 60;
+  const lt = h ? h + ' sa ' + m + ' dk' : m + ':' + String(sc).padStart(2, '0');
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 0.6 * u, paddingHorizontal: 0.9 * u, paddingVertical: 0.35 * u, borderRadius: 1.2 * u, backgroundColor: 'rgba(0,0,0,0.35)', borderWidth: 1, borderColor: 'rgba(126,240,181,0.35)' }}>
+      <Text allowFontScaling={false} style={{ fontSize: 1.8 * u }}>⏱</Text>
+      <View style={{ width: 9 * u, height: 0.8 * u, borderRadius: 9, backgroundColor: 'rgba(255,255,255,0.15)', overflow: 'hidden' }}>
+        <View style={{ width: pct + '%', height: '100%', backgroundColor: C.good }} />
+      </View>
+      <Text allowFontScaling={false} numberOfLines={1} style={{ color: '#7ef0b5', fontWeight: '800', fontSize: 1.8 * u }}>+{L.chipShort(gl[1])} · {lt}</Text>
+    </View>
+  );
+}
 // Türkçe bulunma eki: Mehmet'te, Ayşe'de, Hasan'da, Kemal'de
 function locName(n) {
   const v = (n.toLocaleLowerCase('tr-TR').match(/[aeıioöuü]/g) || ['e']).pop();
@@ -721,10 +740,12 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
       {/* ---- üst şerit ---- */}
       <View style={[styles.top, { height: 8.2 * u, gap: 1.5 * u }]}>
         <View style={styles.brand}>
-          <Text allowFontScaling={false} style={[styles.brandEm, { fontSize: 2.2 * u, letterSpacing: 0.3 * u, marginRight: 0.8 * u }]}>KAHVE USULÜ</Text>
           <Text allowFontScaling={false} style={[styles.brandB, { fontSize: 6.4 * u }]}>101</Text>
           <Text allowFontScaling={false} style={[styles.brandS, { fontSize: 3.6 * u, letterSpacing: 0.7 * u, marginLeft: 0.8 * u }]}>OKEY</Text>
-          <Text allowFontScaling={false} numberOfLines={1} style={[styles.brandSmall, { fontSize: 2.3 * u, marginLeft: 1.2 * u }]}>{modeLbl}</Text>
+          <View style={{ marginLeft: 1.4 * u, alignSelf: 'center', gap: 0.5 * u, flexShrink: 1 }}>
+            <Text allowFontScaling={false} numberOfLines={1} style={[styles.brandSmall, { fontSize: 2.1 * u }]}>{modeLbl}</Text>
+            {!L.MODE.offline ? <PtPill u={u} /> : null}
+          </View>
         </View>
         <TopPlate u={u} g={g} cur={giftOf(2)} onGift={() => setGiftFor(2)} />
         <View style={[styles.topActions, { gap: 0.8 * u }]}>
