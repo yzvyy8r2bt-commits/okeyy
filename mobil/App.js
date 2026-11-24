@@ -800,7 +800,7 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
       <Modal visible={!!handEnd} transparent animationType="fade" supportedOrientations={['landscape']}>
         <View style={styles.modalBg}>
           {handEnd ? (
-            <View style={[styles.modal, { width: '94%', maxHeight: '96%', borderRadius: 2.4 * u, paddingVertical: 2 * u, paddingHorizontal: 2.6 * u }]}>
+            <View style={[styles.modal, { width: '86%', maxHeight: '96%', borderRadius: 2.4 * u, paddingVertical: 2 * u, paddingHorizontal: 2.4 * u }]}>
               <Text allowFontScaling={false} numberOfLines={1} adjustsFontSizeToFit style={[styles.modalT, { fontSize: 4.8 * u }]}>{handEnd.rec.title}</Text>
               {handEnd.rec.tags.length ? <Text allowFontScaling={false} style={{ color: C.muted, textAlign: 'center', fontSize: 3.6 * u, marginBottom: 0.6 * u }}>{handEnd.rec.tags.join(' · ')}</Text> : null}
               {g.players.map((p, i) => {
