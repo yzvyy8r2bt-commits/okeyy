@@ -204,12 +204,12 @@ function Mat({ u, title, limit, side, children, style }) {
       style={[styles.mat, { borderRadius: 2.2 * u, borderWidth: 0.5 * u }, style]}>
       <View pointerEvents="none" style={[StyleSheet.absoluteFill, { overflow: 'hidden', borderRadius: 1.8 * u }]}>{lines}</View>
       <Text allowFontScaling={false} style={[styles.matTitle, { top: 0.6 * u, right: 1.2 * u, fontSize: 1.7 * u }]}>{title}</Text>
-      {limit ? (   // açma limiti: masanın kenarına yapışık yuvarlak rozet (101 Plus'taki gibi, sadece sayı)
-        <View pointerEvents="none" style={[styles.limWrap, { top: 12 * u }, side === 'right' ? { right: -4.8 * u, flexDirection: 'row-reverse' } : { left: -4.8 * u }]}>
-          <View style={[styles.limPill, { height: 5.4 * u, minWidth: 8.6 * u, borderRadius: 2.7 * u, borderWidth: 0.35 * u, paddingHorizontal: 1.2 * u }]}>
-            <Text allowFontScaling={false} style={{ color: '#fff', fontFamily: NUM_FONT, fontWeight: '800', fontSize: 3.6 * u, includeFontPadding: false }}>{limit}</Text>
+      {limit ? (   // açma limiti: masanın üst kenarına oturan yuvarlak rozet; taşların başladığı yerin üstünde kalır
+        <View pointerEvents="none" style={[styles.limWrap, { top: -2.6 * u, left: 1.6 * u, flexDirection: 'column' }]}>
+          <View style={[styles.limPill, { height: 5 * u, minWidth: 8 * u, borderRadius: 2.5 * u, borderWidth: 0.35 * u, paddingHorizontal: 1.2 * u }]}>
+            <Text allowFontScaling={false} style={{ color: '#fff', fontFamily: NUM_FONT, fontWeight: '800', fontSize: 3.4 * u, includeFontPadding: false }}>{limit}</Text>
           </View>
-          <View style={[styles.limTip, { width: 1.7 * u, height: 1.7 * u }, side === 'right' ? { marginRight: -1 * u } : { marginLeft: -1 * u }]} />
+          <View style={[styles.limTip, { width: 1.4 * u, height: 1.4 * u, marginTop: -0.9 * u }]} />
         </View>
       ) : null}
       {children}
