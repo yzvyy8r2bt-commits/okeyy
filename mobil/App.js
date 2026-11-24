@@ -10,6 +10,8 @@ import { SOUND, sfx } from './src/sound';
 import { HOWTO, RULES } from './src/content';
 import * as L from './src/lobby';
 import LobbyScreen from './src/LobbyScreen';
+import LoginScreen from './src/LoginScreen';
+const LOGIN_KEY = 'okey101.login';
 import { GIFT_CATS, GiftIcon, curGift, giftBlock, placeGift, botLv, loadPerm } from './src/gifts';
 import { C, Btn, Toggle, Pick, cyc, Coin } from './src/ui';
 import { GestureHandlerRootView, Gesture, GestureDetector } from 'react-native-gesture-handler';
@@ -275,7 +277,7 @@ function StPick({ u, title, val, onPrev, onNext }) {
   );
 }
 // ---------- ayarlar ve kurallar pencereleri (lobi ve masa ortak) — web'deki düzen ----------
-function SettingsModal({ u, visible, set, saveSet, onClose, onRules, onHowto }) {
+function SettingsModal({ u, visible, set, saveSet, onClose, onRules, onHowto, onLogout }) {
   const q = qpOf(set);
   const putQ = (k, v) => saveSet({ ...set, qp: { ...q, [k]: v } });
   const tri = [undefined, true, false];   // fark etmez → olsun → olmasın
@@ -319,6 +321,7 @@ function SettingsModal({ u, visible, set, saveSet, onClose, onRules, onHowto }) 
             <Btn u={u} pri label="Tamam" onPress={onClose} style={{ flex: 1 }} />
             <Btn u={u} label="Kurallar" onPress={onRules} style={{ flex: 1 }} />
             <Btn u={u} label="Nasıl Oynanır?" onPress={onHowto} style={{ flex: 1.3 }} />
+            {onLogout ? <Btn u={u} label="Çıkış Yap" onPress={onLogout} style={{ flex: 1 }} /> : null}
           </View>
         </View>
       </View>
@@ -837,7 +840,8 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
         </View>
       </Modal>
 
-      <SettingsModal u={u} visible={setOpen} set={set} saveSet={saveSet} onClose={() => setSetOpen(false)} onRules={() => { setSetOpen(false); setRulesOpen('rules'); }} onHowto={() => { setSetOpen(false); setRulesOpen('howto'); }} />
+      <SettingsModal u={u} visible={setOpen} set={set} saveSet={saveSet} onClose={() => setSetOpen(false)} onRules={() => { setSetOpen(false); setRulesOpen('rules'); }} onHowto={() => { setSetOpen(false); setRulesOpen('howto'); }}
+        onLogout={() => { setSetOpen(false); AsyncStorage.removeItem(LOGIN_KEY).catch(() => {}); setScreen('login'); }} />
       <RulesModal u={u} visible={!!rulesOpen} howto={rulesOpen === 'howto'} onClose={() => { const h = rulesOpen === 'howto'; setRulesOpen(false); if (h) setSetOpen(true); }} />
       <Modal visible={menuOpen} transparent animationType="fade" supportedOrientations={['landscape']}>
         <View style={styles.modalBg}>
@@ -898,7 +902,7 @@ function Root() {
   const u = Math.min(win.width, win.height) / 100;
   const [ready, setReady] = useState(false);
   const [set, setSet] = useState(DEF_SET);
-  const [screen, setScreen] = useState('lobby');
+  const [screen, setScreen] = useState('login');
   const [table, setTable] = useState(null);
   const [flash, setFlash] = useState(null);
   const [setOpen, setSetOpen] = useState(false);
@@ -906,7 +910,8 @@ function Root() {
 
   useEffect(() => {
     ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE).catch(() => {});
-    Promise.all([AsyncStorage.getItem(SET_KEY).catch(() => null), L.loadWallet().catch(() => null), loadPerm().catch(() => null)]).then(([v]) => {
+    Promise.all([AsyncStorage.getItem(SET_KEY).catch(() => null), L.loadWallet().catch(() => null), loadPerm().catch(() => null), AsyncStorage.getItem(LOGIN_KEY).catch(() => null)]).then(([v, , , lg]) => {
+      if (lg) setScreen('lobby');
       let st = DEF_SET;
       try { if (v) st = { ...DEF_SET, ...JSON.parse(v) }; } catch (e) { /* bozuk kayıt */ }
       FEEL.vibrate = st.vibrate !== false; SOUND.on = st.sound !== false;
@@ -917,6 +922,16 @@ function Root() {
   const start = (t, cfg) => { CLK.tOut = 0; CLK.cKey = null; setTable(t); GM.newGame(cfg); setScreen('game'); };
 
   if (!ready) return <View style={styles.root} />;
+  if (screen === 'login') {
+    return (
+      <>
+        <StatusBar hidden />
+        <LoginScreen u={u} ins={ins} onHelp={() => setRulesOpen('howto')}
+          onGuest={() => { AsyncStorage.setItem(LOGIN_KEY, 'guest').catch(() => {}); setScreen('lobby'); }} />
+        <RulesModal u={u} visible={!!rulesOpen} howto={rulesOpen === 'howto'} onClose={() => setRulesOpen(false)} />
+      </>
+    );
+  }
   if (screen === 'game' && table) {
     return <Game key={table.id + ':' + GM.getG().epoch} set={set} saveSet={saveSet} table={table}
       onLeave={(f) => { setScreen('lobby'); setFlash(f ? { ...f, at: Date.now() } : null); }}
