@@ -1901,7 +1901,7 @@ function hProcessAll() {
   const snap0 = takeSnap(P);
   if (!P.opened) return fail('Önce elini açmalısın, sonra taş işleyebilirsin.');
   markTurn(P, snap0);
-  let count = 0, changed = true, guard = 0;
+  let count = 0, swaps = 0, changed = true, guard = 0;
   while (changed && guard++ < 60) {
     changed = false;
     for (const t of P.slots.filter(Boolean)) {
@@ -1912,13 +1912,23 @@ function hProcessAll() {
         if (o) { processTile(0, t, m, o[0]); logEv(0, tileName(t) + ' işledi'); count++; changed = true; break; }
       }
       if (changed) break;
+      // okey / gösterge alma: masadaki okeyin yerine tutan taş konur, okey ele gelir
+      for (const m of G.table) {
+        const idx = m.items.findIndex((it, k) => (it.t.wild || it.t.gost) && canSwapAt(m, k, t));
+        if (idx < 0) continue;
+        const joker = swapOkey(0, m, idx, t);
+        removeFromHand(P, t); noteUse(P, t); giveTile(P, joker);
+        logEv(0, 'okey çaldı (' + tileName(t) + ' koydu)');
+        count++; swaps++; changed = true; break;
+      }
+      if (changed) break;
     }
   }
   if (!count) return fail(P.openKind === 'cift' ? 'İşlenebilecek taş yok (bir turda perin her ucuna en fazla 2 taş işlenir).' : 'İşlenebilecek taş yok.');
   H.sfx('open');
   if (handOf(P).length === 0) { restoreSnap(P, snap0); H.render(); return fail(LAST_MSG); }
   H.render();
-  return { ok: true, count, msg: count + ' taş işlendi.' };
+  return { ok: true, count, msg: swaps ? (count - swaps ? (count - swaps) + ' taş işlendi, ' : '') + 'okey aldın!' : count + ' taş işlendi.' };
 }
 function hSwap(tileId, meldId, idx) {
   const e = humanTurnErr(null); if (e) return e;
