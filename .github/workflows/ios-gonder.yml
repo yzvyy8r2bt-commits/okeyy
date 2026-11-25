@@ -5,6 +5,7 @@ on:
 jobs:
   submit:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     defaults:
       run:
         working-directory: mobil
@@ -29,4 +30,14 @@ jobs:
           { echo '-----BEGIN PRIVATE KEY-----'; fold -w 64 /tmp/k.b64; echo; echo '-----END PRIVATE KEY-----'; } | sed '/^$/d' > /tmp/asc.p8
           openssl pkey -in /tmp/asc.p8 -noout && echo "Anahtar biçimi doğru" || { echo "Anahtar okunamadı: ASC_KEY_P8 içeriğini kontrol et (uzunluk $(wc -c < /tmp/k.b64))"; exit 1; }
           echo "EXPO_ASC_API_KEY_PATH=/tmp/asc.p8" >> $GITHUB_ENV
+      - name: Son iPhone paketinin bitmesini bekle
+        run: |
+          for i in $(seq 1 60); do
+            st=$(eas build:list --platform ios --limit 1 --json --non-interactive | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const b=JSON.parse(s)[0];console.log(b?b.status:'NONE')})")
+            echo "Paket durumu: $st"
+            [ "$st" = "FINISHED" ] && exit 0
+            case "$st" in ERRORED|CANCELED|NONE) echo "Paket hazırlanamadı"; exit 1;; esac
+            sleep 30
+          done
+          exit 1
       - run: eas submit --platform ios --profile production --latest --non-interactive
