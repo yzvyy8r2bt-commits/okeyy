@@ -162,20 +162,25 @@ function ChatPanel({ u, ins, msgs, names, onSend, onClose }) {
         <View style={{ flexDirection: 'row', gap: u, marginBottom: u }}>
           <TextInput value={txt} onChangeText={setTxt} placeholder="Yazmak için dokun..." placeholderTextColor="rgba(255,255,255,0.45)" maxLength={80}
             returnKeyType="send" onSubmitEditing={() => send(txt)} allowFontScaling={false}
-            style={{ flex: 1, minHeight: 6.4 * u, borderRadius: 1.4 * u, paddingHorizontal: 1.6 * u, backgroundColor: 'rgba(255,255,255,0.1)', color: '#fff', fontSize: 2.6 * u, fontWeight: '700' }} />
+            style={{ flex: 1, minHeight: 6.4 * u, borderRadius: 1.4 * u, paddingHorizontal: 1.6 * u, backgroundColor: 'rgba(255,255,255,0.1)', color: '#fff', fontSize: 3.1 * u, fontWeight: '700' }} />
           <Btn u={u} pri label="Gönder" onPress={() => send(txt)} style={{ paddingHorizontal: 2.2 * u }} />
         </View>
         <View style={{ flex: 1, flexDirection: 'row', gap: 1.2 * u }}>
-          <ScrollView ref={sv} style={{ flex: 1, borderRadius: 1.4 * u, backgroundColor: 'rgba(0,0,0,0.3)' }} contentContainerStyle={{ padding: 1.2 * u, gap: 0.7 * u }}
+          <ScrollView ref={sv} style={{ flex: 1, borderRadius: 1.4 * u, backgroundColor: 'rgba(0,0,0,0.3)' }} contentContainerStyle={{ padding: 1.4 * u, gap: 1 * u }}
             onContentSizeChange={() => sv.current && sv.current.scrollToEnd({ animated: true })}>
             {msgs.length ? msgs.map((m, k) => (
-              <Text key={k} allowFontScaling={false} style={{ color: '#efe6ff', fontSize: 2.4 * u }}>
+              <Text key={k} allowFontScaling={false} style={{ color: '#efe6ff', fontSize: 3.3 * u }}>
                 <Text style={{ color: m.i === 0 ? C.amber : '#9fd4ff', fontWeight: '800' }}>{names[m.i]}: </Text>{m.t}
               </Text>
-            )) : <Text allowFontScaling={false} style={{ color: C.muted, fontSize: 2.2 * u }}>Henüz mesaj yok. Sağdaki hızlı mesajlardan birine dokun ya da yaz.</Text>}
+            )) : <Text allowFontScaling={false} style={{ color: C.muted, fontSize: 2.8 * u }}>Henüz mesaj yok. Sağdaki hızlı mesajlardan birine dokun ya da yaz.</Text>}
           </ScrollView>
-          <ScrollView style={{ width: 21 * u, flexGrow: 0 }} contentContainerStyle={{ gap: 0.8 * u }}>
-            {QUICK.map(q => <Btn key={q} u={u} sm label={q} onPress={() => send(q)} style={{ minHeight: 6 * u }} />)}
+          <ScrollView style={{ width: 26 * u, flexGrow: 0 }} contentContainerStyle={{ gap: 0.9 * u }}>
+            {QUICK.map(q => (
+              <Pressable key={q} onPress={() => send(q)} style={({ pressed }) => [{ minHeight: 7.6 * u, borderRadius: 1.6 * u, alignItems: 'center', justifyContent: 'center', paddingHorizontal: u,
+                backgroundColor: 'rgba(255,255,255,0.09)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)', borderBottomWidth: 0.5 * u, borderBottomColor: 'rgba(0,0,0,0.4)' }, pressed && { opacity: 0.75 }]}>
+                <Text allowFontScaling={false} numberOfLines={1} adjustsFontSizeToFit style={{ color: '#fff', fontWeight: '800', fontSize: 3.4 * u }}>{q}</Text>
+              </Pressable>
+            ))}
           </ScrollView>
         </View>
       </View>
