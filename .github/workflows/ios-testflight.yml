@@ -1,0 +1,41 @@
+# iPhone paketi + TestFlight'a yükleme.
+# GitHub'da "Actions" → "iPhone: TestFlight'a yükle" → "Run workflow" ile başlatılır.
+# Gerekli gizli anahtarlar (Settings → Secrets → Actions):
+#   EXPO_TOKEN          : Expo erişim anahtarı (zaten var)
+#   ASC_KEY_ID          : App Store Connect API anahtarının "Key ID"si
+#   ASC_ISSUER_ID       : App Store Connect "Issuer ID"
+#   ASC_KEY_P8          : İndirilen .p8 dosyasının içeriği (-----BEGIN PRIVATE KEY----- ile başlayan metin)
+#   APPLE_TEAM_ID       : Apple geliştirici "Team ID" (10 karakter)
+name: "iPhone: TestFlight'a yükle"
+on:
+  workflow_dispatch:
+jobs:
+  ios:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobil
+    env:
+      EXPO_ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      EXPO_ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      EXPO_APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      EXPO_APPLE_TEAM_TYPE: INDIVIDUAL
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      - name: Paketleri kur
+        run: |
+          npm install
+          npx expo install --fix
+      - name: API anahtarını dosyaya yaz
+        run: |
+          printf '%s' "${{ secrets.ASC_KEY_P8 }}" > /tmp/asc.p8
+          echo "EXPO_ASC_API_KEY_PATH=/tmp/asc.p8" >> $GITHUB_ENV
+      - name: iPhone paketini hazırla ve TestFlight'a gönder
+        run: eas build --platform ios --profile production --non-interactive --auto-submit --no-wait
