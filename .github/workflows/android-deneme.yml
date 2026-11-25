@@ -23,7 +23,8 @@ jobs:
       - name: Paketleri kur
         run: |
           npm install
-          npx expo install --fix || true
+          npx expo install --fix
+          npx expo-doctor || true
       - name: Expo projesini bağla (ilk seferde)
         run: |
           if ! grep -q '"projectId"' app.json; then
