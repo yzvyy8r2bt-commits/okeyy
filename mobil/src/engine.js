@@ -371,8 +371,11 @@ function canSwapAt(m, idx, t) {
   if (m.type === 'run') return t.c === it.c && t.n === it.n;
   const n = m.items[0].n;
   if (t.n !== n) return false;
-  if (m.items.length < 4) return false;   // 3'lü aynı sayı perinde okeyin rengi belli değil: eksik iki taş birlikte konmalı (setSwapPair)
-  return !m.items.some((o, k) => k !== idx && o.c === t.c);
+  const wilds = m.items.filter(o => o.t.wild).length;
+  // 3'lü per, 1 okey: okeyin rengi belli değil → eksik iki taş birlikte konmalı (setSwapPair)
+  // 3'lü per, 2 okey (ör. siyah 10 + 2 okey kütü): eksik renklerden herhangi biri tek başına bir okeyi alır
+  if (m.items.length < 4 && wilds < 2) return false;
+  return !m.items.some((o, k) => k !== idx && !o.t.wild && o.c === t.c);
 }
 // 3'lü aynı sayı peri (ör. siyah 13, mavi 13, okey): okeyi almak için eksik İKİ rengi birlikte koymak gerekir
 function setSwapNeed(m, idx) {
@@ -401,7 +404,12 @@ function findSwapIdx(m, t) {
 function doSwap(m, idx, t) {
   const it = m.items[idx], joker = it.t;
   it.t = t;
-  if (m.type === 'set') { it.c = t.c; m.items.sort((a, b) => a.c - b.c); }
+  if (m.type === 'set') {
+    it.c = t.c;
+    const w = m.items.find(o => o !== it && o.t.wild && o.c === t.c);   // diğer okey aynı renge denk geldiyse boş renge kaydır
+    if (w) { const used = m.items.filter(o => o !== w).map(o => o.c); w.c = [0, 1, 2, 3].find(c => !used.includes(c)); }
+    m.items.sort((a, b) => a.c - b.c);
+  }
   return joker;
 }
 // Yanlışa atma: atılan taş masadaki herhangi bir açık seriye işlenebiliyorsa
