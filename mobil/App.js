@@ -6,7 +6,7 @@ import { StatusBar } from 'expo-status-bar';
 import * as ScreenOrientation from 'expo-screen-orientation';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { FEEL, tick, bump, warn, err } from './src/feel';
-import { SOUND, sfx, setMusic, musicActive } from './src/sound';
+import { SOUND, sfx, setMusic, musicActive, musicInGame } from './src/sound';
 import { HOWTO, RULES } from './src/content';
 import * as L from './src/lobby';
 import LobbyScreen from './src/LobbyScreen';
@@ -1288,6 +1288,7 @@ function Root() {
     });
   }, []);
   useEffect(() => { const sub = AppState.addEventListener('change', st => musicActive(st === 'active')); return () => sub.remove(); }, []);   // arka planda müzik susar
+  useEffect(() => { musicInGame(screen === 'game'); }, [screen]);   // masada oyun oynarken müzik susar
   const saveSet = (st) => { setSet(st); FEEL.vibrate = st.vibrate !== false; SOUND.on = st.sound !== false; setMusic(st.music); AsyncStorage.setItem(SET_KEY, JSON.stringify(st)).catch(() => {}); };
   const start = (t, cfg) => { CLK.tOut = 0; CLK.cKey = null; setTable(t); GM.newGame(cfg); setScreen('game'); };
 

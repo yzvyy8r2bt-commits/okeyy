@@ -27,15 +27,18 @@ export function sfx(k) {
   } catch (e) { try { p.play(); } catch (e2) { /* yok say */ } }
 }
 
-// arka plan müziği: sakin, klasik bir döngü (web sürümündeki müziğin aynısı, dosyaya çevrildi)
-let MP = null, musicOn = false;
-export function setMusic(on, active = true) {
-  musicOn = !!on;
-  const play = musicOn && active;
+// arka plan müziği: kahvehane havasında, Hicaz makamında bağlama/ud tınısı + darbuka (kendi üretimimiz, telifsiz)
+// sadece lobide çalar: masada oyun başlayınca susar, masadan kalkınca yeniden çalar
+let MP = null;
+const MS = { on: false, app: true, game: false };
+function syncMusic() {
+  const play = MS.on && MS.app && !MS.game;
   try {
-    if (play && !MP) { init(); MP = createAudioPlayer(MUSIC); MP.loop = true; MP.volume = 0.45; }
+    if (play && !MP) { init(); MP = createAudioPlayer(MUSIC); MP.loop = true; MP.volume = 0.5; }
     if (!MP) return;
     if (play) MP.play(); else MP.pause();
   } catch (e) { /* ses çalınamadı */ }
 }
-export function musicActive(active) { setMusic(musicOn, active); }
+export function setMusic(on) { MS.on = !!on; syncMusic(); }
+export function musicActive(active) { MS.app = !!active; syncMusic(); }
+export function musicInGame(inGame) { MS.game = !!inGame; syncMusic(); }
