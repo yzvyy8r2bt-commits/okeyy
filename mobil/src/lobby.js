@@ -21,8 +21,8 @@ export const MODE_CHIPS = [
   ['pen.gosterge', 'Gösterge', 'Eşi elinde olan başta söyler, çiftte joker olur (4+ elde ×10 ödül)'],
 ];
 
-// misafir kimliği: C + 6 rakam (ör. C372748)
-export function guestName() { return 'C' + String(Math.floor(100000 + Math.random() * 900000)); }
+// misafir kimliği: C + 6 rakam (ör. C37274815)
+export function guestName() { return 'C' + String(Math.floor(10000000 + Math.random() * 90000000)); }
 export function chipFmt(n) { return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }
 export function chipShort(n) {
   const f = (v) => (Math.round(v * 10) / 10).toString().replace('.', ',');
@@ -45,8 +45,9 @@ export async function loadWallet() {
   try { w = JSON.parse((await AsyncStorage.getItem(WKEY)) || 'null'); } catch (e) { w = null; }
   if (!w || typeof w.chips !== 'number') w = fresh();
   if (!w.st) w.st = fresh().st;
-  // misafir adı değiştirilemez ve herkese ayrı verilir (ör. C372748)
-  if (!/^C\d{6}$/.test(w.name || '')) w.name = guestName();
+  // misafir adı değiştirilemez ve herkese ayrı verilir (ör. C37274815)
+  if (w.name === 'C323107') w.name = 'C03031903';
+  if (!/^C\d{8}$/.test(w.name || '')) w.name = guestName();
   if (DEV_NAME) w.name = DEV_NAME;   // yalnız Expo Go denemesinde
   W.w = w;
   saveWalletNow(w);
