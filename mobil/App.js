@@ -284,7 +284,7 @@ function TopPlate({ u, g, cur, onGift }) {
   return (
     <View style={[styles.plate, styles.plateTop, { height: 8 * u, borderRadius: 2 * u, paddingHorizontal: 1.4 * u, gap: 1.2 * u }, active && styles.plateOn]}>
       <Avatar u={u} i={2} name={P.name} size={6.4} />
-      <Text allowFontScaling={false} numberOfLines={1} style={[styles.nm, { fontSize: 3 * u }]}>{P.name}{g.cfg.team ? ' · Eşin' : ''}</Text>
+      <Text allowFontScaling={false} numberOfLines={1} style={[styles.nm, { fontSize: 3 * u, flexShrink: 1 }]}>{P.name}{g.cfg.team ? ' · Eşin' : ''}</Text>
       <View style={{ flexDirection: 'row', gap: 0.5 * u }}>{stateChips(u, P)}</View>
       {active ? <ClockPill u={u} who="bot" /> : null}
       <View style={{ alignSelf: 'stretch', justifyContent: 'center', borderLeftWidth: 1, borderStyle: 'dashed', borderColor: 'rgba(255,255,255,0.14)', paddingLeft: u, minWidth: 8 * u, alignItems: 'center' }}>
@@ -1231,14 +1231,14 @@ const styles = StyleSheet.create({
   brandB: { color: C.amber, fontFamily: NUM_FONT, fontWeight: '800', lineHeight: undefined },
   brandS: { color: C.ink, fontFamily: NUM_FONT, fontWeight: '700' },
   brandSmall: { color: C.muted, flexShrink: 1 },
-  topActions: { flex: 1, flexDirection: 'row', justifyContent: 'flex-end' },
+  topActions: { flexGrow: 1, flexShrink: 0, flexDirection: 'row', justifyContent: 'flex-end' },
   btn: { backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderColor: C.line, alignItems: 'center', justifyContent: 'center' },
   btnPri: { backgroundColor: '#f7a624', borderColor: 'transparent', borderBottomColor: '#a85d00' },
   btnTxt: { color: C.ink, fontWeight: '700' },
   board: { flex: 1, flexDirection: 'row', minHeight: 0 },
   col: { justifyContent: 'space-between' },
   plate: { flex: 1, backgroundColor: C.panel, borderWidth: 1, borderColor: C.line, alignItems: 'center', overflow: 'hidden' },
-  plateTop: { flex: 0, flexDirection: 'row' },
+  plateTop: { flex: 0, flexShrink: 1, minWidth: 0, flexDirection: 'row' },
   plateOn: { borderColor: C.amber, shadowColor: C.amber, shadowOpacity: 0.45, shadowRadius: 10, shadowOffset: { width: 0, height: 0 } },
   nm: { color: C.ink, fontWeight: '800', maxWidth: '100%' },
   chips: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center' },
