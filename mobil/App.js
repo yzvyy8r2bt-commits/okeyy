@@ -783,10 +783,10 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
     const why = giftBlock(giftOf(i), cat, it[2]);
     if (why) { toast(why === 'Kalıcı hediyesi var' ? 'Bu oyuncunun üzerinde kalıcı hediye var. Sadece Kalıcı bölümünden hediye gönderebilirsin.' : 'Oyuncunun üzerindeki hediyeden daha pahalı bir hediye seçmelisin.', 'bad'); return; }
     L.addChips(-it[2]); setGiftFor(null);
-    if (!L.MODE.offline) { L.bump('gift_sent'); L.checkTasks().forEach(m => toast(m, 'task')); }
+    if (!L.MODE.offline && i !== 0) { L.bump('gift_sent'); L.checkTasks().forEach(m => toast(m, 'task')); }
     putGift(i, it, cat); sfx('tap');
-    toast(nameOf(i) + ' oyuncusuna ' + it[0] + ' gönderdin', 'info');
-    if (Math.random() < 0.35) setTimeout(() => botGift(i, cat.id === 'takil' ? 'takil' : 'kahve'), 2200 + Math.random() * 1500);
+    toast(i === 0 ? 'Kendine ' + it[0] + ' aldın' : nameOf(i) + ' oyuncusuna ' + it[0] + ' gönderdin', 'info');
+    if (i !== 0 && Math.random() < 0.35) setTimeout(() => botGift(i, cat.id === 'takil' ? 'takil' : 'kahve'), 2200 + Math.random() * 1500);
   };
 
   const g = G();
@@ -929,11 +929,14 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
               <Text allowFontScaling={false} numberOfLines={1} style={[styles.nm, { fontSize: 2.4 * u }]}>{L.wallet().name}</Text>
               {stateChips(u, P)}
             </View>
-            {giftOf(0) ? (
-              <Pressable onPress={() => setGiftFor(0)} style={{ width: 6.6 * u, height: 6.6 * u, borderRadius: 1.2 * u, backgroundColor: 'rgba(0,0,0,0.3)', borderWidth: 1, borderStyle: 'dashed', borderColor: 'rgba(255,255,255,0.16)', alignItems: 'center', justifyContent: 'center', marginBottom: -0.6 * u }}>
-                <GiftIcon name={giftOf(0).em} size={6.2 * u} />
-              </Pressable>
-            ) : null}
+            <Pressable onPress={() => setGiftFor(0)} hitSlop={6} style={{ width: 9.6 * u, height: 9.6 * u, marginVertical: -1.8 * u, borderRadius: 1.6 * u, backgroundColor: 'rgba(0,0,0,0.3)', borderWidth: 1, borderStyle: 'dashed', borderColor: giftOf(0) ? 'rgba(255,255,255,0.16)' : 'rgba(255,187,51,0.55)', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              {giftOf(0) ? <GiftIcon name={giftOf(0).em} size={9 * u} /> : (
+                <View style={{ alignItems: 'center' }}>
+                  <GiftIcon name="Kalp" size={3.6 * u} />
+                  <Text allowFontScaling={false} style={{ color: '#ffe39a', fontWeight: '800', fontSize: 1.8 * u }}>Hediye</Text>
+                </View>
+              )}
+            </Pressable>
             <ClockPill u={u} who="me" style={{ alignSelf: 'center' }} />
             <View style={{ flex: 1, alignItems: statusMsg ? 'flex-start' : 'flex-end' }}>
               {statusMsg ? <Text allowFontScaling={false} numberOfLines={2} style={{ color: statusKind === 'task' ? '#7ef0b5' : statusKind === 'alert' ? '#ffd27a' : '#ffc0b9', fontWeight: '700', fontSize: 2.3 * u }}>{statusMsg}</Text>
@@ -1049,6 +1052,7 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
             const mp = !cur ? '' : cur.kind === 'oz' ? 'Üzerinde kalıcı hediye var (' + curName + '). Bu oyuncuya sadece Kalıcı bölümünden hediye gönderebilirsin.'
               : 'Üzerinde ' + L.chipFmt(cur.p) + ' çiplik bir hediye var (' + curName + '). Ondan daha pahalı bir hediye ya da Kalıcı hediye gönderebilirsin.';
             const nm = i === 0 ? L.wallet().name : P.name;
+            const mpTxt = i === 0 ? mp.replace('Bu oyuncuya', 'Kendine') : mp;
             return (
               <View style={[styles.modal, { width: '88%', maxHeight: '94%', borderRadius: 2.4 * u, padding: 2.2 * u }]}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 1.2 * u }}>
@@ -1061,11 +1065,9 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
                     <Coin s={2.4 * u} /><Text allowFontScaling={false} style={{ fontFamily: NUM_FONT, fontWeight: '800', fontSize: 2.6 * u, color: '#ffe39a' }}>{L.chipFmt(L.wallet().chips)}</Text>
                   </View>
                 </View>
-                {i === 0 ? (
-                  <Text allowFontScaling={false} style={{ color: C.muted, fontSize: 2.1 * u, marginTop: u }}>{cur ? 'Üzerindeki hediye: ' + cur.em : ''}</Text>
-                ) : (
+                {(
                   <>
-                    {mp ? <Text allowFontScaling={false} style={{ color: '#ffe39a', fontSize: 1.9 * u, marginTop: u }}>{mp}</Text> : null}
+                    {mpTxt ? <Text allowFontScaling={false} style={{ color: '#ffe39a', fontSize: 1.9 * u, marginTop: u }}>{mpTxt}</Text> : null}
                     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 0.6 * u, marginTop: 1.2 * u }}>
                       {GIFT_CATS.map(c => (
                         <Pressable key={c.id} onPress={() => setGcat(c.id)} style={{ paddingHorizontal: 1.4 * u, paddingVertical: 0.7 * u, borderRadius: u, backgroundColor: c.id === cat.id ? C.amber : 'rgba(255,255,255,0.1)' }}>
