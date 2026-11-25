@@ -691,9 +691,14 @@ button { font-family: inherit; }
 .pg-topg .pg-oz svg, .pg-topg .pg-tmp svg, .pg-topg .pg-perm svg { width: calc(var(--u) * 10); height: calc(var(--u) * 10); }
 
 /* bana gelen hediye: ıstakanın üstünde, sürenin yanında */
-.mygift { flex: none; display: flex; align-items: center; justify-content: center; width: calc(var(--u) * 6.6); height: calc(var(--u) * 6.6); margin-bottom: calc(var(--u) * -.6); border-radius: calc(var(--u) * 1.2); background: rgba(0, 0, 0, .3); border: 1px dashed rgba(255, 255, 255, .16); }
+.mygift { flex: none; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; width: calc(var(--u) * 9.6); height: calc(var(--u) * 9.6); margin: calc(var(--u) * -1.8) 0; border-radius: calc(var(--u) * 1.6); background: rgba(0, 0, 0, .3); border: 1px dashed rgba(255, 255, 255, .16); }
+.mygift.empty { border-color: rgba(255, 187, 51, .55); }
+.mygift.empty svg { width: calc(var(--u) * 3.6); height: calc(var(--u) * 3.6); }
+.mygift.empty i { font-style: normal; color: #ffe39a; font-weight: 800; font-size: calc(var(--u) * 1.8); }
+.bigflash { position: absolute; left: 50%; top: 18%; transform: translate(-50%, 0) scale(.6); opacity: 0; z-index: 60; pointer-events: none; padding: calc(var(--u) * 2.2) calc(var(--u) * 5); border-radius: calc(var(--u) * 2.4); background: rgba(24, 10, 40, .94); border: calc(var(--u) * .5) solid #ffbb33; box-shadow: 0 0 calc(var(--u) * 6) rgba(255, 187, 51, .45); color: #ffc93c; font-weight: 900; font-size: calc(var(--u) * 7); white-space: nowrap; transition: opacity .15s, transform .15s; }
+.bigflash.on { opacity: 1; transform: translate(-50%, 0) scale(1); }
 .mygift[hidden] { display: none; }
-.mygift svg { width: calc(var(--u) * 6.4); height: calc(var(--u) * 6.4); display: block; filter: drop-shadow(0 2px 4px rgba(0,0,0,.5)); }
+.mygift svg { width: calc(var(--u) * 9); height: calc(var(--u) * 9); display: block; filter: drop-shadow(0 2px 4px rgba(0,0,0,.5)); }
 .mygift.new { animation: pgin .6s ease-out; }
 
 /* benim kutum */
@@ -755,7 +760,7 @@ button { touch-action: manipulation; }
       <div class="rackwrap">
         <div class="srow">
           <button class="meplate" id="mePlate" type="button" data-act="lb-profile" title="Profilim"></button>
-          <div class="mygift" id="myGift" hidden title="Sana gelen hediye"></div>
+          <div class="mygift" id="myGift" hidden title="Hediye" data-act="gf-gift-0"></div>
           <div class="clock" id="clock" hidden title="Tur süresi">0:60</div>
           <div class="status" id="status" aria-live="polite"></div>
           <div class="bk right" id="actR"></div>
@@ -807,6 +812,16 @@ function shuffle(a) {
 function tileName(t) {
   if (t.fake) return 'Sahte Okey';
   return COLOR_NAMES[t.c] + ' ' + t.n;
+}
+function genName(n) {   // Mehmet'in, Ayşe'nin
+  const low = n.toLocaleLowerCase('tr-TR'), v = (low.match(/[aeıioöuü]/g) || ['e']).pop();
+  let h = { a: 'ı', ı: 'ı', o: 'u', u: 'u', e: 'i', i: 'i', ö: 'ü', ü: 'ü' }[v]; if (/(al|el)$/.test(low) && v === 'a') h = 'i';
+  return n + '’' + ('aeıioöuü'.includes(low.slice(-1)) ? 'n' : '') + h + 'n';
+}
+function locName(n) {   // Mehmet'te, Ayşe'de, Kemal'de
+  const v = (n.toLocaleLowerCase('tr-TR').match(/[aeıioöuü]/g) || ['e']).pop();
+  const back = 'aıou'.includes(v) && !/(al|el)$/i.test(n), hard = 'fstkçşhp'.includes(n.slice(-1).toLocaleLowerCase('tr-TR'));
+  return n + '’' + (hard ? 't' : 'd') + (back ? 'a' : 'e');
 }
 function faceName(c, n) { return COLOR_NAMES[c] + ' ' + n; }
 
@@ -1387,7 +1402,8 @@ function announceGost(i) {
   t.gost = true; P.gostSaid = true; H.ev('gost', { i });
   addPenalty(P, 'gost', 'Gösterge ödülü', -10 * G.gosterge.n);   // göstergenin 10 katı silme
   logEv(i, 'Gösterge bende');
-  H.toast((P.human ? 'Gösterge bende! ' + tileName(t) + ' çiftte her taşla eşleşir.' : P.name + ': Gösterge bende'), 'info');
+  if (H.flash) H.flash(P.human ? 'Gösterge bende!' : 'Gösterge ' + locName(P.name), false);
+  else H.toast((P.human ? 'Gösterge bende! ' + tileName(t) + ' çiftte her taşla eşleşir.' : P.name + ': Gösterge bende'), 'info');
   H.render();
   return { ok: true, msg: 'Gösterge bende' };
 }
@@ -1652,7 +1668,8 @@ function doDiscard(i, tile) {
   if (!finishing) {
     const left = handOf(P).length;
     if (left >= 1 && left <= 3) {
-      H.toast(P.human ? 'Elinde ' + left + ' taş kaldı' : P.name + ' oyuncusunun ' + left + ' taşı kaldı', 'info');
+      const lm = P.human ? left + ' taşın kaldı!' : genName(P.name) + ' ' + left + ' taşı kaldı';
+      if (H.flash) H.flash(lm, true); else H.toast(lm, 'info');
       logEv(i, left + ' taşı kaldı');
     }
   }
@@ -3249,8 +3266,9 @@ function giftBadge(i) {
 function renderMyGift() {
   const el = $('myGift'); if (!el) return;
   const c = UI.table && G ? curGift(0) : null;
-  el.hidden = !c;
-  if (!c) { el.innerHTML = ''; return; }
+  el.hidden = !(UI.table && G);
+  el.classList.toggle('empty', !c);
+  if (!c) { el.innerHTML = giftIcon('Kalp') + '<i>Hediye</i>'; return; }
   const g = UI.gifts && UI.gifts[0];
   el.innerHTML = icByName(c.em);
   el.classList.toggle('new', !!(g && g.tmp && g.tmp.fresh && Date.now() - g.tmp.fresh < 900));
@@ -3291,10 +3309,11 @@ function showGiftMenu(i) {
   const curName = cur ? (GIFT_CATS.flatMap(c => c.items).find(x => x[0] === cur.em || x[1] === cur.em) || [cur.em])[0] : '';
   const mpTxt = !cur ? '' : cur.kind === 'oz' ? 'Üzerinde kalıcı hediye var (' + curName + '). Bu oyuncuya sadece Kalıcı bölümünden hediye gönderebilirsin.'
     : 'Üzerinde ' + chipFmt(cur.p) + ' çiplik bir hediye var (' + curName + '). Ondan daha pahalı bir hediye ya da Kalıcı hediye gönderebilirsin.';
-  const team = G.cfg.team ? (i === 2 ? ' · Eşin' : ' · Rakip') : '';
+  const team = i === 0 ? ' · Kendine hediye' : G.cfg.team ? (i === 2 ? ' · Eşin' : ' · Rakip') : '';
+  const mpShow = i === 0 ? mpTxt.replace('Bu oyuncuya', 'Kendine') : mpTxt;
   openModal('<div class="gf"><div class="gf-head"><span class="lb-av gf-av">' + P.name[0] + '</span><div><b>' + P.name + team + '</b><small>Seviye ' + botLv(P.name) + '</small></div>' +
     '<div class="lb-chips sm"><i class="coin"></i>' + chipFmt(wallet().chips) + '</div></div>' +
-    (mpTxt ? '<p class="gf-mp">' + mpTxt + '</p>' : '') + '<h3 class="pf-h">Hediye Yolla</h3><div class="tk-tabs">' + tabs + '</div><div class="gf-grid">' + items + '</div>' +
+    (mpShow ? '<p class="gf-mp">' + mpShow + '</p>' : '') + '<h3 class="pf-h">Hediye Yolla</h3><div class="tk-tabs">' + tabs + '</div><div class="gf-grid">' + items + '</div>' +
     (cat.forever ? '<p class="st-note">Kalıcı hediyeler süresizdir: başka biri farklı bir kalıcı hediye gönderene kadar oyuncunun kutusunda kalır. Her biri 1 milyon çip.</p>' : cat.perm ? '<p class="st-note">Günlük hediyeler 24 saat boyunca oyuncunun kutusunda durur; aynı oyuncuyla başka masada karşılaşırsan da görünür.</p>' : '<p class="st-note">Hediye oyun bitene kadar oyuncunun kutusunda durur. Takılmalık hediyelerle dalga geçmek serbest!</p>') +
     '<div class="mrow"><button class="btn pri" data-act="close">Kapat</button></div></div>');
 }
@@ -3305,12 +3324,12 @@ function sendGift(i, catId, k) {
   const why = giftBlock(i, cat, it[2]);
   if (why) { warn(why === 'Kalıcı hediyesi var' ? 'Bu oyuncunun üzerinde kalıcı hediye var. Sadece Kalıcı bölümünden hediye gönderebilirsin.' : 'Oyuncunun üzerindeki hediyeden daha pahalı bir hediye seçmelisin.'); return; }
   addChips(-it[2]); closeModal();
-  flyGift(null, $(PLATE[i]), ic(it));
+  flyGift(null, i === 0 ? $('myGift') : $(PLATE[i]), ic(it));
   setTimeout(() => setGift(i, it[0], !!cat.perm, !!cat.forever, it[2]), 800);
-  toast(G.players[i].name + ' oyuncusuna ' + it[0] + ' gönderdin', 'info');
-  bump('gift_sent'); checkTasks();
+  toast(i === 0 ? 'Kendine ' + it[0] + ' aldın' : G.players[i].name + ' oyuncusuna ' + it[0] + ' gönderdin', 'info');
+  if (i !== 0) { bump('gift_sent'); checkTasks(); }
   // bazen karşılık verir
-  if (Math.random() < .35) setTimeout(() => botGift(i, catId === 'takil' ? 'takil' : 'kahve'), 2200 + Math.random() * 1500);
+  if (i !== 0 && Math.random() < .35) setTimeout(() => botGift(i, catId === 'takil' ? 'takil' : 'kahve'), 2200 + Math.random() * 1500);
 }
 // bot hediyesi sana
 function botGift(from, catId) {
@@ -4319,6 +4338,15 @@ H.handEnd = (rec, last) => {
   setTimeout(() => { if (G && G.phase === 'over') showHandEnd(rec, last); }, special ? 2300 : (rec.kind === 'draw' ? 600 : 1500));
 };
 H.gameEnd = () => { showGameEnd(); };
+// masanın ortasında büyük, kısa duyuru (short: ~1 sn)
+H.flash = (msg, short) => {
+  const st = $('stage'); if (!st) return;
+  const old = st.querySelector('.bigflash'); if (old) old.remove();
+  const f = document.createElement('div'); f.className = 'bigflash'; f.textContent = msg; st.appendChild(f);
+  requestAnimationFrame(() => requestAnimationFrame(() => f.classList.add('on')));
+  setTimeout(() => f.classList.remove('on'), short ? 800 : 1250);
+  setTimeout(() => f.remove(), short ? 1000 : 1500);
+};
 // ceza alan botu salla
 const _origToast = H.toast;
 H.toast = (m, k) => {

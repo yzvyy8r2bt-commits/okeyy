@@ -568,7 +568,7 @@ export default function LobbyScreen({ u, ins, set, saveSet, onStart, openSetting
               <SegFull u={u} opts={[['all', 'Fark etmez'], ['yardimli', 'Yardımlı'], ['yardimsiz', 'Yardımsız']]} val={filter.hard} onPick={v => setFilter({ ...filter, hard: v })} />
             </View>
             <View style={{ flex: 1.1 }}>
-              <Text allowFontScaling={false} style={cLbl(u)}>OYUN MODLARI <Text style={{ fontSize: 1.7 * u }}>(dokun: fark etmez → olsun → olmasın)</Text></Text>
+              <Text allowFontScaling={false} style={cLbl(u)}>CEZALAR <Text style={{ fontSize: 1.7 * u }}>(dokun: fark etmez → olsun → olmasın)</Text></Text>
               {[['rekor', 'Rekorlu'], ['okeyCal', 'Okey çalma cezası'], ['herTas', 'Her taş cezalı'], ['yanAc', 'Yandan açma cezalı'], ['gosterge', 'Gösterge']].map(([k, n]) => {
                 const v = filter.pen[k];
                 const next = v === undefined ? true : v ? false : undefined;
