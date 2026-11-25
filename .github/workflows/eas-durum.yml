@@ -17,6 +17,7 @@ jobs:
         with:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
+      - run: npm install --silent
       - run: |
           eas build:list --platform ios --limit 1 --json --non-interactive > /tmp/b.json
           node -e "const b=require('/tmp/b.json')[0];console.log('DURUM',b.status);console.log('HATA',JSON.stringify(b.error||null));(b.logFiles||[]).forEach(u=>console.log('LOG',u))"
