@@ -81,7 +81,7 @@ export const RULES = [
  {
   "t": "Gösterge",
   "i": [
-   "Oyun modlarında Gösterge açıksa, ortadaki göstergenin eşi elinde olan oyuncu elin başında, ilk taşını çekmeden önce o taşa basılı tutarak (başlayan oyuncu ilk taşını attıktan sonra da, çekmeden önce söyleyebilir) \"Gösterge bende\" der. Herkese bildirim gider. Göstergeyi söyleyene göstergenin 10 katı silme yazılır (ör. gösterge 4 ise −40).",
+   "Oyun modlarında Gösterge açıksa, ortadaki göstergenin eşi elinde olan oyuncu elin başında, ilk taşını çekmeden önce o taşa basılı tutarak (başlayan oyuncu ilk taşını attıktan sonra da, çekmeden önce söyleyebilir) \"Gösterge bende\" der. Herkese bildirim gider. 4 el ve üstü oyunlarda göstergeyi söyleyene göstergenin 10 katı silme yazılır (ör. gösterge 4 ise −40); 1 ve 2 ellik oyunlarda bu ödül yoktur.",
    "Söylenen gösterge yalnızca çiftte joker gibidir: her taşla çift olur. Seri perde sıradan taş olarak kullanılır.",
    "Seri açtıysan ve masada çift açan varsa, çift indirirken göstergeyi kullanabilirsin.",
    "Yandan alınan taşı göstergeyle çift yapıp açarsan ya da indirirsen taşı atana ceza yazılmaz (okeyle yapılırsa yazılır).",
@@ -111,4 +111,28 @@ export const RULES = [
    "Seri Diz ve Çift Diz, ıstakayı en iyi dizilimle düzenler."
   ]
  }
+];
+
+// açılışta (giriş beklemesinde) gösterilen ipuçları
+export const TIPS = [
+  'Gösterge elindeyse ilk taşını çekmeden göstergeye basılı tut, "Gösterge bende" de. 4 el ve üstü oyunlarda göstergenin 10 katı ödül alırsın!',
+  '3\'lü aynı sayı perindeki okeyi almak için eksik iki rengi birlikte koymalısın.',
+  '1 taş ve 2 okeyle per indirirken taşı en sola koyarsan yukarı doğru seri, ortaya ya da sağa koyarsan küt olur.',
+  'Elini açtıktan sonra Seri Aç düğmesinin yanında ıstakandaki taşların toplamı yazar. Çiftte 100\'ü geçerse kırmızı olur, dikkat!',
+  'Masadaki bir okeyin yerini tutan taşı atarsan işlek sayılır ve 101 ceza yersin.',
+  '151 ve üzeri seri ya da 7 çiftle açarsan rekor ödülü kazanırsın: −101. 161+ ya da 8+ çiftte −202!',
+  'Okey atarak bitirirsen rakiplerin cezası katlanır. Okeyini son ana sakla!',
+  'Yandan aldığın taşı kullanamayacaksan Yan kutusuna geri sürükle: ceza yok, ama desteden çekersin.',
+  'Elini açtığın turda Geri Topla ile indirdiklerini geri alıp düzeltebilirsin.',
+  'Eşli oyunda eşinin okeyini alırsan ona ceza yazılmaz.',
+  'Masadaki oyuncuların adına dokun: istatistiklerini gör, arkadaş ekle ya da hediye yolla.',
+  'Kendine de hediye alabilirsin! Adının yanındaki hediye kutusuna dokun.',
+  'Her gün giriş yap, günlük hediyeni al. Seri bozulmazsa hediye büyür.',
+  'Oyun oynadıkça süre bonusu birikir, sol üstte ne kadar kaldığını görebilirsin.',
+  'Görevleri tamamla, çip ve seviye kazan.',
+  'Yardımlı modda okeyler ters gelir, işlek taşlarda kırmızı ünlem görünür.',
+  'Seri Diz ve Çift Diz düğmeleri ıstakanı en iyi şekilde dizer.',
+  'Tur süresi dolarsa senin yerine taş çekilir ve atılır. Üst üste 2 tur kaçırırsan süren 5 saniyeye düşer.',
+  'Çayın tazesi, okeyin hası. Hayırlı oyunlar!',
+  'Kahvehanede kural basit: az puan kazanır, çok konuşan çay ısmarlar.',
 ];

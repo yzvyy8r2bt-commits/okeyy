@@ -7,7 +7,7 @@ import * as ScreenOrientation from 'expo-screen-orientation';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { FEEL, tick, bump, warn, err } from './src/feel';
 import { SOUND, sfx, setMusic, musicActive, musicInGame } from './src/sound';
-import { HOWTO, RULES } from './src/content';
+import { HOWTO, RULES, TIPS } from './src/content';
 import * as L from './src/lobby';
 import LobbyScreen from './src/LobbyScreen';
 import LoginScreen from './src/LoginScreen';
@@ -1270,6 +1270,9 @@ function Root() {
   const win = useWindowDimensions();
   const u = Math.min(win.width, win.height) / 100;
   const [ready, setReady] = useState(false);
+  const [splashDone, setSplashDone] = useState(false);
+  const [tip] = useState(() => TIPS[Math.floor(Math.random() * TIPS.length)]);
+  useEffect(() => { const t = setTimeout(() => setSplashDone(true), 2500); return () => clearTimeout(t); }, []);   // ipucu okunabilsin
   const [set, setSet] = useState(DEF_SET);
   const [screen, setScreen] = useState('login');
   const [table, setTable] = useState(null);
@@ -1292,7 +1295,20 @@ function Root() {
   const saveSet = (st) => { setSet(st); FEEL.vibrate = st.vibrate !== false; SOUND.on = st.sound !== false; setMusic(st.music); AsyncStorage.setItem(SET_KEY, JSON.stringify(st)).catch(() => {}); };
   const start = (t, cfg) => { CLK.tOut = 0; CLK.cKey = null; setTable(t); GM.newGame(cfg); setScreen('game'); };
 
-  if (!ready) return <View style={styles.root} />;
+  if (!ready || !splashDone) return (   // açılış: logo + ipucu (online sürümde bağlanma süresi burada geçer)
+    <View style={[styles.root, { alignItems: 'center', justifyContent: 'center', paddingHorizontal: 20 * u }]}>
+      <Text allowFontScaling={false} style={{ color: C.muted, fontWeight: '800', fontSize: 2.8 * u, letterSpacing: 0.8 * u }}>KAHVE USULÜ</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
+        <Text allowFontScaling={false} style={[styles.brandB, { fontSize: 14 * u }]}>101</Text>
+        <Text allowFontScaling={false} style={[styles.brandS, { fontSize: 7 * u, letterSpacing: 1.2 * u, marginLeft: 1.6 * u }]}>OKEY</Text>
+      </View>
+      <View style={{ marginTop: 3 * u, maxWidth: 120 * u, paddingVertical: 1.6 * u, paddingHorizontal: 2.4 * u, borderRadius: 2 * u, backgroundColor: 'rgba(0,0,0,0.3)', borderWidth: 1, borderColor: 'rgba(255,201,60,0.35)' }}>
+        <Text allowFontScaling={false} style={{ color: C.amber, fontWeight: '900', fontSize: 2.6 * u, textAlign: 'center', marginBottom: 0.6 * u }}>💡 İPUCU</Text>
+        <Text allowFontScaling={false} style={{ color: '#efe6ff', fontSize: 3 * u, lineHeight: 4.2 * u, textAlign: 'center' }}>{tip}</Text>
+      </View>
+      <Text allowFontScaling={false} style={{ color: C.muted, fontSize: 2.4 * u, marginTop: 2.4 * u }}>Yükleniyor…</Text>
+    </View>
+  );
   if (screen === 'login') {
     return (
       <>

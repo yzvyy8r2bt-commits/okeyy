@@ -18,7 +18,7 @@ export const MODE_CHIPS = [
   ['pen.herTas', 'Her taş cezalı', 'Açtıktan sonra yandan alıp indirince: atana taş×10 (çift ×20)'],
   ['pen.yanAc', 'Yandan açma cezalı', 'Yandan alınan taşla el açılırsa: atana taş×10 (çift ×20)'],
   ['hard', 'Yardımsız', 'Per çizgileri ve ipuçları gösterilmez'],
-  ['pen.gosterge', 'Gösterge', 'Eşi elinde olan başta basılı tutup söyler, çiftte joker olur'],
+  ['pen.gosterge', 'Gösterge', 'Eşi elinde olan başta söyler, çiftte joker olur (4+ elde ×10 ödül)'],
 ];
 
 // misafir kimliği: C + 6 rakam (ör. C372748)

@@ -98,7 +98,7 @@ function announceGost(i) {
   if (!canAnnounce(P)) return fail('Gösterge ancak elin başında, ilk taşını çekmeden söylenebilir.');
   const t = handOf(P).find(isGostTwin);
   t.gost = true; P.gostSaid = true; H.ev('gost', { i });
-  addPenalty(P, 'gost', 'Gösterge ödülü', -10 * G.gosterge.n);   // göstergenin 10 katı silme
+  if ((G.cfg.hands || 1) >= 4) addPenalty(P, 'gost', 'Gösterge ödülü', -10 * G.gosterge.n);   // göstergenin 10 katı silme: sadece 4 el ve üstü oyunlarda
   logEv(i, 'Gösterge bende');
   H.toast((P.human ? 'Gösterge bende! ' + tileName(t) + ' çiftte her taşla eşleşir.' : P.name + ': Gösterge bende'), 'info');   // büyük duyuru masanın ortasında (H.ev gost)
   H.render();
