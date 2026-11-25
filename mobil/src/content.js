@@ -37,6 +37,8 @@ export const RULES = [
    "Yan oyuncu işlek taş atıp 101 ceza yediyse, o taşı yandan alınca cezası 101 yerine taş sayısı ×10 olur (alana ceza yok).",
    "Bir oyuncunun perde bıraktığı okeyi çalarsan okeyi bırakan oyuncuya 101 ceza yazılır (kendi okeyini alırsan ceza yok).",
    "Perdeki okeyi almak için yerine tam olarak temsil ettiği taşı koymalısın; okey ıstakana gelir. Çiftteki okey de, çiftin eşi olan taşla alınabilir (eşin değilse okeyi bırakana 101 ceza).",
+   "Aynı sayı perinde (küt) 1 okey varsa okeyin rengi belli değildir: örneğin siyah 13, mavi 13 ve okey perinde okeyi almak için sarı 13 ve kırmızı 13 birlikte konmalı. Tek taş konursa okey alınmaz, taş sadece pere işlenir. 4'lü kütte (rengi belli) tek taş yeter.",
+   "1 taş ve 2 okeyle per indirirken taşın yeri perin türünü belirler. Taş en soldaysa yukarı doğru seri olur (siyah 10, okey, okey = siyah 10-11-12): okeyleri siyah 11 ve siyah 12 alır. Taş ortada ya da sağdaysa küt olur (10'lu): ilk konan farklı renk 10 bir okeyi alır, kalan okey için kalan iki renk birlikte konmalı.",
    "Masadaki bir okeyin (seri ya da çift) yerini tutan taşı atmak işlek sayılır: atan 101 ceza yer."
   ]
  },

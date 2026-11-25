@@ -1,0 +1,30 @@
+name: Uzaktan güncelleme gönder (OTA)
+on:
+  workflow_dispatch:
+    inputs:
+      kanal:
+        description: "Kanal: preview (deneme APK) ya da production (mağaza)"
+        required: true
+        default: production
+      mesaj:
+        description: "Güncelleme notu"
+        required: false
+        default: "Düzeltmeler"
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobil
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      - run: npm install
+      - run: npx expo install --fix || true
+      - run: eas update --channel "${{ github.event.inputs.kanal }}" --message "${{ github.event.inputs.mesaj }}" --non-interactive

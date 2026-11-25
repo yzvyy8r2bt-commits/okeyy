@@ -23,7 +23,8 @@
         "backgroundColor": "#2c1252"
       },
       "versionCode": 1,
-      "permissions": [
+      "permissions": [],
+      "blockedPermissions": [
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS",
         "android.permission.FOREGROUND_SERVICE",
@@ -32,7 +33,12 @@
     },
     "plugins": [
       "expo-screen-orientation",
-      "expo-audio",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": false
+        }
+      ],
       [
         "expo-splash-screen",
         {
@@ -48,6 +54,14 @@
         "projectId": "ddf66a22-25ba-4d15-9298-f9c11ba7a27e"
       }
     },
-    "owner": "ismailsurucu"
+    "owner": "ismailsurucu",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/ddf66a22-25ba-4d15-9298-f9c11ba7a27e",
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0
+    }
   }
 }
