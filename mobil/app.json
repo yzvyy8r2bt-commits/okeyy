@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Kahve Usulü 101 Okey",
+    "name": "Kahve Usulu 101 Okey",
     "slug": "kahve-usulu-101-okey",
     "version": "1.0.0",
     "orientation": "landscape",
@@ -12,7 +12,8 @@
       "supportsTablet": false,
       "requireFullScreen": true,
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "CFBundleDisplayName": "101 Okey"
       },
       "buildNumber": "1"
     },
