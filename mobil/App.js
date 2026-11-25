@@ -264,14 +264,16 @@ function GiftSlot({ u, cur, size, onPress }) {
   );
 }
 // yan oyuncu kutusu (.plate)
-function SidePlate({ u, i, g, cur, onGift }) {
+function SidePlate({ u, i, g, cur, onGift, onInfo }) {
   const P = g.players[i], active = g.turn === i && g.phase !== 'over';
   return (
     <View style={{ flex: 1 }}>
     {active ? <ClockPill u={u} who="bot" style={{ position: 'absolute', top: -1.3 * u, right: -u, zIndex: 4, minWidth: 6.4 * u }} /> : null}
     <View style={[styles.plate, { borderRadius: 2 * u, padding: 1.1 * u, gap: 0.8 * u }, active && styles.plateOn]}>
-      <Avatar u={u} i={i} name={P.name} size={6.4} />
-      <Text allowFontScaling={false} numberOfLines={1} style={[styles.nm, { fontSize: 3 * u }]}>{P.name}{g.cfg.team ? ' · Rakip' : ''}</Text>
+      <Pressable onPress={onInfo} hitSlop={6} style={{ alignItems: 'center', gap: 0.8 * u, alignSelf: 'stretch' }}>
+        <Avatar u={u} i={i} name={P.name} size={6.4} />
+        <Text allowFontScaling={false} numberOfLines={1} style={[styles.nm, { fontSize: 3 * u }]}>{P.name}{g.cfg.team ? ' · Rakip' : ''}</Text>
+      </Pressable>
       <View style={[styles.chips, { gap: 0.5 * u }]}>{stateChips(u, P)}</View>
       <View style={[styles.shelf, { marginHorizontal: -1.1 * u, alignItems: 'center', justifyContent: 'center' }]}><GiftSlot u={u} cur={cur} size={9} onPress={onGift} /></View>
     </View>
@@ -279,12 +281,14 @@ function SidePlate({ u, i, g, cur, onGift }) {
   );
 }
 // karşı oyuncu (üst şeritte, .plate.top)
-function TopPlate({ u, g, cur, onGift }) {
+function TopPlate({ u, g, cur, onGift, onInfo }) {
   const P = g.players[2], active = g.turn === 2 && g.phase !== 'over';
   return (
     <View style={[styles.plate, styles.plateTop, { height: 8 * u, borderRadius: 2 * u, paddingHorizontal: 1.4 * u, gap: 1.2 * u }, active && styles.plateOn]}>
-      <Avatar u={u} i={2} name={P.name} size={6.4} />
-      <Text allowFontScaling={false} numberOfLines={1} style={[styles.nm, { fontSize: 3 * u, flexShrink: 1 }]}>{P.name}{g.cfg.team ? ' · Eşin' : ''}</Text>
+      <Pressable onPress={onInfo} hitSlop={6} style={{ flexDirection: 'row', alignItems: 'center', gap: 1.2 * u, flexShrink: 1 }}>
+        <Avatar u={u} i={2} name={P.name} size={6.4} />
+        <Text allowFontScaling={false} numberOfLines={1} style={[styles.nm, { fontSize: 3 * u, flexShrink: 1 }]}>{P.name}{g.cfg.team ? ' · Eşin' : ''}</Text>
+      </Pressable>
       <View style={{ flexDirection: 'row', gap: 0.5 * u }}>{stateChips(u, P)}</View>
       {active ? <ClockPill u={u} who="bot" /> : null}
       <View style={{ alignSelf: 'stretch', justifyContent: 'center', borderLeftWidth: 1, borderStyle: 'dashed', borderColor: 'rgba(255,255,255,0.14)', paddingLeft: u, minWidth: 8 * u, alignItems: 'center' }}>
@@ -562,6 +566,7 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
   const bubT = useRef({});
   const chatOpenRef = useRef(false); chatOpenRef.current = chatOpen;
   const say = useCallback((i, t) => {
+    if (i !== 0) { const gg = G(); if (gg && gg.players[i] && L.social().blocked.includes(gg.players[i].name)) return; }   // engellenen oyuncunun mesajı görünmez
     setChat(c => c.concat({ i, t }).slice(-60));
     if (i !== 0 && !chatOpenRef.current) setUnread(n => n + 1);
     setBubbles(b => ({ ...b, [i]: t }));
@@ -588,6 +593,8 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
   const [settle, setSettle] = useState(null);       // oyun sonu çip hesabı
   const [tmpGifts, setTmpGifts] = useState({});     // bu oyunluk hediyeler
   const [giftFor, setGiftFor] = useState(null);     // hediye penceresi açık olan oyuncu
+  const [infoFor, setInfoFor] = useState(null);     // profil penceresi açık olan oyuncu
+  const [social, setSocial] = useState(() => L.social());
   const [gcat, setGcat] = useState('kahve');
   const tmpRef = useRef({}); tmpRef.current = tmpGifts;
   const rackRef = useRef(null), atRef = useRef(null), yanRef = useRef(null);
@@ -649,7 +656,7 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
   }, []);
 
   // pencere açıkken süre durur; süre dolunca otomatik oyna
-  useEffect(() => { CLK.paused = !!(giftFor !== null || settle || handEnd || scoreOpen || setOpen || rulesOpen || menuOpen); }, [giftFor, settle, handEnd, scoreOpen, setOpen, rulesOpen, menuOpen]);
+  useEffect(() => { CLK.paused = !!(giftFor !== null || infoFor !== null || settle || handEnd || scoreOpen || setOpen || rulesOpen || menuOpen); }, [giftFor, infoFor, settle, handEnd, scoreOpen, setOpen, rulesOpen, menuOpen]);
   useEffect(() => {
     const id = setInterval(() => {
       const now = Date.now(), dt = now - (CLK.last || now); CLK.last = now;
@@ -775,6 +782,7 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
   const giftOf = i => curGift(nameOf(i), tmpRef.current[i]);
   const putGift = (i, item, cat) => { const t = placeGift(nameOf(i), item, cat); setTmpGifts(o => ({ ...o, [i]: t })); };
   const botGift = useCallback((from, catId) => {
+    { const gg = G(); if (gg && gg.players[from] && L.social().blocked.includes(gg.players[from].name)) return; }   // engellenenin hediyesi gelmez
     const gg = G(); if (!gg) return;
     const cat = GIFT_CATS.find(c => c.id === catId) || GIFT_CATS[0];
     const ok = cat.items.filter(x => !giftBlock(giftOf(0), cat, x[2]));
@@ -872,7 +880,7 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
             {!L.MODE.offline ? <PtPill u={u} /> : null}
           </View>
         </View>
-        <TopPlate u={u} g={g} cur={giftOf(2)} onGift={() => setGiftFor(2)} />
+        <TopPlate u={u} g={g} cur={giftOf(2)} onGift={() => setGiftFor(2)} onInfo={() => setInfoFor(2)} />
         <View style={[styles.topActions, { gap: 0.8 * u }]}>
           <View>
             <Btn u={u} sm label="Sohbet" onPress={() => { setChatOpen(true); setUnread(0); }} />
@@ -890,7 +898,7 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
       <View style={[styles.board, { gap: u, marginTop: 0.8 * u }]}>
         <View style={[styles.col, { width: 17.5 * u, gap: 0.8 * u, paddingBottom: 6.5 * u }]}>
           <Corner u={u} tile={lastOf(2)} />
-          <SidePlate u={u} i={3} g={g} cur={giftOf(3)} onGift={() => setGiftFor(3)} />
+          <SidePlate u={u} i={3} g={g} cur={giftOf(3)} onGift={() => setGiftFor(3)} onInfo={() => setInfoFor(3)} />
         </View>
         <Mat u={u} title="SERİ PERLER" limit={kat ? String(GM.seriesNeed()) : null} side="left" style={{ flex: 1, zIndex: 3 }}>
           <ScrollView style={{ marginBottom: 4.4 * u }} contentContainerStyle={[styles.melds, { padding: 1.2 * u, paddingTop: 3.4 * u, rowGap: u * ms, columnGap: 1.2 * u * ms }]}>
@@ -925,7 +933,7 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
         </Mat>
         <View style={[styles.col, { width: 17.5 * u, gap: 0.8 * u, paddingBottom: 6.5 * u }]}>
           <Corner u={u} tile={lastOf(1)} />
-          <SidePlate u={u} i={1} g={g} cur={giftOf(1)} onGift={() => setGiftFor(1)} />
+          <SidePlate u={u} i={1} g={g} cur={giftOf(1)} onGift={() => setGiftFor(1)} onInfo={() => setInfoFor(1)} />
         </View>
       </View>
 
@@ -937,7 +945,7 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
             <Btn u={u} label="Geri Bırak" onPress={() => feedback(GM.hReturnSide())}
               style={{ marginTop: 0.8 * u, width: 15.5 * u, paddingHorizontal: 0.6 * u, backgroundColor: 'rgba(255,187,51,0.18)', borderColor: 'rgba(255,187,51,0.7)' }} />
           ) : null}
-          {!hard ? <DizBtn u={u} label={'SERİ\nDİZ'} h={geom.height - (disc && P.sideTile && !P.sideUsed ? 9 * u : 0)} onPress={() => { GM.hArrange('seri'); bumpRack(); tick(); }} /> : null}
+          {!hard ? <DizBtn u={u} label={'ÇİFT\nDİZ'} h={geom.height - (disc && P.sideTile && !P.sideUsed ? 9 * u : 0)} onPress={() => { GM.hArrange('cift'); bumpRack(); tick(); }} /> : null}
         </View>
         <View style={{ width: rackW, gap: 0.5 * u, zIndex: 10 }}>
           <View style={[styles.srow, { gap: 1.2 * u }]}>
@@ -981,7 +989,7 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
         </View>
         <View style={{ width: 17.5 * u, alignItems: 'center', marginTop: -7.5 * u, alignSelf: 'stretch' }}>
           <Corner u={u} cref={atRef} tile={lastOf(0)} hot={disc} over={over === 'at'} />
-          {!hard ? <DizBtn u={u} label={'ÇİFT\nDİZ'} h={geom.height} onPress={() => { GM.hArrange('cift'); bumpRack(); tick(); }} /> : null}
+          {!hard ? <DizBtn u={u} label={'SERİ\nDİZ'} h={geom.height} onPress={() => { GM.hArrange('seri'); bumpRack(); tick(); }} /> : null}
         </View>
       </View>
 
@@ -1090,6 +1098,43 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
         </View>
       </Modal>
 
+      {/* oyuncu profili: masadaki oyuncunun adına/resmine dokununca */}
+      <Modal visible={infoFor !== null} transparent animationType="fade" supportedOrientations={['landscape']}>
+        <Pressable style={styles.modalBg} onPress={() => setInfoFor(null)}>
+          {infoFor !== null ? (() => {
+            const i = infoFor, P = g.players[i], st = L.botStats(P.name), lv = botLv(P.name);
+            const fr = social.friends.includes(P.name), bl = social.blocked.includes(P.name);
+            const tog = key => { const n = L.toggleSocial(key, P.name); setSocial({ ...n }); toast(key === 'friends' ? (n.friends.includes(P.name) ? P.name + ' arkadaşlarına eklendi' : P.name + ' arkadaşlıktan çıkarıldı') : (n.blocked.includes(P.name) ? P.name + ' engellendi: hediyelerini ve mesajlarını görmeyeceksin' : P.name + ' oyuncusunun engeli kaldırıldı'), 'info'); };
+            const row = (k, v) => (
+              <View key={k} style={{ flex: 1, minWidth: 18 * u, alignItems: 'center', paddingVertical: u, borderRadius: 1.4 * u, backgroundColor: 'rgba(0,0,0,0.3)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
+                <Text allowFontScaling={false} style={{ color: '#ffe39a', fontFamily: NUM_FONT, fontWeight: '900', fontSize: 3.6 * u }}>{v}</Text>
+                <Text allowFontScaling={false} style={{ color: C.muted, fontSize: 2.2 * u, marginTop: 0.2 * u }}>{k}</Text>
+              </View>
+            );
+            return (
+              <Pressable onPress={() => {}} style={[styles.modal, { width: '70%', borderRadius: 2.4 * u, padding: 2.4 * u }]}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 1.6 * u }}>
+                  <Avatar u={u} i={i} name={P.name} size={9} />
+                  <View style={{ flex: 1 }}>
+                    <Text allowFontScaling={false} numberOfLines={1} style={{ color: C.ink, fontWeight: '900', fontSize: 4.2 * u }}>{P.name}</Text>
+                    <Text allowFontScaling={false} style={{ color: C.muted, fontSize: 2.6 * u }}>Seviye {lv}{g.cfg.team ? (i === 2 ? ' · Eşin' : ' · Rakip') : ''}{fr ? ' · Arkadaşın' : ''}</Text>
+                  </View>
+                </View>
+                <Text allowFontScaling={false} style={{ color: C.amber, fontWeight: '800', fontSize: 2.6 * u, letterSpacing: 0.3 * u, marginTop: 1.8 * u, marginBottom: 0.8 * u }}>İSTATİSTİKLER</Text>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: u }}>
+                  {row('Oyun', L.chipFmt(st.games))}{row('Kazanma', '%' + st.winPct)}{row('El bitirme', L.chipFmt(st.finish))}{row('Okey atma', L.chipFmt(st.okey))}{row('En yüksek açış', st.best)}
+                </View>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: u, marginTop: 2 * u }}>
+                  <Btn u={u} pri={!fr} label={fr ? 'Arkadaşlıktan Çıkar' : '+ Arkadaş Ekle'} style={{ flex: 1 }} onPress={() => tog('friends')} />
+                  <Btn u={u} label="Hediye Yolla" style={{ flex: 1 }} onPress={() => { setInfoFor(null); setTimeout(() => setGiftFor(i), 350); }} />
+                  <Btn u={u} label={bl ? 'Engeli Kaldır' : 'Engelle'} style={{ flex: 1 }} onPress={() => tog('blocked')} />
+                  <Btn u={u} label="Kapat" style={{ flex: 1 }} onPress={() => setInfoFor(null)} />
+                </View>
+              </Pressable>
+            );
+          })() : null}
+        </Pressable>
+      </Modal>
       <Modal visible={giftFor !== null} transparent animationType="fade" supportedOrientations={['landscape']}>
         <View style={styles.modalBg}>
           {giftFor !== null ? (() => {

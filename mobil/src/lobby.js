@@ -328,3 +328,22 @@ export function adState() { const w = wallet(); if (!w.ad || w.ad.day !== todayK
 export function adLeft() { return Math.max(0, AD_DAILY - adState().n); }
 export function adWait() { return Math.max(0, adState().last + AD_COOL - Date.now()); }
 export function adClaim() { const s = adState(); s.n++; s.last = Date.now(); addChips(AD_REWARD); saveWallet(); }
+
+/* ---------- arkadaşlar / engellenenler (yerel) ---------- */
+const SKEY = 'okey101.social';
+let SOC = { friends: [], blocked: [] };
+AsyncStorage.getItem(SKEY).then(v => { try { const o = JSON.parse(v || 'null'); if (o) SOC = { friends: o.friends || [], blocked: o.blocked || [] }; } catch (e) {} }).catch(() => {});
+export function social() { return SOC; }
+export function toggleSocial(key, name) {
+  const has = SOC[key].includes(name);
+  SOC = { ...SOC, [key]: has ? SOC[key].filter(x => x !== name) : SOC[key].concat(name) };
+  AsyncStorage.setItem(SKEY, JSON.stringify(SOC)).catch(() => {});
+  return SOC;
+}
+// bot oyuncuların görünen istatistikleri: isme göre sabit (her açılışta aynı)
+export function botStats(name) {
+  let h = 7; for (const c of name) h = (h * 131 + c.charCodeAt(0)) % 1000003;
+  const r = k => ((h * (k * 2654435761 % 1000)) % 1000) / 1000;
+  const games = 150 + Math.floor(r(1) * 4800);
+  return { games, winPct: 18 + Math.floor(r(2) * 22), finish: Math.floor(games * (0.18 + r(3) * 0.2)), okey: Math.floor(games * (0.02 + r(4) * 0.05)), best: 151 + Math.floor(r(5) * 120) };
+}
