@@ -13,7 +13,7 @@ export const START_CHIPS = 50000, ENTRY_MULT = 1, TABLE_FEE = 0.07;
 export const DAILY_STREAK = [10000, 15000, 20000, 25000, 30000, 35000, 50000];
 export const BOT_NAMES = ['Ahmet', 'Mehmet', 'Ayşe', 'Fatma', 'Hasan', 'Hüseyin', 'Zeynep', 'Emine', 'Mustafa', 'Ali', 'Hatice', 'Osman', 'Yusuf', 'Elif', 'İbrahim', 'Murat', 'Serkan', 'Gül', 'Kemal', 'Sevim', 'Cemil', 'Nuri', 'Recep', 'Dilek', 'Erol', 'Tülay', 'Bayram', 'Şükrü'];
 export const MODE_CHIPS = [
-  ['pen.rekor', 'Rekorlu', '150+ puan ya da 7+ çiftle açana −101 ödül'],
+  ['pen.rekor', 'Rekorlu', '151+ seri ya da 7 çift −101, 161+ ya da 8+ çift −202 ödül'],
   ['pen.okeyCal', 'Okey çalma cezası', 'Okeyi çalınan oyuncuya +101 ceza'],
   ['pen.herTas', 'Her taş cezalı', 'Açtıktan sonra yandan alıp indirince: atana taş×10 (çift ×20)'],
   ['pen.yanAc', 'Yandan açma cezalı', 'Yandan alınan taşla el açılırsa: atana taş×10 (çift ×20)'],

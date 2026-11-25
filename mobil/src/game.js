@@ -80,7 +80,7 @@ function fail(msg) { return { ok: false, msg }; }
 function tableMeldById(id) { return G.table.find(m => m.id === id); }
 const PEN_DEFS = [
   ['gosterge', 'Gösterge', 'Göstergenin eşi elinde olan elin başında söyleyip çiftte joker gibi kullanır'],
-  ['rekor', 'Rekorlu', '150+ puanla ya da 7+ çiftle açana −101 rekor ödülü'],
+  ['rekor', 'Rekorlu', '151+ seri ya da 7 çift −101, 161+ ya da 8+ çift −202 ödül'],
   ['okeyCal', 'Okey çalma', 'Perdeki okeyi çalınan oyuncuya 101 ceza'],
   ['yanAc', 'Yandan taş alıp açma', 'Yandan alınan taşla açılırsa taşı atana taş×10 (çiftte ×20) ceza'],
   ['herTas', 'Her taş ceza', 'Elini açtıktan sonra yandan alıp per veya çift indirdiğin taşın sahibine taş×10 (çiftte ×20) ceza']
@@ -98,6 +98,7 @@ function announceGost(i) {
   if (!canAnnounce(P)) return fail('Gösterge ancak elin başında, ilk taşını çekmeden söylenebilir.');
   const t = handOf(P).find(isGostTwin);
   t.gost = true; P.gostSaid = true; H.ev('gost', { i });
+  addPenalty(P, 'gost', 'Gösterge ödülü', -10 * G.gosterge.n);   // göstergenin 10 katı silme
   logEv(i, 'Gösterge bende');
   H.toast((P.human ? 'Gösterge bende! ' + tileName(t) + ' çiftte her taşla eşleşir.' : P.name + ': Gösterge bende'), 'info');   // büyük duyuru masanın ortasında (H.ev gost)
   H.render();
@@ -126,11 +127,13 @@ function restoreSnap(P, s) {
     p.penLog.forEach((e, j) => Object.assign(e, o.vals[j]));
   });
 }
-// Rekor ödülü: 150+ puanla ya da 7+ çiftle açan en yüksek açana −101 yazılır
-const REC_MIN = { seri: 150, cift: 7 };
+// Rekor ödülü: seri 151+ → −101, 161+ → −202; çift 7 → −101, 8+ → −202. Geçen olursa ödül ona geçer.
+const REC_MIN = { seri: 151, cift: 7 };
+const recTier = (kind, val) => kind === 'seri' ? (val >= 161 ? 2 : val >= 151 ? 1 : 0) : (val >= 8 ? 2 : val >= 7 ? 1 : 0);
 function awardRecord(P, kind, val) {
   if (!penOn('rekor')) return;
   if (val < REC_MIN[kind]) return;
+  const amt = 101 * recTier(kind, val);
   const cur = G.rec[kind];
   if (cur && val <= cur.val) return;
   if (cur) {
@@ -139,11 +142,11 @@ function awardRecord(P, kind, val) {
     logEv(P.i, V.name + ' rekor ödülünü kaybetti');
   }
   const label = kind === 'seri' ? 'Rekor ödülü (' + val + ' puan)' : 'Rekor ödülü (' + val + ' çift)';
-  addPenalty(P, 'record', label, -101);
+  addPenalty(P, 'record', label, -amt);
   G.rec[kind] = { by: P.i, val, entry: P.penLog[P.penLog.length - 1] };
   H.ev('record', { i: P.i, kind });
-  logEv(P.i, 'REKOR: ' + val + (kind === 'seri' ? ' puan' : ' çift') + ' (−101)');
-  H.toast((P.human ? 'Rekor ödülü senin: ' : P.name + ' rekor ödülünü aldı: ') + val + (kind === 'seri' ? ' puan' : ' çift') + ' (−101)' + (cur ? ' · ' + G.players[cur.by].name + ' ödülü kaybetti' : ''), 'good');
+  logEv(P.i, 'REKOR: ' + val + (kind === 'seri' ? ' puan' : ' çift') + ' (−' + amt + ')');
+  H.toast((P.human ? 'Rekor ödülü senin: ' : P.name + ' rekor ödülünü aldı: ') + val + (kind === 'seri' ? ' puan' : ' çift') + ' (−' + amt + ')' + (cur ? ' · ' + G.players[cur.by].name + ' ödülü kaybetti' : ''), 'good');
   H.sfx('okey');
 }
 function addPenalty(P, kind, label, amt, tileId) {
@@ -565,6 +568,7 @@ function hOpen(prefer, strict) {
     return fail(m + sideFail());
   }
   let msg;
+  if (pl.kind === 'seri' && pl.an.melds.some(m => m.items.some(x => x.t.fromPair))) return fail('Çiftten aldığın gösterge ile seri açamazsın.');
   if (pl.kind === 'seri') {
     const pts = openSeries(0, pl.an.melds);
     msg = 'Elini açtın: ' + pts + ' puan.';
@@ -630,6 +634,7 @@ function swapOkey(i, m, idx, t) {
   const it = m.items[idx];
   const by = it.by !== undefined ? it.by : m.owner;
   const joker = doSwap(m, idx, t);
+  if (joker.gost && m.kind === 'pair') joker.fromPair = true;   // çiftten alınan gösterge ile seri açılamaz
   if (joker.gost) {
     logEv(i, 'göstergeyi aldı (' + tileName(t) + ' koydu)');
     H.toast(G.players[i].human ? 'Göstergeyi aldın: çiftte her taşla eşleşir' : G.players[i].name + ' göstergeyi aldı', 'info');
@@ -898,7 +903,7 @@ function botTryOpen(P) {
   const plan = bestSeries(P.hand, side || undefined);
   const laidB = plan.melds.reduce((a, m) => a + m.items.length, 0);
   const finishOpen = G.cfg.mode === 'katlamali' && plan.value >= 101 && P.hand.length - laidB === 1;
-  if (plan.melds.length && (plan.value >= seriesNeed() || finishOpen) && (!side || plan.usesMust)) {
+  if (plan.melds.length && (plan.value >= seriesNeed() || finishOpen) && (!side || plan.usesMust) && !plan.melds.some(m => m.items.some(x => x.t.fromPair))) {
     if (side) forceTileIn(plan, side);
     openSeries(P.i, plan.melds); return 'seri';
   }

@@ -58,13 +58,13 @@ export const RULES = [
  {
   "t": "El açma ve bitirme",
   "i": [
-   "Rekor ödülü: 150 ve üzeri puanla ya da 7 ve üzeri çiftle el açan −101 kazanır. Seri ve çift için ödül ayrıdır. Daha yüksek açan olursa ödül ona geçer, öncekinin ödülü silinir.",
+   "Rekor ödülü: 151–160 puanla seri ya da 7 çiftle açan −101, 161 ve üzeri puanla ya da 8 ve üzeri çiftle açan −202 kazanır. Seri ve çift için ödül ayrıdır. Daha yüksek açan olursa ödül ona geçer, öncekinin ödülü silinir.",
    "Katlamalıda rakibin açtığı sayıyı geçemiyorsan bile, işlek yapmadan elindeki taşlardan tek taş kalacak şekilde 101+ puanla açabilirsen eli açabilir ve o son taşı atıp bitirebilirsin. Rakibin sayısı aranmaz. Bu normal bitiş sayılır (kimse açmamışsa kafa).",
    "Eli açarken tüm taşlarını indiremezsin: elinde en az bir taş kalmalı. Eli son taşını sağına atarak bitirirsin. Kimse açmadan aynı turda açıp bitirmek kafadır.",
    "Limit tutmasa da perlerini indirebilirsin: aynı turda, taş atmadan indirdiğin perler (ya da çiftler) toplanır, toplam limite ulaşınca elin açılmış olur. Tamamlamadan taş atarsan indirdiklerin geri gelir ve +101 yanlış açma cezası yazılır. Geri Topla ile indirdiklerini geri alıp düzeltebilirsin; yine açamadan taş atarsan ceza aynıdır.",
    "El açtığın turda Geri Topla düğmesiyle indirdiklerini geri alabilirsin. Düzeltip yeniden açabilirsen ceza yok; açamazsan ya da açmadan taş atarsan +101 yanlış el açma cezası yazılır.",
    "Elin daha önceki bir turda açıksa, bu turda işlediğin, indirdiğin ya da okey/gösterge almak için koyduğun taşları taş atmadan önce Geri Topla ile ıstakana geri alabilirsin. Bunun cezası yoktur; taşı attıktan sonra geri alınamaz.",
-   "Çift açan oyuncu eli bitirememişse kalan taşının 2 katı yazılır. Rakip okeyle ya da çiftle bitirirse bu 4 kata, seri açanın cezası 2 kata çıkar."
+   "Çift açan oyuncu eli bitirememişse kalan taşının 2 katı yazılır. Rakip okeyle ya da çiftle bitirirse bu 4 kata, seri açanın cezası 2 kata çıkar. Rakip bitirdiğinde çift açanın elinde 100'ü geçen sayı kalmışsa ayrıca +101 ceza yazılır."
   ]
  },
  {
@@ -79,11 +79,11 @@ export const RULES = [
  {
   "t": "Gösterge",
   "i": [
-   "Oyun modlarında Gösterge açıksa, ortadaki göstergenin eşi elinde olan oyuncu elin başında, ilk taşını çekmeden önce o taşa basılı tutarak (başlayan oyuncu ilk taşını attıktan sonra da, çekmeden önce söyleyebilir) \"Gösterge bende\" der. Herkese bildirim gider, puan kazanılmaz.",
+   "Oyun modlarında Gösterge açıksa, ortadaki göstergenin eşi elinde olan oyuncu elin başında, ilk taşını çekmeden önce o taşa basılı tutarak (başlayan oyuncu ilk taşını attıktan sonra da, çekmeden önce söyleyebilir) \"Gösterge bende\" der. Herkese bildirim gider. Göstergeyi söyleyene göstergenin 10 katı silme yazılır (ör. gösterge 4 ise −40).",
    "Söylenen gösterge yalnızca çiftte joker gibidir: her taşla çift olur. Seri perde sıradan taş olarak kullanılır.",
    "Seri açtıysan ve masada çift açan varsa, çift indirirken göstergeyi kullanabilirsin.",
    "Yandan alınan taşı göstergeyle çift yapıp açarsan ya da indirirsen taşı atana ceza yazılmaz (okeyle yapılırsa yazılır).",
-   "Masada gösterge + X çifti varsa, eli açık olan ve X’i olan oyuncu X’i koyup göstergeyi alır ve başka taşla yeniden çift indirebilir. Göstergeyi almanın cezası yoktur. O X taşını atmak işlek sayılır (101).",
+   "Masada gösterge + X çifti varsa, eli açık olan ve X’i olan oyuncu X’i koyup göstergeyi alır ve başka taşla yeniden çift indirebilir. Göstergeyi almanın cezası yoktur; ama çiftten alınan gösterge ile seri açılamaz. O X taşını atmak işlek sayılır (101).",
    "El sonunda elde kalan gösterge kendi sayısı kadar yazılır; atılan gösterge sıradan taşa döner."
   ]
  },

@@ -451,6 +451,7 @@ function scoreHand(players, winner, opts) {
       notes.push('Kalan taş ' + sum);
       if (ok) notes.push('Elde okey +' + extra);
       if (pm > 1) notes.push((p.cift ? 'Çift açtı ' : '') + '×' + pm);
+      if (p.cift && !draw && sum > 100) { base += 101; notes.push('Çiftte yüzü geçti +101'); }   // çift açan, rakip bitirince 100'ü geçen sayıyla kaldıysa
     }
     let pen = 0;
     for (const e of (p.penLog || [])) { pen += e.amt; notes.push(e.amt < 0 ? e.label + ' −' + (-e.amt) : e.label + ' +' + e.amt); }

@@ -30,7 +30,7 @@ const fmt = n => (n < 0 ? '−' + Math.abs(n) : String(n));
 // ---------- ayarlar (cihazda saklanır) ----------
 const PEN_DEFS = [
   ['gosterge', 'Gösterge', 'Göstergenin eşi elinde olan elin başında söyleyip çiftte joker gibi kullanır'],
-  ['rekor', 'Rekorlu', '150+ puanla ya da 7+ çiftle açana −101 rekor ödülü'],
+  ['rekor', 'Rekorlu', '151+ seri ya da 7 çift −101, 161+ ya da 8+ çift −202 ödül'],
   ['okeyCal', 'Okey çalma', 'Perdeki okeyi çalınan oyuncuya 101 ceza'],
   ['yanAc', 'Yandan taş alıp açma', 'Yandan alınan taşla açılırsa taşı atana taş×10 (çiftte ×20) ceza'],
   ['herTas', 'Her taş ceza', 'Elini açtıktan sonra yandan alıp per veya çift indirdiğin taşın sahibine taş×10 (çiftte ×20) ceza'],
