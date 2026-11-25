@@ -1,0 +1,23 @@
+# Son iPhone paketinin durumunu ve hata kaydını gösterir
+name: "EAS: son paket durumu"
+on:
+  workflow_dispatch:
+jobs:
+  durum:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobil
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      - run: |
+          eas build:list --platform ios --limit 1 --json --non-interactive > /tmp/b.json
+          node -e "const b=require('/tmp/b.json')[0];console.log('DURUM',b.status);console.log('HATA',JSON.stringify(b.error||null));(b.logFiles||[]).forEach(u=>console.log('LOG',u))"
+          for u in $(node -e "(require('/tmp/b.json')[0].logFiles||[]).forEach(u=>console.log(u))"); do curl -s "$u" | tail -c 20000 | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{s.split('\n').forEach(l=>{try{const o=JSON.parse(l);if(o.msg)console.log('KAYIT',(o.phase||'')+' | '+o.msg.slice(0,400))}catch(e){}})})"; done
