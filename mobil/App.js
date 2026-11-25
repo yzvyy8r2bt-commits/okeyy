@@ -970,7 +970,7 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
             </View>
             <View style={{ flexDirection: 'row', gap: 0.7 * u, alignItems: 'center' }}>
               {P.opened ? (() => {   // el açıldıktan sonra ıstakada kalan taşların toplamı (çiftte 100'ü geçerse kırmızı)
-                const sum = P.hand.reduce((a, t) => a + t.n, 0), over = P.cift && sum > 100;
+                const sum = P.slots.filter(Boolean).reduce((a, t) => a + t.n, 0), over = P.cift && sum > 100;
                 return (
                   <View style={{ height: 6 * u, minWidth: 8 * u, paddingHorizontal: 1.2 * u, borderRadius: 1.4 * u, alignItems: 'center', justifyContent: 'center', backgroundColor: over ? '#7a1d22' : 'rgba(0,0,0,0.35)', borderWidth: 1, borderColor: over ? '#ff7a6e' : 'rgba(255,201,60,0.5)' }}>
                     <Text allowFontScaling={false} style={{ color: over ? '#ffd0c9' : '#ffe39a', fontFamily: NUM_FONT, fontWeight: '900', fontSize: 3.4 * u }}>({sum})</Text>
