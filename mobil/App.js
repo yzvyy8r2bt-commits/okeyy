@@ -494,15 +494,13 @@ function RulesModal({ u, visible, onClose, howto }) {
 function ModeStrip({ u, g }) {
   const c = g.cfg;
   const on = k => !c.pen || c.pen[k] !== false || (k === 'yanAc' && c.pen.herTas !== false);
-  const modes = [['rekor', 'Rekorlu'], ['okeyCal', 'Okey çalma cezası'], ['herTas', 'Her taş cezalı'], ['yanAc', 'Yandan açma cezalı'], ['gosterge', 'Gösterge']].filter(([k]) => on(k));
+  const modes = [['rekor', 'Rekorlu'], ['okeyCal', 'Okey çalma cezası'], ['herTas', 'Her taş cezalı'], ['yanAc', 'Yandan açma cezalı'], ['gosterge', 'Gösterge']].filter(([k]) => on(k)).map(([, t]) => t);
   if (!modes.length) return null;
   return (
-    <View pointerEvents="none" style={{ position: 'absolute', left: 1.2 * u, right: 1.2 * u, bottom: 0.8 * u, flexDirection: 'row', flexWrap: 'nowrap', gap: 0.6 * u, overflow: 'hidden' }}>
-      {modes.map(([k, t]) => (
-        <View key={k} style={{ height: 3 * u, borderRadius: 1.5 * u, paddingHorizontal: 1.1 * u, justifyContent: 'center', backgroundColor: 'rgba(120,70,190,0.45)', borderWidth: 1, borderColor: 'rgba(190,150,255,0.45)' }}>
-          <Text allowFontScaling={false} numberOfLines={1} style={{ color: '#efe6ff', fontWeight: '800', fontSize: 1.9 * u }}>✓ {t}</Text>
-        </View>
-      ))}
+    <View pointerEvents="none" style={{ position: 'absolute', left: 1.2 * u, right: 1.2 * u, bottom: 0.8 * u, alignItems: 'flex-start' }}>
+      <View style={{ maxWidth: '100%', height: 3 * u, borderRadius: 1.5 * u, paddingHorizontal: 1.2 * u, justifyContent: 'center', backgroundColor: 'rgba(120,70,190,0.45)', borderWidth: 1, borderColor: 'rgba(190,150,255,0.45)' }}>
+        <Text allowFontScaling={false} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={{ color: '#efe6ff', fontWeight: '800', fontSize: 1.9 * u }}>{modes.join(' / ')}</Text>
+      </View>
     </View>
   );
 }
@@ -961,7 +959,15 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
               {statusMsg ? <Text allowFontScaling={false} numberOfLines={2} style={{ color: statusKind === 'task' ? '#7ef0b5' : statusKind === 'alert' ? '#ffd27a' : '#ffc0b9', fontWeight: '700', fontSize: 2.3 * u }}>{statusMsg}</Text>
                 : <Text allowFontScaling={false} style={{ color: C.amber, fontFamily: NUM_FONT, fontWeight: '700', fontSize: 2.6 * u, letterSpacing: 0.1 * u }}>Toplam {fmt(g.totals[0])}{penMine ? ' · Bu el ceza +' + penMine : ''}</Text>}
             </View>
-            <View style={{ flexDirection: 'row', gap: 0.7 * u }}>
+            <View style={{ flexDirection: 'row', gap: 0.7 * u, alignItems: 'center' }}>
+              {P.opened ? (() => {   // el açıldıktan sonra ıstakada kalan taşların toplamı (çiftte 100'ü geçerse kırmızı)
+                const sum = P.hand.reduce((a, t) => a + t.n, 0), over = P.cift && sum > 100;
+                return (
+                  <View style={{ height: 6 * u, minWidth: 8 * u, paddingHorizontal: 1.2 * u, borderRadius: 1.4 * u, alignItems: 'center', justifyContent: 'center', backgroundColor: over ? '#7a1d22' : 'rgba(0,0,0,0.35)', borderWidth: 1, borderColor: over ? '#ff7a6e' : 'rgba(255,201,60,0.5)' }}>
+                    <Text allowFontScaling={false} style={{ color: over ? '#ffd0c9' : '#ffe39a', fontFamily: NUM_FONT, fontWeight: '900', fontSize: 3.4 * u }}>({sum})</Text>
+                  </View>
+                );
+              })() : null}
               <Btn u={u} pri label={seriLbl} disabled={!(seriOn && !(pd && pd.kind !== 'seri'))} onPress={() => feedback(!P.opened ? GM.hOpen('seri', true) : GM.hLay())} />
               <Btn u={u} pri label={ciftLbl} disabled={!(ciftOn && !(pd && pd.kind !== 'cift'))} onPress={() => feedback(!P.opened ? GM.hOpen('cift', true) : GM.hProcessPairs([]))} />
               {P.opened && !hard ? <Btn u={u} label="Tümünü İşle" disabled={!disc} onPress={() => feedback(GM.hProcessAll())} /> : null}
