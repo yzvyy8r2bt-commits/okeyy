@@ -867,7 +867,7 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
         <View style={styles.brand}>
           <Text allowFontScaling={false} style={[styles.brandB, { fontSize: 6.4 * u }]}>101</Text>
           <Text allowFontScaling={false} style={[styles.brandS, { fontSize: 3.6 * u, letterSpacing: 0.7 * u, marginLeft: 0.8 * u }]}>OKEY</Text>
-          <View style={{ marginLeft: 1.4 * u, alignSelf: 'center', gap: 0.5 * u, flexShrink: 1 }}>
+          <View style={{ marginLeft: 1.4 * u, alignSelf: 'center', gap: 0.5 * u, flexShrink: 0 }}>
             <Text allowFontScaling={false} numberOfLines={1} style={[styles.brandSmall, { fontSize: 2.1 * u }]}>{modeLbl}</Text>
             {!L.MODE.offline ? <PtPill u={u} /> : null}
           </View>
@@ -901,11 +901,11 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
         </Mat>
         <View style={[styles.mid, { width: 12 * u, gap: 0.8 * u }]}>
           <TableInfo u={u} g={g} />
-          <CenterBox u={u} label="DESTE" drag={deckDrag}>
-            <TileBack w={9 * u} h={11 * u} fs={6.4 * u} count={g.deck.length} hot={canDraw} />
-          </CenterBox>
           <CenterBox u={u} label="GÖSTERGE">
             <TileFace tile={g.gosterge} w={9 * u} h={11 * u} fs={6.4 * u} />
+          </CenterBox>
+          <CenterBox u={u} label="DESTE" drag={deckDrag}>
+            <TileBack w={9 * u} h={11 * u} fs={6.4 * u} count={g.deck.length} hot={canDraw} />
           </CenterBox>
         </View>
         <Mat u={u} title="ÇİFTLER" limit={kat ? String(GM.pairsNeed()) : null} side="right" style={{ width: 34 * u, zIndex: 3 }}>
@@ -1273,7 +1273,7 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#24104a' },
   glowBg: { position: 'absolute', left: '15%', right: '15%', top: '5%', height: '70%', borderRadius: 9999, backgroundColor: 'rgba(160,90,255,0.10)' },
   top: { flexDirection: 'row', alignItems: 'center' },
-  brand: { flex: 1, flexDirection: 'row', alignItems: 'baseline', minWidth: 0 },
+  brand: { flexGrow: 1, flexShrink: 0, flexDirection: 'row', alignItems: 'baseline' },
   brandEm: { color: '#e9d3ff', fontWeight: '700', alignSelf: 'center' },
   brandB: { color: C.amber, fontFamily: NUM_FONT, fontWeight: '800', lineHeight: undefined },
   brandS: { color: C.ink, fontFamily: NUM_FONT, fontWeight: '700' },
