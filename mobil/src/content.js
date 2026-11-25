@@ -116,11 +116,9 @@ export const RULES = [
 // açılışta (giriş beklemesinde) gösterilen ipuçları
 export const TIPS = [
   'Gösterge elindeyse ilk taşını çekmeden göstergeye basılı tut, "Gösterge bende" de. Böylece gösterge çift indirirken her taşla eş olur, 4 el ve üstü oyunlarda da göstergenin 10 katı ödül alırsın!',
-  '151 ve üzeri seri ya da 7 çiftle açarsan rekor ödülü kazanırsın: −101. 161+ ya da 8+ çiftte −202!',
+  'Rekorlu oyunlarda 151 ve üzeri seri ya da 7 çiftle açarsan rekor ödülü kazanırsın: −101. 161+ ya da 8+ çiftte −202!',
   'Okey çalma cezası açık masada, perdeki okeyini başkası alırsa sana 101 ceza yazılır. Okeyli per indirirken iki kez düşün!',
   'Her taş cezalı masada, elini açmış biri senin attığın taşı yandan alıp yeni per ya da çift indirirse sana taş sayısı ×10 ceza yazılır (çiftte ×20).',
   'Yandan açma cezalı masada, attığın taşı alan oyuncu onunla elini açarsa sana taş sayısı ×10 ceza yazılır (çift açarsa ×20).',
-  'Masadaki bir okeyin yerini tutan ya da bir pere işlenebilen taşı atarsan işlek sayılır ve 101 ceza yersin.',
-  'Masa açarken Cezalar bölümünden hangi kuralların geçerli olacağını sen seçersin. Oyunda açık olan cezalar seri perlerin altında yazar.',
-  'Ayarlar\'daki Hemen Oyna Ayarları\'ndan el sayısını, tek ya da eşli, yardımlı ya da yardımsız ve istediğin cezaları seç: Hemen Oyna seni tam aradığın masaya oturtur.',
+  'Cezalı modların hepsini oynamak zorunda değilsin: masa kurarken istemediğin cezaları kapatabilir, masa ararken Masa Filtrele ya da Hemen Oyna Ayarları ile sadece istediğin kurallardaki masaları bulabilirsin.',
 ];
