@@ -38,4 +38,20 @@ jobs:
       - name: iPhone paketini hazırla
         run: |
           if [ ! -s /tmp/asc.p8 ]; then echo "ASC_KEY_P8 gizli anahtarı eksik"; exit 1; fi
-          eas build --platform ios --profile production --non-interactive --no-wait
+          sudo apt-get install -y -qq expect >/dev/null
+          # İlk seferde sertifika/profil oluşturmak için EAS soru soruyor: soruları otomatik cevapla
+          cat > /tmp/eas.exp <<'EXP'
+          set timeout 900
+          spawn eas build --platform ios --profile production --no-wait
+          expect {
+            -re {[Pp]ush [Nn]otifications.*} { send "n\r"; exp_continue }
+            -re {log in to your Apple account.*} { send "y\r"; exp_continue }
+            -re {\(Y/n\)} { send "y\r"; exp_continue }
+            -re {\(y/N\)} { send "y\r"; exp_continue }
+            -re {Apple ID:} { puts "\nApple ID soruldu, API anahtarı kullanılamadı"; exit 2 }
+            eof
+          }
+          catch wait result
+          exit [lindex $result 3]
+          EXP
+          env -u CI expect /tmp/eas.exp
