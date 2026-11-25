@@ -629,11 +629,11 @@ function hLay() {
   return { ok: true, msg: an.melds.length + ' per indirdin.' };
 }
 // Perdeki okeyi gerçek taşla değiş: okeyi perde bırakan oyuncuya 101 ceza yazılır
-function swapOkey(i, m, idx, t) {
+function swapOkey(i, m, idx, t, t2) {
   G.players[i].swapThisTurn = true; bumpClock(); H.ev('swap', { i, gost: !!m.items[idx].t.gost });
   const it = m.items[idx];
   const by = it.by !== undefined ? it.by : m.owner;
-  const joker = doSwap(m, idx, t);
+  const joker = t2 ? doSwap2(m, idx, t, t2, i) : doSwap(m, idx, t);
   if (joker.gost && m.kind === 'pair') joker.fromPair = true;   // çiftten alınan gösterge ile seri açılamaz
   if (joker.gost) {
     logEv(i, 'göstergeyi aldı (' + tileName(t) + ' koydu)');
@@ -696,6 +696,18 @@ function hSwap(tileId, meldId, idx) {
   const t = P.slots.find(x => x && x.id === tileId);
   const m = tableMeldById(meldId);
   if (!t || !m) return fail('Taş veya per bulunamadı.');
+  const need = setSwapNeed(m, idx);
+  if (need && !canSwapAt(m, idx, t)) {   // 3'lü aynı sayı peri: eksik iki renk birlikte konur
+    const pair = setSwapPair(m, idx, handOf(P));
+    const names = need.cols.map(c => faceName(c, need.n)).join(' ve ');
+    if (!pair || !pair.includes(t)) return fail('Okeyi almak için ' + names + ' taşlarını birlikte koymalısın.');
+    const joker = swapOkey(0, m, idx, pair[0], pair[1]);
+    pair.forEach(x => { removeFromHand(P, x); noteUse(P, x); });
+    giveTile(P, joker);
+    logEv(0, 'okey çaldı (' + names + ' koydu)');
+    H.sfx('open'); H.render();
+    return { ok: true, msg: 'Okey aldın! Yerine ' + names + ' konuldu.' };
+  }
   if (!canSwapAt(m, idx, t)) {
     const it = m.items[idx], o = m.kind === 'pair' ? m.items[1 - idx] : it;
     return fail((it.t.gost ? 'Göstergeyi' : 'Okeyi') + ' almak için yerine tam olarak ' + faceName(o.c, o.n) + ' taşını koymalısın.');

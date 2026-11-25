@@ -360,7 +360,27 @@ function canSwapAt(m, idx, t) {
   if (m.type === 'run') return t.c === it.c && t.n === it.n;
   const n = m.items[0].n;
   if (t.n !== n) return false;
+  if (m.items.length < 4) return false;   // 3'lü aynı sayı perinde okeyin rengi belli değil: eksik iki taş birlikte konmalı (setSwapPair)
   return !m.items.some((o, k) => k !== idx && o.c === t.c);
+}
+// 3'lü aynı sayı peri (ör. siyah 13, mavi 13, okey): okeyi almak için eksik İKİ rengi birlikte koymak gerekir
+function setSwapNeed(m, idx) {
+  const it = m.items[idx];
+  if (!it || !it.t.wild || m.kind !== 'series' || m.type !== 'set' || m.items.length !== 3) return null;
+  const cols = m.items.filter((o, k) => k !== idx).map(o => o.c);
+  return { n: m.items[0].n, cols: [0, 1, 2, 3].filter(c => !cols.includes(c)) };
+}
+function setSwapPair(m, idx, hand) {
+  const need = setSwapNeed(m, idx); if (!need) return null;
+  const pick = need.cols.map(c => hand.find(x => x && !x.wild && x.n === need.n && x.c === c));
+  return pick.every(Boolean) ? pick : null;
+}
+function doSwap2(m, idx, t1, t2, by) {
+  const it = m.items[idx], joker = it.t;
+  it.t = t1; it.c = t1.c;
+  m.items.push({ t: t2, c: t2.c, n: m.items[0].n, by });
+  m.items.sort((a, b) => a.c - b.c);
+  return joker;
 }
 function findSwapIdx(m, t) {
   for (let i = 0; i < m.items.length; i++) if (canSwapAt(m, i, t)) return i;
@@ -463,7 +483,7 @@ if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     COLOR_NAMES, COLS, ROWS, setRng, rand, mulberry, shuffle, tileName, faceName, makeDeck, dealHand,
     analyzeRun, analyzeSet, analyzeMeld, parseGroup, isPair, pj, parsePairsInGroup, bestPairs,
-    rackAnalysis, bestSeries, runBounds, extendOptions, applyExtend, canSwapAt, findSwapIdx, doSwap,
+    rackAnalysis, bestSeries, runBounds, extendOptions, applyExtend, canSwapAt, findSwapIdx, doSwap, setSwapNeed, setSwapPair, doSwap2,
     isWrongDiscard, layoutGroups, arrangeSlots, sortTiles, groupByColor, partnerScore, scoreHand
   };
 }

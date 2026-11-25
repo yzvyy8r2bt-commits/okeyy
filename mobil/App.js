@@ -704,6 +704,8 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
         const it = m.items[idx];
         // 1) tam okeyin (göstergenin) üstüne bırakıldıysa: okeyi al
         if (it && (it.t.wild || it.t.gost) && E.canSwapAt(m, idx, tile)) { feedback(GM.hSwap(tile.id, m.id, idx)); return; }
+        // 3'lü aynı sayı perindeki okey: elinde eksik iki renk de varsa ikisi birlikte konur, okey gelir
+        if (it && it.t.wild && E.setSwapNeed(m, idx)) { const pr = E.setSwapPair(m, idx, GM.handOf(P)); if (pr && pr.includes(tile)) { feedback(GM.hSwap(tile.id, m.id, idx)); return; } }
         if (P.opened && P.openKind === 'cift' && m.kind === 'pair') { feedback(GM.hProcessPairs([tile.id])); return; }
         // 2) pere işlenebiliyorsa: bırakılan tarafa (sol yarı → sol uç, sağ yarı → sağ uç)
         const side = x < r.x + r.w / 2 ? 'lo' : 'hi';
