@@ -18,7 +18,7 @@ function newGame(cfg, opts) {
   G = {
     epoch: ep,
     cfg: Object.assign({ mode: 'katlamali', hands: 4, team: false, speed: 'normal', pen: {} }, cfg),
-    handNo: 0, hands: [], totals: [0, 0, 0, 0],
+    handNo: 0, startOff: Math.floor(Math.random() * 4), hands: [], totals: [0, 0, 0, 0],
     allBots: !!opts.allBots, phase: 'menu', finished: false,
     players: [], table: [], deck: [], log: [], freshId: null
   };
@@ -26,7 +26,7 @@ function newGame(cfg, opts) {
   return G;
 }
 function startHand() {
-  const starter = G.handNo % 4;
+  const starter = ((G.startOff || 0) + G.handNo) % 4;   // ilk eli rastgele biri başlar, sonra sırayla döner
   const d = dealHand(starter);
   G.deck = d.deck; G.gosterge = d.gosterge; G.okey = d.okey;
   G.table = []; G.meldSeq = 1;
