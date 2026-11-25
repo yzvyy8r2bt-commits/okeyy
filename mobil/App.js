@@ -6,7 +6,7 @@ import { StatusBar } from 'expo-status-bar';
 import * as ScreenOrientation from 'expo-screen-orientation';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { FEEL, tick, bump, warn, err } from './src/feel';
-import { SOUND, sfx } from './src/sound';
+import { SOUND, sfx, setMusic, musicActive } from './src/sound';
 import { HOWTO, RULES } from './src/content';
 import * as L from './src/lobby';
 import LobbyScreen from './src/LobbyScreen';
@@ -594,6 +594,7 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
   const [tmpGifts, setTmpGifts] = useState({});     // bu oyunluk hediyeler
   const [giftFor, setGiftFor] = useState(null);     // hediye penceresi açık olan oyuncu
   const [infoFor, setInfoFor] = useState(null);     // profil penceresi açık olan oyuncu
+  const [repFor, setRepFor] = useState(null);       // bildir (şikayet) penceresi
   const [social, setSocial] = useState(() => L.social());
   const [gcat, setGcat] = useState('kahve');
   const tmpRef = useRef({}); tmpRef.current = tmpGifts;
@@ -656,7 +657,7 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
   }, []);
 
   // pencere açıkken süre durur; süre dolunca otomatik oyna
-  useEffect(() => { CLK.paused = !!(giftFor !== null || infoFor !== null || settle || handEnd || scoreOpen || setOpen || rulesOpen || menuOpen); }, [giftFor, infoFor, settle, handEnd, scoreOpen, setOpen, rulesOpen, menuOpen]);
+  useEffect(() => { CLK.paused = !!(giftFor !== null || infoFor !== null || repFor !== null || settle || handEnd || scoreOpen || setOpen || rulesOpen || menuOpen); }, [giftFor, infoFor, repFor, settle, handEnd, scoreOpen, setOpen, rulesOpen, menuOpen]);
   useEffect(() => {
     const id = setInterval(() => {
       const now = Date.now(), dt = now - (CLK.last || now); CLK.last = now;
@@ -1128,11 +1129,29 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
                   <Btn u={u} pri={!fr} label={fr ? 'Arkadaşlıktan Çıkar' : '+ Arkadaş Ekle'} style={{ flex: 1 }} onPress={() => tog('friends')} />
                   <Btn u={u} label="Hediye Yolla" style={{ flex: 1 }} onPress={() => { setInfoFor(null); setTimeout(() => setGiftFor(i), 350); }} />
                   <Btn u={u} label={bl ? 'Engeli Kaldır' : 'Engelle'} style={{ flex: 1 }} onPress={() => tog('blocked')} />
+                  <Btn u={u} label="Bildir" style={{ flex: 1, backgroundColor: 'rgba(200,50,60,0.25)', borderColor: 'rgba(255,110,110,0.6)' }} onPress={() => { setInfoFor(null); setTimeout(() => setRepFor(i), 350); }} />
                   <Btn u={u} label="Kapat" style={{ flex: 1 }} onPress={() => setInfoFor(null)} />
                 </View>
               </Pressable>
             );
           })() : null}
+        </Pressable>
+      </Modal>
+      {/* oyuncuyu bildir (şikayet) */}
+      <Modal visible={repFor !== null} transparent animationType="fade" supportedOrientations={['landscape']}>
+        <Pressable style={styles.modalBg} onPress={() => setRepFor(null)}>
+          {repFor !== null ? (
+            <Pressable onPress={() => {}} style={[styles.modal, { width: '70%', borderRadius: 2.4 * u, padding: 2.4 * u }]}>
+              <Text allowFontScaling={false} style={[styles.modalT, { fontSize: 4.2 * u }]}>{g.players[repFor].name} oyuncusunu bildir</Text>
+              <Text allowFontScaling={false} style={{ color: C.muted, fontSize: 2.6 * u, textAlign: 'center', marginBottom: 1.4 * u }}>Sebebi seç. Bildirimin ekibimiz tarafından incelenir.</Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: u, justifyContent: 'center' }}>
+                {['Hile yapıyor', 'Küfür / hakaret', 'Kasten oyunu uzatıyor', 'Uygunsuz isim', 'Diğer'].map(w => (
+                  <Btn key={w} u={u} label={w} style={{ minWidth: 26 * u }} onPress={() => { L.addReport(g.players[repFor].name, w); setRepFor(null); toast('Bildirimin alındı, teşekkürler. Ekibimiz inceleyecek.', 'good'); }} />
+                ))}
+              </View>
+              <View style={{ alignItems: 'center', marginTop: 1.6 * u }}><Btn u={u} pri label="Vazgeç" onPress={() => setRepFor(null)} /></View>
+            </Pressable>
+          ) : null}
         </Pressable>
       </Modal>
       <Modal visible={giftFor !== null} transparent animationType="fade" supportedOrientations={['landscape']}>
@@ -1264,11 +1283,12 @@ function Root() {
       if (lg) { L.MODE.offline = lg === 'offline'; setScreen('lobby'); }
       let st = DEF_SET;
       try { if (v) st = { ...DEF_SET, ...JSON.parse(v) }; } catch (e) { /* bozuk kayıt */ }
-      FEEL.vibrate = st.vibrate !== false; SOUND.on = st.sound !== false;
+      FEEL.vibrate = st.vibrate !== false; SOUND.on = st.sound !== false; setMusic(st.music);
       setSet(st); setReady(true);
     });
   }, []);
-  const saveSet = (st) => { setSet(st); FEEL.vibrate = st.vibrate !== false; SOUND.on = st.sound !== false; AsyncStorage.setItem(SET_KEY, JSON.stringify(st)).catch(() => {}); };
+  useEffect(() => { const sub = AppState.addEventListener('change', st => musicActive(st === 'active')); return () => sub.remove(); }, []);   // arka planda müzik susar
+  const saveSet = (st) => { setSet(st); FEEL.vibrate = st.vibrate !== false; SOUND.on = st.sound !== false; setMusic(st.music); AsyncStorage.setItem(SET_KEY, JSON.stringify(st)).catch(() => {}); };
   const start = (t, cfg) => { CLK.tOut = 0; CLK.cKey = null; setTable(t); GM.newGame(cfg); setScreen('game'); };
 
   if (!ready) return <View style={styles.root} />;

@@ -1,7 +1,7 @@
 // Ses efektleri: web sürümündeki sentez seslerinden üretilmiş kısa dosyalar
 import { createAudioPlayer, setAudioModeAsync } from 'expo-audio';
 
-import { SFX } from './media';
+import { SFX, MUSIC } from './media';
 const SRC = SFX;
 export const SOUND = { on: true };
 const P = {};
@@ -26,3 +26,16 @@ export function sfx(k) {
     if (r && r.then) r.then(() => p.play(), () => p.play()); else p.play();
   } catch (e) { try { p.play(); } catch (e2) { /* yok say */ } }
 }
+
+// arka plan müziği: sakin, klasik bir döngü (web sürümündeki müziğin aynısı, dosyaya çevrildi)
+let MP = null, musicOn = false;
+export function setMusic(on, active = true) {
+  musicOn = !!on;
+  const play = musicOn && active;
+  try {
+    if (play && !MP) { init(); MP = createAudioPlayer(MUSIC); MP.loop = true; MP.volume = 0.45; }
+    if (!MP) return;
+    if (play) MP.play(); else MP.pause();
+  } catch (e) { /* ses çalınamadı */ }
+}
+export function musicActive(active) { setMusic(musicOn, active); }

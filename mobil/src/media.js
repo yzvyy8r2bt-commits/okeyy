@@ -10,6 +10,7 @@ export const SFX = {
   okey: require('../assets/sfx/okey.wav'),
   turn: require('../assets/sfx/turn.wav'),
 };
+export const MUSIC = require('../assets/sfx/music.wav');
 export const GIFT_IMG = {
   'altin-kolye': require('../assets/gifts/altin-kolye.png'),
   'altin-semaver': require('../assets/gifts/altin-semaver.png'),
