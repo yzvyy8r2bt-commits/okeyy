@@ -33,7 +33,10 @@ jobs:
           npx expo install --fix
       - name: API anahtarını dosyaya yaz
         run: |
-          printf '%s' "${{ secrets.ASC_KEY_P8 }}" > /tmp/asc.p8
+          # telefondan kopyalanınca satırlar bozulabiliyor: anahtarı düzgün PEM biçimine getir
+          printf '%s' "${{ secrets.ASC_KEY_P8 }}" | sed -e 's/-----BEGIN PRIVATE KEY-----//' -e 's/-----END PRIVATE KEY-----//' | tr -d ' \r\n\t' > /tmp/k.b64
+          { echo '-----BEGIN PRIVATE KEY-----'; fold -w 64 /tmp/k.b64; echo; echo '-----END PRIVATE KEY-----'; } | sed '/^$/d' > /tmp/asc.p8
+          openssl pkey -in /tmp/asc.p8 -noout && echo "Anahtar biçimi doğru" || { echo "Anahtar okunamadı: ASC_KEY_P8 içeriğini kontrol et (uzunluk $(wc -c < /tmp/k.b64))"; exit 1; }
           echo "EXPO_ASC_API_KEY_PATH=/tmp/asc.p8" >> $GITHUB_ENV
       - name: iPhone paketini hazırla
         run: |
