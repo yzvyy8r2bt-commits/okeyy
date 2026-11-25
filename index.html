@@ -888,6 +888,13 @@ function analyzeSet(tiles) {
   return { kind: 'series', type: 'set', items, value: n * len };
 }
 function analyzeMeld(tiles) {
+  // 1 gerçek taş + 2 okey: taşın yeri perin türünü belirler.
+  // Gerçek taş en soldaysa yukarı doğru seri (ör. siyah 10-11-12), ortada ya da sağdaysa aynı sayı peri (küt).
+  if (tiles.length === 3 && tiles.filter(t => t.wild).length === 2) {
+    const ri = tiles.findIndex(t => !t.wild), real = tiles[ri];
+    if (ri === 0 && real.n <= 11) return analyzeRun(tiles);
+    return analyzeSet(tiles);
+  }
   const r = analyzeRun(tiles), s = analyzeSet(tiles);
   if (r && s) return r.value >= s.value ? r : s;
   return r || s;
@@ -1148,6 +1155,7 @@ function canSwapAt(m, idx, t) {
 function setSwapNeed(m, idx) {
   const it = m.items[idx];
   if (!it || !it.t.wild || m.kind !== 'series' || m.type !== 'set' || m.items.length !== 3) return null;
+  if (m.items.filter(o => o.t.wild).length > 1) return null;   // 1 taş + 2 okey kütü: önce renkler işlenip 4'lü olmalı
   const cols = m.items.filter((o, k) => k !== idx).map(o => o.c);
   return { n: m.items[0].n, cols: [0, 1, 2, 3].filter(c => !cols.includes(c)) };
 }
