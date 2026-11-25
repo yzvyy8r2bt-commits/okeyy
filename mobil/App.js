@@ -490,15 +490,32 @@ function RulesModal({ u, visible, onClose, howto }) {
 }
 
 // göstergenin üstünde masanın özellikleri (101 Plus'taki gibi kutucuklar)
+// seri perler alanının altında: masada açık olan oyun modları (cezalar)
+function ModeStrip({ u, g }) {
+  const c = g.cfg;
+  const on = k => !c.pen || c.pen[k] !== false || (k === 'yanAc' && c.pen.herTas !== false);
+  const modes = [['rekor', 'Rekorlu'], ['okeyCal', 'Okey çalma cezası'], ['herTas', 'Her taş cezalı'], ['yanAc', 'Yandan açma cezalı'], ['gosterge', 'Gösterge']].filter(([k]) => on(k));
+  if (!modes.length) return null;
+  return (
+    <View pointerEvents="none" style={{ position: 'absolute', left: 1.2 * u, right: 1.2 * u, bottom: 0.8 * u, flexDirection: 'row', flexWrap: 'nowrap', gap: 0.6 * u, overflow: 'hidden' }}>
+      {modes.map(([k, t]) => (
+        <View key={k} style={{ height: 3 * u, borderRadius: 1.5 * u, paddingHorizontal: 1.1 * u, justifyContent: 'center', backgroundColor: 'rgba(120,70,190,0.45)', borderWidth: 1, borderColor: 'rgba(190,150,255,0.45)' }}>
+          <Text allowFontScaling={false} numberOfLines={1} style={{ color: '#efe6ff', fontWeight: '800', fontSize: 1.9 * u }}>✓ {t}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
 function TableInfo({ u, g }) {
-  // sadece masanın dört özelliği; oyun modları masa menüsünde (Ayarlar) görünür
   const c = g.cfg;
   const boxes = [[c.team ? 'EŞLİ' : 'TEK'], [c.hands + ' EL'], [c.hard ? 'YARDIMSIZ' : 'YARDIMLI', false, !c.hard], [c.mode === 'katlamali' ? 'KATLAMALI' : 'KLASİK', c.mode === 'katlamali']];
+  const [h, setH] = useState(0);
+  const gap = 0.5 * u, bh = h ? Math.max(1.6 * u, Math.min(3.4 * u, (h - gap * (boxes.length - 1)) / boxes.length)) : 3.4 * u;
   return (
-    <View pointerEvents="none" style={{ flex: 1, minHeight: 0, justifyContent: 'center', gap: 0.6 * u }}>
-      {boxes.map(([t, red, green]) => (
-        <View key={t} style={{ height: 3.4 * u, borderRadius: 0.9 * u, backgroundColor: red ? '#8e1f2c' : green ? '#17734a' : 'rgba(6,10,30,0.75)', borderWidth: 1, borderColor: red ? '#c0394a' : green ? '#3fd08c' : 'rgba(255,255,255,0.12)', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 0.5 * u }}>
-          <Text allowFontScaling={false} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={{ color: '#fff', fontFamily: NUM_FONT, fontWeight: '800', fontSize: 2.3 * u }}>{t}</Text>
+    <View pointerEvents="none" onLayout={e => setH(e.nativeEvent.layout.height)} style={{ flex: 1, minHeight: 0, justifyContent: 'center', gap }}>
+      {boxes.map(([t, red, green, mode]) => (
+        <View key={t} style={{ height: bh, borderRadius: 0.9 * u, backgroundColor: red ? '#8e1f2c' : green ? '#17734a' : mode ? 'rgba(120,70,190,0.55)' : 'rgba(6,10,30,0.75)', borderWidth: 1, borderColor: red ? '#c0394a' : green ? '#3fd08c' : mode ? 'rgba(190,150,255,0.5)' : 'rgba(255,255,255,0.12)', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 0.5 * u }}>
+          <Text allowFontScaling={false} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.5} style={{ color: '#fff', fontFamily: NUM_FONT, fontWeight: '800', fontSize: Math.min(2.3 * u, bh * 0.62) }}>{t}</Text>
         </View>
       ))}
     </View>
@@ -878,10 +895,11 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
           <SidePlate u={u} i={3} g={g} cur={giftOf(3)} onGift={() => setGiftFor(3)} />
         </View>
         <Mat u={u} title="SERİ PERLER" limit={kat ? String(GM.seriesNeed()) : null} side="left" style={{ flex: 1, zIndex: 3 }}>
-          <ScrollView contentContainerStyle={[styles.melds, { padding: 1.2 * u, paddingTop: 3.4 * u, rowGap: u * ms, columnGap: 1.2 * u * ms }]}>
+          <ScrollView style={{ marginBottom: 4.4 * u }} contentContainerStyle={[styles.melds, { padding: 1.2 * u, paddingTop: 3.4 * u, rowGap: u * ms, columnGap: 1.2 * u * ms }]}>
             {series.length ? series.map(m => <MeldView key={m.id} u={u} m={m} ms={ms} setRef={setMeldRef} over={over === String(m.id)} />)
               : <Text allowFontScaling={false} style={[styles.emptyNote, { fontSize: 2.6 * u }]}>Masada henüz açılmış seri per yok.</Text>}
           </ScrollView>
+          <ModeStrip u={u} g={g} />
         </Mat>
         <View style={[styles.mid, { width: 12 * u, gap: 0.8 * u }]}>
           <TableInfo u={u} g={g} />
