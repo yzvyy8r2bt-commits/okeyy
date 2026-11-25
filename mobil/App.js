@@ -1,7 +1,7 @@
 // Kahve Usulü 101 Okey — App Store / Play Store sürümü (Expo)
 // Masa düzeni web sürümüyle birebir: tüm ölçüler u = ekran yüksekliği / 100
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, Pressable, StyleSheet, ScrollView, useWindowDimensions, Modal, Animated, AppState } from 'react-native';
+import { View, Text, Pressable, StyleSheet, ScrollView, useWindowDimensions, Modal, Animated, AppState, TextInput } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import * as ScreenOrientation from 'expo-screen-orientation';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -122,6 +122,65 @@ function PtPill({ u }) {
 // el sonu açıklamalarından sadece rakamlar: "El açamadı 202" → 202, "Yandan taşı açıldı (1×20) +20" → +20
 function numNotes(notes) {
   return notes.map(n => n.replace(/\([^)]*\)/g, '').split(/\s+/).filter(w => /\d/.test(w)).join(' ')).filter(Boolean).join('   ');
+}
+// ---------- sohbet ----------
+const QUICK = ['Selamlar', 'Bol şanslar!', 'Tebrikler!', 'Teşekkürler', 'Seri lütfen!', 'El nasıl?', 'Hadi oyna!', 'İyi oyunlar'];
+// botların cevapları (online sürümde gerçek oyuncular yazacak)
+const BOT_REPLY = {
+  'Selamlar': ['Selamlar', 'Aleyküm selam', 'Hoş geldin'],
+  'Bol şanslar!': ['Sana da!', 'Sağ ol, sana da', 'Bol şanslar!'],
+  'Tebrikler!': ['Teşekkürler', 'Sağ ol'],
+  'Seri lütfen!': ['Bekle biraz', 'Yapıyoruz', 'Taş gelmiyor ki'],
+  'El nasıl?': ['Fena değil', 'Kötü geldi', 'İdare eder', 'Çok iyi'],
+  'Hadi oyna!': ['Düşünüyorum', 'Tamam tamam'],
+  'İyi oyunlar': ['İyi oyunlar', 'Sana da'],
+};
+// oyuncunun yanında birkaç saniye duran konuşma balonu
+function ChatBubble({ u, text, style }) {
+  if (!text) return null;
+  return (
+    <View pointerEvents="none" style={[{ position: 'absolute', zIndex: 40, maxWidth: 34 * u, paddingHorizontal: 1.6 * u, paddingVertical: 0.9 * u, borderRadius: 1.8 * u,
+      backgroundColor: '#fff', shadowColor: '#000', shadowOpacity: 0.4, shadowRadius: u, shadowOffset: { width: 0, height: 0.4 * u }, elevation: 10 }, style]}>
+      <Text allowFontScaling={false} numberOfLines={3} style={{ color: '#1b1030', fontWeight: '800', fontSize: 2.5 * u }}>{text}</Text>
+    </View>
+  );
+}
+function ChatPanel({ u, ins, msgs, names, onSend, onClose }) {
+  const [txt, setTxt] = useState('');
+  const sv = useRef(null);
+  const send = (t) => { const v = (t || '').trim(); if (!v) return; onSend(v.slice(0, 80)); setTxt(''); };
+  return (
+    <View style={[StyleSheet.absoluteFill, { zIndex: 60, flexDirection: 'row' }]}>
+      <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.35)' }} onPress={onClose} />
+      <View style={{ width: '56%', backgroundColor: 'rgba(16,8,32,0.97)', borderLeftWidth: 1, borderLeftColor: 'rgba(255,255,255,0.15)',
+        paddingTop: Math.max(ins.top, 1.6 * u), paddingBottom: Math.max(ins.bottom, 1.6 * u), paddingLeft: 1.6 * u, paddingRight: Math.max(ins.right, 1.6 * u) }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: u, marginBottom: u }}>
+          <Text allowFontScaling={false} style={{ flex: 1, color: C.amber, fontFamily: NUM_FONT, fontWeight: '800', fontSize: 4 * u, letterSpacing: 0.2 * u }}>SOHBET</Text>
+          <Btn u={u} sm label="✕" onPress={onClose} style={{ paddingHorizontal: 2 * u }} />
+        </View>
+        {/* yazma alanı üstte: klavye açılınca görünür kalsın */}
+        <View style={{ flexDirection: 'row', gap: u, marginBottom: u }}>
+          <TextInput value={txt} onChangeText={setTxt} placeholder="Yazmak için dokun..." placeholderTextColor="rgba(255,255,255,0.45)" maxLength={80}
+            returnKeyType="send" onSubmitEditing={() => send(txt)} allowFontScaling={false}
+            style={{ flex: 1, minHeight: 6.4 * u, borderRadius: 1.4 * u, paddingHorizontal: 1.6 * u, backgroundColor: 'rgba(255,255,255,0.1)', color: '#fff', fontSize: 2.6 * u, fontWeight: '700' }} />
+          <Btn u={u} pri label="Gönder" onPress={() => send(txt)} style={{ paddingHorizontal: 2.2 * u }} />
+        </View>
+        <View style={{ flex: 1, flexDirection: 'row', gap: 1.2 * u }}>
+          <ScrollView ref={sv} style={{ flex: 1, borderRadius: 1.4 * u, backgroundColor: 'rgba(0,0,0,0.3)' }} contentContainerStyle={{ padding: 1.2 * u, gap: 0.7 * u }}
+            onContentSizeChange={() => sv.current && sv.current.scrollToEnd({ animated: true })}>
+            {msgs.length ? msgs.map((m, k) => (
+              <Text key={k} allowFontScaling={false} style={{ color: '#efe6ff', fontSize: 2.4 * u }}>
+                <Text style={{ color: m.i === 0 ? C.amber : '#9fd4ff', fontWeight: '800' }}>{names[m.i]}: </Text>{m.t}
+              </Text>
+            )) : <Text allowFontScaling={false} style={{ color: C.muted, fontSize: 2.2 * u }}>Henüz mesaj yok. Sağdaki hızlı mesajlardan birine dokun ya da yaz.</Text>}
+          </ScrollView>
+          <ScrollView style={{ width: 21 * u, flexGrow: 0 }} contentContainerStyle={{ gap: 0.8 * u }}>
+            {QUICK.map(q => <Btn key={q} u={u} sm label={q} onPress={() => send(q)} style={{ minHeight: 6 * u }} />)}
+          </ScrollView>
+        </View>
+      </View>
+    </View>
+  );
 }
 // Türkçe bulunma eki: Mehmet'te, Ayşe'de, Hasan'da, Kemal'de
 function locName(n) {
@@ -467,6 +526,31 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
   const [statusMsg, setStatusMsg] = useState(null);
   const [statusKind, setStatusKind] = useState('bad');
   const [big, setBig] = useState(null);   // masanın ortasındaki büyük duyuru
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chat, setChat] = useState([]);           // { i, t }
+  const [unread, setUnread] = useState(0);
+  const [bubbles, setBubbles] = useState({});     // oyuncu → balon yazısı
+  const bubT = useRef({});
+  const chatOpenRef = useRef(false); chatOpenRef.current = chatOpen;
+  const say = useCallback((i, t) => {
+    setChat(c => c.concat({ i, t }).slice(-60));
+    if (i !== 0 && !chatOpenRef.current) setUnread(n => n + 1);
+    setBubbles(b => ({ ...b, [i]: t }));
+    clearTimeout(bubT.current[i]);
+    bubT.current[i] = setTimeout(() => setBubbles(b => ({ ...b, [i]: null })), 3500);
+    if (i !== 0) sfx('tap');
+  }, []);
+  useEffect(() => () => Object.values(bubT.current).forEach(clearTimeout), []);
+  const botSay = (i, t, delay) => setTimeout(() => { const gg = G(); if (gg) say(i, t); }, delay);
+  const sendChat = (t) => {
+    say(0, t);
+    const opts = BOT_REPLY[t];
+    if (opts && Math.random() < 0.85) {     // bir bot cevap verir
+      const i = 1 + Math.floor(Math.random() * 3);
+      botSay(i, opts[Math.floor(Math.random() * opts.length)], 900 + Math.random() * 1800);
+      if (t === 'Selamlar' && Math.random() < 0.5) botSay(1 + ((i) % 3), 'Selamlar', 2200 + Math.random() * 1500);
+    }
+  };
   const [handEnd, setHandEnd] = useState(null);
   const [scoreOpen, setScoreOpen] = useState(false);
   const [setOpen, setSetOpen] = useState(false);
@@ -524,6 +608,7 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
       wait: (ms) => sleep(ms),
       ev: (name, d) => {
         if (name === 'penalty' && d && d.amt >= 101) giftReact('penalty', d.i); else if (name === 'finish' && d) giftReact('win', d.i);
+        if (name === 'finish' && d && Math.random() < 0.6) { const o = [1, 2, 3].filter(k => k !== d.i); botSay(o[Math.floor(Math.random() * o.length)], d.i === 0 ? 'Tebrikler!' : 'Tebrikler ' + G().players[d.i].name, 1200); }
         if (name === 'gost' && d) setBig({ t: d.i === 0 ? 'Gösterge bende!' : 'Gösterge ' + locName(G().players[d.i].name), k: Date.now() });
         L.taskEv(name, d).forEach(m => toast(m, 'task'));   // görevler
       },
@@ -739,6 +824,10 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
       <StatusBar hidden />
       <View pointerEvents="none" style={styles.glowBg} />
       <BigFlash u={u} msg={big} />
+      <ChatBubble u={u} text={bubbles[2]} style={{ top: 10 * u, alignSelf: 'center', left: '38%' }} />
+      <ChatBubble u={u} text={bubbles[3]} style={{ top: 22 * u, left: Math.max(ins.left, 2 * u) + 20 * u }} />
+      <ChatBubble u={u} text={bubbles[1]} style={{ top: 22 * u, right: Math.max(ins.right, 2 * u) + 20 * u }} />
+      <ChatBubble u={u} text={bubbles[0]} style={{ bottom: 38 * u, left: Math.max(ins.left, 2 * u) + 24 * u }} />
 
       {/* ---- üst şerit ---- */}
       <View style={[styles.top, { height: 8.2 * u, gap: 1.5 * u }]}>
@@ -752,10 +841,15 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
         </View>
         <TopPlate u={u} g={g} cur={giftOf(2)} onGift={() => setGiftFor(2)} />
         <View style={[styles.topActions, { gap: 0.8 * u }]}>
+          <View>
+            <Btn u={u} sm label="Sohbet" onPress={() => { setChatOpen(true); setUnread(0); }} />
+            {unread ? <View pointerEvents="none" style={{ position: 'absolute', right: -0.6 * u, top: -0.6 * u, minWidth: 2.8 * u, height: 2.8 * u, borderRadius: 1.4 * u, backgroundColor: '#ff4d3d', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 0.5 * u }}>
+              <Text allowFontScaling={false} style={{ color: '#fff', fontWeight: '900', fontSize: 1.8 * u }}>{unread}</Text></View> : null}
+          </View>
           <Btn u={u} sm label="Yazboz" onPress={() => setScoreOpen(true)} />
           <Btn u={u} sm label="Kurallar" onPress={() => setRulesOpen('rules')} />
           <Btn u={u} sm label="Ayarlar" onPress={() => (table ? setMenuOpen(true) : setSetOpen(true))} />
-          <Btn u={u} sm label={set.sound ? 'Ses: Açık' : 'Ses: Kapalı'} onPress={() => saveSet({ ...set, sound: !set.sound })} />
+          <Btn u={u} sm label={set.sound ? '🔊' : '🔇'} onPress={() => saveSet({ ...set, sound: !set.sound })} style={{ paddingHorizontal: 1.4 * u }} />
         </View>
       </View>
 
@@ -854,6 +948,7 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
       ) : null}
 
       {/* el sonu */}
+      {chatOpen ? <ChatPanel u={u} ins={ins} msgs={chat} names={g.players.map((p, k) => k === 0 ? L.wallet().name : p.name)} onSend={sendChat} onClose={() => setChatOpen(false)} /> : null}
       <Modal visible={!!handEnd} transparent animationType="fade" supportedOrientations={['landscape']}>
         <View style={styles.modalBg}>
           {handEnd ? (
