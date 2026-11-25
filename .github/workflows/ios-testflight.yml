@@ -2,11 +2,9 @@
 # GitHub'da "Actions" → "iPhone: TestFlight'a yükle" → "Run workflow" ile başlatılır.
 # Gerekli gizli anahtarlar (Settings → Secrets → Actions):
 #   EXPO_TOKEN          : Expo erişim anahtarı (zaten var)
-#   ASC_KEY_ID          : App Store Connect API anahtarının "Key ID"si
-#   ASC_ISSUER_ID       : App Store Connect "Issuer ID"
-#   ASC_KEY_P8          : İndirilen .p8 dosyasının içeriği (-----BEGIN PRIVATE KEY----- ile başlayan metin)
-#   APPLE_TEAM_ID       : Apple geliştirici "Team ID" (10 karakter)
-name: "iPhone: TestFlight'a yükle"
+#   ASC_KEY_P8          : İndirilen AuthKey_2X8W7LD2TL.p8 dosyasının içeriği (-----BEGIN PRIVATE KEY----- ile başlayan metin)
+# Key ID / Issuer ID / Team ID gizli değil, aşağıda yazılı.
+name: "iPhone: paket hazırla"
 on:
   workflow_dispatch:
 jobs:
@@ -16,9 +14,9 @@ jobs:
       run:
         working-directory: mobil
     env:
-      EXPO_ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
-      EXPO_ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
-      EXPO_APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      EXPO_ASC_KEY_ID: 2X8W7LD2TL
+      EXPO_ASC_ISSUER_ID: 12c030f9-0a59-4c98-8c5b-0aa3d963bb0b
+      EXPO_APPLE_TEAM_ID: 4PP3G8CF75
       EXPO_APPLE_TEAM_TYPE: INDIVIDUAL
     steps:
       - uses: actions/checkout@v4
@@ -37,5 +35,7 @@ jobs:
         run: |
           printf '%s' "${{ secrets.ASC_KEY_P8 }}" > /tmp/asc.p8
           echo "EXPO_ASC_API_KEY_PATH=/tmp/asc.p8" >> $GITHUB_ENV
-      - name: iPhone paketini hazırla ve TestFlight'a gönder
-        run: eas build --platform ios --profile production --non-interactive --auto-submit --no-wait
+      - name: iPhone paketini hazırla
+        run: |
+          if [ ! -s /tmp/asc.p8 ]; then echo "ASC_KEY_P8 gizli anahtarı eksik"; exit 1; fi
+          eas build --platform ios --profile production --non-interactive --no-wait

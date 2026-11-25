@@ -1,0 +1,29 @@
+# Hazırlanan son iPhone paketini App Store Connect / TestFlight'a gönderir.
+name: "iPhone: TestFlight'a gönder"
+on:
+  workflow_dispatch:
+jobs:
+  submit:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobil
+    env:
+      EXPO_ASC_KEY_ID: 2X8W7LD2TL
+      EXPO_ASC_ISSUER_ID: 12c030f9-0a59-4c98-8c5b-0aa3d963bb0b
+      EXPO_APPLE_TEAM_ID: 4PP3G8CF75
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      - run: npm install
+      - name: API anahtarını dosyaya yaz
+        run: |
+          printf '%s' "${{ secrets.ASC_KEY_P8 }}" > /tmp/asc.p8
+          echo "EXPO_ASC_API_KEY_PATH=/tmp/asc.p8" >> $GITHUB_ENV
+      - run: eas submit --platform ios --profile production --latest --non-interactive
