@@ -610,14 +610,22 @@ export default function LobbyScreen({ u, ins, set, saveSet, onStart, openSetting
                     </>}
                     <Text allowFontScaling={false} style={[cLbl(u), { marginTop: 1.2 * u }]}>OYUN</Text>
                     <SegFull u={u} opts={[['klasik', 'Klasik 101'], ['katlamali', 'Katlamalı 101']]} val={create.mode} onPick={v => setCreate({ ...create, mode: v })} />
-                    <Text allowFontScaling={false} style={[cLbl(u), { marginTop: 1.2 * u }]}>BİÇİM</Text>
-                    <SegFull u={u} opts={[[false, 'Tek'], [true, 'Eşli']]} val={create.team} onPick={v => setCreate({ ...create, team: v })} />
+                    <View style={{ flexDirection: 'row', gap: 1.2 * u }}>
+                      <View style={{ flex: 1 }}>
+                        <Text allowFontScaling={false} style={[cLbl(u), { marginTop: 1.2 * u }]}>BİÇİM</Text>
+                        <SegFull u={u} opts={[[false, 'Tek'], [true, 'Eşli']]} val={create.team} onPick={v => setCreate({ ...create, team: v })} />
+                      </View>
+                      <View style={{ flex: 1.3 }}>
+                        <Text allowFontScaling={false} style={[cLbl(u), { marginTop: 1.2 * u }]}>YARDIM</Text>
+                        <SegFull u={u} opts={[[false, 'Yardımlı'], [true, 'Yardımsız']]} val={!!create.hard} onPick={v => setCreate({ ...create, hard: v })} />
+                      </View>
+                    </View>
                     <Text allowFontScaling={false} style={[cLbl(u), { marginTop: 1.2 * u }]}>EL SAYISI</Text>
                     <SegFull u={u} opts={cs.hands.map(h => [h, String(h)])} val={create.hands} onPick={v => setCreate({ ...create, hands: v })} />
                   </View>
                   <View style={{ flex: 1.3 }}>
-                    <Text allowFontScaling={false} style={cLbl(u)}>OYUN MODLARI</Text>
-                    {L.MODE_CHIPS.map(([k, label, desc]) => {
+                    <Text allowFontScaling={false} style={cLbl(u)}>CEZALAR</Text>
+                    {L.MODE_CHIPS.filter(([k]) => k !== 'hard').map(([k, label, desc]) => {
                       const pk = k.slice(4), on = k === 'hard' ? create.hard : create.pen[pk] !== false;
                       const flip = () => k === 'hard' ? setCreate({ ...create, hard: !create.hard }) : setCreate({ ...create, pen: linkPen(create.pen, pk, !on) });
                       return <Toggle key={k} u={u} label={label} desc={desc} on={on} onPress={flip} />;
