@@ -700,7 +700,7 @@ function hSwap(tileId, meldId, idx) {
   if (need && !canSwapAt(m, idx, t)) {   // 3'lü aynı sayı peri: eksik iki renk birlikte konur
     const pair = setSwapPair(m, idx, handOf(P));
     const names = need.cols.map(c => faceName(c, need.n)).join(' ve ');
-    if (!pair || !pair.includes(t)) return fail('Okeyi almak için ' + names + ' taşlarını birlikte koymalısın.');
+    if (!pair || !pair.includes(t)) return hProcess([t.id], m.id);   // tek taş: okey alınmaz, sadece işlenir
     const joker = swapOkey(0, m, idx, pair[0], pair[1]);
     pair.forEach(x => { removeFromHand(P, x); noteUse(P, x); });
     giveTile(P, joker);

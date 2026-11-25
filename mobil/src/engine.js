@@ -333,7 +333,9 @@ function extendOptions(m, t) {
     const miss = [0, 1, 2, 3].find(c => !cols.includes(c));
     return miss === undefined ? null : [{ side: 'set', c: miss }];
   }
-  if (t.n !== n || cols.includes(t.c)) return null;
+  // okeyin rengi henüz belli değilse (3'lü per) gerçek taş eksik renklerden herhangi biri olabilir
+  const real = m.items.filter(i => !i.t.wild).map(i => i.c);
+  if (t.n !== n || real.includes(t.c)) return null;
   return [{ side: 'set', c: t.c }];
 }
 function applyExtend(m, t, opt) {
@@ -342,7 +344,9 @@ function applyExtend(m, t, opt) {
     m.items.push({ t, c: color, n: opt.p, p: opt.p });
     m.items.sort((a, b) => a.p - b.p);
   } else {
+    const w = m.items.find(i => i.t.wild && i.c === opt.c);
     m.items.push({ t, c: opt.c, n: m.items[0].n });
+    if (w) { const used = m.items.filter(i => i !== w).map(i => i.c); w.c = [0, 1, 2, 3].find(c => !used.includes(c)); }
     m.items.sort((a, b) => a.c - b.c);
   }
 }
