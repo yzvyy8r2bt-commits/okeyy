@@ -1,0 +1,39 @@
+# Android deneme paketi (APK): GitHub'da "Actions" → "Android deneme paketi" → "Run workflow" ile başlatılır.
+# Paket Expo'nun sunucularında hazırlanır; bitince expo.dev'de indirme linki çıkar.
+name: Android deneme paketi
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobil
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      - name: Paketleri kur
+        run: |
+          npm install
+          npx expo install --fix || true
+      - name: Expo projesini bağla (ilk seferde)
+        run: |
+          if ! grep -q '"projectId"' app.json; then
+            eas init --non-interactive --force
+            cd ..
+            git config user.name "github-actions"
+            git config user.email "actions@github.com"
+            git add mobil/app.json
+            git commit -m "Expo proje kimliği eklendi" || true
+            git push || true
+          fi
+      - name: Android paketini başlat
+        run: eas build --platform android --profile preview --non-interactive --no-wait
