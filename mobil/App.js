@@ -792,6 +792,7 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
   const g = G();
   if (!g) return <View style={styles.root} />;
   const P = g.players[0];
+  const ycols = g.cfg.team ? [[0, 2], [1, 3]] : [[0], [1], [2], [3]];
   // yardımlı oyun: okey taşları ters durur (çekilen okey de), el başında ıstaka seri dizili gelir
   if (!g.cfg.hard && g.phase !== 'over') {
     P.slots.forEach(t => { if (t && t.wild && !t._am) { t.mark = true; t._am = true; } });
@@ -975,7 +976,28 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
             <View style={[styles.modal, { width: '86%', maxHeight: '96%', borderRadius: 2.4 * u, paddingVertical: 2 * u, paddingHorizontal: 2.4 * u }]}>
               <Text allowFontScaling={false} numberOfLines={1} adjustsFontSizeToFit style={[styles.modalT, { fontSize: 4.8 * u }]}>{handEnd.rec.title}</Text>
               {handEnd.rec.tags.length ? <Text allowFontScaling={false} style={{ color: C.muted, textAlign: 'center', fontSize: 3.6 * u, marginBottom: 0.6 * u }}>{handEnd.rec.tags.join(' · ')}</Text> : null}
-              {g.players.map((p, i) => {
+              {g.cfg.team ? [[0, 2], [1, 3]].map((tm, k) => {
+                const nm = i => (i === 0 ? L.wallet().name : g.players[i].name);
+                const hand = tm.reduce((a, i) => a + handEnd.rec.per[i].total, 0), tot = tm.reduce((a, i) => a + g.totals[i], 0);
+                const won = tm.includes(handEnd.rec.winner);
+                return (
+                  <View key={k} style={{ borderBottomWidth: 1, borderColor: C.line, paddingVertical: 0.8 * u }}>
+                    <View style={[styles.resRow, { borderBottomWidth: 0, paddingVertical: 0.2 * u }]}>
+                      <Text allowFontScaling={false} numberOfLines={1} adjustsFontSizeToFit style={[styles.resName, { flex: 1, fontSize: 4.2 * u }, won && { color: C.amber }]}>{k === 0 ? 'Takımınız' : 'Rakip takım'} · {nm(tm[0])} & {nm(tm[1])}</Text>
+                      <Text allowFontScaling={false} style={{ color: '#fff', width: 15 * u, textAlign: 'right', fontWeight: '800', fontSize: 4.2 * u }}>{hand > 0 ? '+' + hand : fmt(hand)}</Text>
+                      <Text allowFontScaling={false} style={{ color: C.amber, width: 15 * u, textAlign: 'right', fontWeight: '900', fontSize: 4.2 * u }}>{fmt(tot)}</Text>
+                    </View>
+                    {tm.map(i => (
+                      <View key={i} style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: 2 * u }}>
+                        <Text allowFontScaling={false} numberOfLines={1} adjustsFontSizeToFit style={{ color: C.muted, fontWeight: '700', fontSize: 3.2 * u, width: 22 * u }}>{nm(i)}</Text>
+                        <Text allowFontScaling={false} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ flex: 1, color: '#bfb2dc', fontSize: 3.2 * u }}>{numNotes(handEnd.rec.per[i].notes)}</Text>
+                        <Text allowFontScaling={false} style={{ color: '#d9cdf2', width: 15 * u, textAlign: 'right', fontSize: 3.2 * u }}>{handEnd.rec.per[i].total > 0 ? '+' + handEnd.rec.per[i].total : fmt(handEnd.rec.per[i].total)}</Text>
+                        <View style={{ width: 15 * u }} />
+                      </View>
+                    ))}
+                  </View>
+                );
+              }) : g.players.map((p, i) => {
                 const r = handEnd.rec.per[i];
                 return (
                   <View key={i} style={[styles.resRow, { paddingVertical: 0.7 * u }]}>
@@ -986,7 +1008,7 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
                   </View>
                 );
               })}
-              <Text allowFontScaling={false} style={{ color: C.muted, fontSize: 3.4 * u, marginTop: 0.6 * u, textAlign: 'center' }}>El {g.hands.length} / {g.cfg.hands} · Az puan kazanır</Text>
+              <Text allowFontScaling={false} style={{ color: C.muted, fontSize: 3.4 * u, marginTop: 0.6 * u, textAlign: 'center' }}>El {g.hands.length} / {g.cfg.hands} · {g.cfg.team ? 'Toplamı az olan takım kazanır' : 'Az puan kazanır'}</Text>
               <View style={{ marginTop: 1.2 * u, alignItems: 'center' }}>
                 <Btn u={u} pri label={handEnd.last ? 'Sonucu Gör' : 'Sonraki El'} onPress={nextHand} />
               </View>
@@ -1125,23 +1147,24 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
       </Modal>
 
       {/* yazboz */}
+      {/* yazboz: eşli oyunda takım sütunları */}
       <Modal visible={scoreOpen} transparent animationType="fade" supportedOrientations={['landscape']}>
         <Pressable style={styles.modalBg} onPress={() => setScoreOpen(false)}>
           <View style={[styles.modal, { width: '86%', maxHeight: '96%', borderRadius: 2.4 * u, paddingVertical: 2.2 * u, paddingHorizontal: 3 * u }]}>
             <Text allowFontScaling={false} style={[styles.modalT, { fontSize: 4.2 * u }]}>Yazboz</Text>
             <View style={[styles.resRow, { paddingVertical: 0.6 * u }]}>
               <Text allowFontScaling={false} style={{ width: 10 * u, color: C.muted, fontSize: 2.6 * u }}>El</Text>
-              {g.players.map((p, i) => <Text key={i} allowFontScaling={false} style={{ flex: 1, textAlign: 'right', color: '#fff', fontWeight: '800', fontSize: 3 * u }}>{i === 0 ? L.wallet().name : p.name}</Text>)}
+              {ycols.map((c, k) => <Text key={k} allowFontScaling={false} numberOfLines={1} adjustsFontSizeToFit style={{ flex: 1, textAlign: 'right', color: '#fff', fontWeight: '800', fontSize: 3 * u }}>{c.map(i => (i === 0 ? L.wallet().name : g.players[i].name)).join(' & ')}</Text>)}
             </View>
             {g.hands.map((h, k) => (
               <View key={k} style={[styles.resRow, { paddingVertical: 0.6 * u }]}>
                 <Text allowFontScaling={false} style={{ width: 10 * u, color: C.muted, fontSize: 2.6 * u }}>{k + 1}. el</Text>
-                {h.per.map((r, i) => <Text key={i} allowFontScaling={false} style={{ flex: 1, textAlign: 'right', color: i === h.winner ? C.amber : '#fff', fontSize: 3.2 * u, fontWeight: '700' }}>{fmt(r.total)}</Text>)}
+                {ycols.map((c, j) => <Text key={j} allowFontScaling={false} style={{ flex: 1, textAlign: 'right', color: c.includes(h.winner) ? C.amber : '#fff', fontSize: 3.2 * u, fontWeight: '700' }}>{fmt(c.reduce((a, i) => a + h.per[i].total, 0))}</Text>)}
               </View>
             ))}
             <View style={[styles.resRow, { paddingVertical: 0.6 * u, borderBottomWidth: 0 }]}>
               <Text allowFontScaling={false} style={{ width: 10 * u, color: C.amber, fontWeight: '800', fontSize: 2.8 * u }}>Toplam</Text>
-              {g.totals.map((t, i) => <Text key={i} allowFontScaling={false} style={{ flex: 1, textAlign: 'right', color: C.amber, fontWeight: '800', fontSize: 3.4 * u }}>{fmt(t)}</Text>)}
+              {ycols.map((c, j) => <Text key={j} allowFontScaling={false} style={{ flex: 1, textAlign: 'right', color: C.amber, fontWeight: '800', fontSize: 3.4 * u }}>{fmt(c.reduce((a, i) => a + g.totals[i], 0))}</Text>)}
             </View>
             <View style={{ marginTop: 2 * u, alignItems: 'center' }}>
               <Btn u={u} label="Kapat" onPress={() => setScoreOpen(false)} />
