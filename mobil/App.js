@@ -167,12 +167,11 @@ function Avatar({ u, i, name, size }) {
   );
 }
 function stateChips(u, P) {
-  const pp = P.penLog.reduce((a, e) => a + (e.amt > 0 ? e.amt : 0), 0), bn = P.penalty - pp;
+  const net = P.penLog.reduce((a, e) => a + e.amt, 0);   // ceza ve ödüllerin toplamı: sadece rakam (−60, +40)
   return (
     <>
       {!P.opened ? <Chip u={u}>Kapalı</Chip> : P.openKind === 'seri' ? <Chip u={u} kind="ok">Açtı · {P.openVal}</Chip> : <Chip u={u} kind="gold">Çift · {P.openVal}</Chip>}
-      {pp ? <Chip u={u} kind="bad">Ceza +{pp}</Chip> : null}
-      {bn ? <Chip u={u} kind="gold">Rekor {bn}</Chip> : null}
+      {net ? <Chip u={u} kind={net > 0 ? 'bad' : 'gold'}>{net > 0 ? '+' + net : '−' + (-net)}</Chip> : null}
       {P.gostSaid ? <Chip u={u} kind="gold">Gösterge</Chip> : null}
       {(() => { const n = GM.handOf(P).length; return P.opened && n >= 1 && n <= 3 ? <Chip u={u} kind="bad">{n} taş</Chip> : null; })()}
     </>
