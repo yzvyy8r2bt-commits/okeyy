@@ -284,15 +284,15 @@ function SidePlate({ u, i, g, cur, onGift, onInfo }) {
 function TopPlate({ u, g, cur, onGift, onInfo }) {
   const P = g.players[2], active = g.turn === 2 && g.phase !== 'over';
   return (
-    <View style={[styles.plate, styles.plateTop, { height: 8 * u, borderRadius: 2 * u, paddingHorizontal: 1.4 * u, gap: 1.2 * u }, active && styles.plateOn]}>
-      <Pressable onPress={onInfo} hitSlop={6} style={{ flexDirection: 'row', alignItems: 'center', gap: 1.2 * u, flexShrink: 1 }}>
-        <Avatar u={u} i={2} name={P.name} size={6.4} />
-        <Text allowFontScaling={false} numberOfLines={1} style={[styles.nm, { fontSize: 3 * u, flexShrink: 1 }]}>{P.name}{g.cfg.team ? ' · Eşin' : ''}</Text>
+    <View style={[styles.plate, styles.plateTop, { height: 9 * u, borderRadius: 2.2 * u, paddingHorizontal: 1.8 * u, gap: 1.6 * u, marginTop: 0.4 * u }, active && styles.plateOn]}>
+      <Pressable onPress={onInfo} hitSlop={8} style={{ flexDirection: 'row', alignItems: 'center', gap: 1.4 * u, flexShrink: 1 }}>
+        <Avatar u={u} i={2} name={P.name} size={7.6} />
+        <Text allowFontScaling={false} numberOfLines={1} style={[styles.nm, { fontSize: 3.8 * u, flexShrink: 1 }]}>{P.name}{g.cfg.team ? ' · Eşin' : ''}</Text>
       </Pressable>
       <View style={{ flexDirection: 'row', gap: 0.5 * u }}>{stateChips(u, P)}</View>
       {active ? <ClockPill u={u} who="bot" /> : null}
       <View style={{ alignSelf: 'stretch', justifyContent: 'center', borderLeftWidth: 1, borderStyle: 'dashed', borderColor: 'rgba(255,255,255,0.14)', paddingLeft: u, minWidth: 8 * u, alignItems: 'center' }}>
-        <GiftSlot u={u} cur={cur} size={6.6} onPress={onGift} />
+        <GiftSlot u={u} cur={cur} size={7.6} onPress={onGift} />
       </View>
     </View>
   );
@@ -403,16 +403,17 @@ function StRow({ u, ic, label, children }) {
     </View>
   );
 }
+const stArrow = u => ({ width: 10 * u, height: 8 * u, borderRadius: 1.2 * u, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)' });
 function StPick({ u, title, val, onPrev, onNext }) {
   return (
     <View style={{ marginBottom: 0.8 * u }}>
       <Text allowFontScaling={false} style={{ color: C.muted, fontSize: 2 * u, textAlign: 'center', marginBottom: 0.4 * u }}>{title}</Text>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 0.8 * u }}>
-        <Btn u={u} sm label="‹" onPress={onPrev} />
-        <View style={{ flex: 1, height: 6.6 * u, borderRadius: u, backgroundColor: 'rgba(0,0,0,0.45)', alignItems: 'center', justifyContent: 'center' }}>
-          <Text allowFontScaling={false} style={{ color: C.ink, fontFamily: NUM_FONT, fontWeight: '800', fontSize: 3 * u }}>{val}</Text>
-        </View>
-        <Btn u={u} sm label="›" onPress={onNext} />
+        <Pressable onPress={onPrev} hitSlop={6} style={({ pressed }) => [stArrow(u), pressed && { opacity: 0.6 }]}><Text allowFontScaling={false} style={{ color: C.ink, fontWeight: '900', fontSize: 5 * u, marginTop: -0.6 * u }}>‹</Text></Pressable>
+        <Pressable onPress={onNext} style={{ flex: 1, height: 8 * u, borderRadius: 1.2 * u, backgroundColor: 'rgba(0,0,0,0.45)', alignItems: 'center', justifyContent: 'center' }}>
+          <Text allowFontScaling={false} style={{ color: C.ink, fontFamily: NUM_FONT, fontWeight: '800', fontSize: 3.4 * u }}>{val}</Text>
+        </Pressable>
+        <Pressable onPress={onNext} hitSlop={6} style={({ pressed }) => [stArrow(u), pressed && { opacity: 0.6 }]}><Text allowFontScaling={false} style={{ color: C.ink, fontWeight: '900', fontSize: 5 * u, marginTop: -0.6 * u }}>›</Text></Pressable>
       </View>
     </View>
   );
@@ -449,8 +450,8 @@ function SettingsModal({ u, visible, set, saveSet, onClose, onRules, onHowto, on
                     const v = q.pen[k] === 'any' ? undefined : q.pen[k];
                     const st = v === undefined ? styles.qpAny : v ? styles.qpOn : styles.qpOff;
                     return (
-                      <Pressable key={k} onPress={() => { const nv = cyc(tri, v, 1), np = { ...q.pen, [k]: nv }; if (k === 'herTas' && nv === true) np.yanAc = true; putQ('pen', np); }} style={[styles.qp, st, { width: '48%', borderRadius: u, paddingVertical: 0.8 * u }]}>
-                        <Text allowFontScaling={false} style={{ fontWeight: '800', fontSize: 1.8 * u, textAlign: 'center', color: v === undefined ? '#cfc4ee' : v ? '#7ef0b5' : '#ff9a9a', textDecorationLine: v === false ? 'line-through' : 'none' }}>{v === undefined ? '' : v ? '✓ ' : '✕ '}{n}</Text>
+                      <Pressable key={k} onPress={() => { const nv = cyc(tri, v, 1), np = { ...q.pen, [k]: nv }; if (k === 'herTas' && nv === true) np.yanAc = true; putQ('pen', np); }} style={[styles.qp, st, { width: '48%', minHeight: 7 * u, justifyContent: 'center', borderRadius: 1.2 * u, paddingVertical: 1.2 * u }]}>
+                        <Text allowFontScaling={false} style={{ fontWeight: '800', fontSize: 2.4 * u, textAlign: 'center', color: v === undefined ? '#cfc4ee' : v ? '#7ef0b5' : '#ff9a9a', textDecorationLine: v === false ? 'line-through' : 'none' }}>{v === undefined ? '' : v ? '✓ ' : '✕ '}{n}</Text>
                       </Pressable>
                     );
                   })}
@@ -889,7 +890,6 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
               <Text allowFontScaling={false} style={{ color: '#fff', fontWeight: '900', fontSize: 1.8 * u }}>{unread}</Text></View> : null}
           </View>
           <Btn u={u} sm label="Yazboz" onPress={() => setScoreOpen(true)} />
-          <Btn u={u} sm label="Kurallar" onPress={() => setRulesOpen('rules')} />
           <Btn u={u} sm label="Ayarlar" onPress={() => (table ? setMenuOpen(true) : setSetOpen(true))} />
           <Btn u={u} sm label={set.sound ? '🔊' : '🔇'} onPress={() => saveSet({ ...set, sound: !set.sound })} style={{ paddingHorizontal: 1.4 * u }} />
         </View>
