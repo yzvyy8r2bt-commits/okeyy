@@ -187,6 +187,15 @@ function ChatPanel({ u, ins, msgs, names, onSend, onClose }) {
     </View>
   );
 }
+// Türkçe ilgi eki: Mehmet'in, Ayşe'nin, Hasan'ın, Şükrü'nün, Kemal'in
+function genName(n) {
+  const low = n.toLocaleLowerCase('tr-TR');
+  const v = (low.match(/[aeıioöuü]/g) || ['e']).pop();
+  const map = { a: 'ı', ı: 'ı', o: 'u', u: 'u', e: 'i', i: 'i', ö: 'ü', ü: 'ü' };
+  let h = map[v]; if (/(al|el)$/.test(low) && (v === 'a')) h = 'i';
+  const endsV = 'aeıioöuü'.includes(low.slice(-1));
+  return n + "'" + (endsV ? 'n' : '') + h + 'n';
+}
 // Türkçe bulunma eki: Mehmet'te, Ayşe'de, Hasan'da, Kemal'de
 function locName(n) {
   const v = (n.toLocaleLowerCase('tr-TR').match(/[aeıioöuü]/g) || ['e']).pop();
@@ -195,15 +204,15 @@ function locName(n) {
   return n + "'" + (hard ? 't' : 'd') + (back ? 'a' : 'e');
 }
 // masanın ortasında kısa, büyük duyuru (ör. Gösterge Mehmet'te)
-function BigFlash({ u, msg }) {
+function BigFlash({ u, msg }) {   // msg.short: 1 saniyede gelip gider
   const a = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     if (!msg) return;
     a.setValue(0);
     Animated.sequence([
-      Animated.spring(a, { toValue: 1, friction: 6, tension: 180, useNativeDriver: true }),
-      Animated.delay(900),
-      Animated.timing(a, { toValue: 0, duration: 220, useNativeDriver: true }),
+      msg.short ? Animated.timing(a, { toValue: 1, duration: 150, useNativeDriver: true }) : Animated.spring(a, { toValue: 1, friction: 6, tension: 180, useNativeDriver: true }),
+      Animated.delay(msg.short ? 650 : 900),
+      Animated.timing(a, { toValue: 0, duration: msg.short ? 200 : 220, useNativeDriver: true }),
     ]).start();
   }, [msg]);
   if (!msg) return null;
@@ -614,6 +623,7 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
       ev: (name, d) => {
         if (name === 'penalty' && d && d.amt >= 101) giftReact('penalty', d.i); else if (name === 'finish' && d) giftReact('win', d.i);
         if (name === 'finish' && d && Math.random() < 0.6) { const o = [1, 2, 3].filter(k => k !== d.i); botSay(o[Math.floor(Math.random() * o.length)], d.i === 0 ? 'Tebrikler!' : 'Tebrikler ' + G().players[d.i].name, 1200); }
+        if (name === 'left' && d) setBig({ t: d.i === 0 ? d.left + ' taşın kaldı!' : genName(G().players[d.i].name) + ' ' + d.left + ' taşı kaldı', short: true, k: Date.now() });
         if (name === 'gost' && d) setBig({ t: d.i === 0 ? 'Gösterge bende!' : 'Gösterge ' + locName(G().players[d.i].name), k: Date.now() });
         L.taskEv(name, d).forEach(m => toast(m, 'task'));   // görevler
       },

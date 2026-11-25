@@ -365,7 +365,7 @@ function doDiscard(i, tile) {
   if (!finishing) {
     const left = handOf(P).length;
     if (left >= 1 && left <= 3) {
-      H.toast(P.human ? 'Elinde ' + left + ' taş kaldı' : P.name + ' oyuncusunun ' + left + ' taşı kaldı', 'alert');
+      H.ev('left', { i: P.i, left });   // masanın ortasında büyük duyuru
       logEv(i, left + ' taşı kaldı');
     }
   }
