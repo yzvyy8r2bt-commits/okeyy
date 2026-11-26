@@ -74,8 +74,18 @@ function logEv(i, text) {
   G.log.push(line); if (G.log.length > 40) G.log.shift();
   H.log(line);
 }
-function seriesNeed() { return G.cfg.mode === 'katlamali' ? Math.max(101, G.maxSeries + 1) : 101; }
-function pairsNeed() { return G.cfg.mode === 'katlamali' ? Math.max(5, G.maxPairs + 1) : 5; }
+// Katlamalıda geçilmesi gereken en yüksek açılış (eşli oyunda eşin açılışı sayılmaz)
+function topOpen(kind, i) {
+  let v = 0, by = '';
+  for (const p of G.players) {
+    if (p.i === i || !p.opened || p.openKind !== kind) continue;
+    if (G.cfg.team && p.i % 2 === i % 2) continue;
+    if (p.openVal > v) { v = p.openVal; by = p.name; }
+  }
+  return { v, by };
+}
+function seriesNeed(i = 0) { return G.cfg.mode === 'katlamali' ? Math.max(101, topOpen('seri', i).v + 1) : 101; }
+function pairsNeed(i = 0) { return G.cfg.mode === 'katlamali' ? Math.max(5, topOpen('cift', i).v + 1) : 5; }
 function fail(msg) { return { ok: false, msg }; }
 function tableMeldById(id) { return G.table.find(m => m.id === id); }
 const PEN_DEFS = [
@@ -195,9 +205,9 @@ function canUseSide(P, tile) {
   const cur = handOf(P), hand = cur.includes(tile) ? cur : cur.concat([tile]);
   if (!P.opened) {
     const bs = bestSeries(hand, tile);
-    if (bs.usesMust && bs.value >= seriesNeed()) return true;
+    if (bs.usesMust && bs.value >= seriesNeed(P.i)) return true;
     const pw = pairsWith(hand, tile);
-    return !!(pw && pw.length >= pairsNeed());
+    return !!(pw && pw.length >= pairsNeed(P.i));
   }
   if (P.openKind === 'cift') return !!pairsWith(hand, tile) || G.table.some(m => (m.kind === 'series' && extOpts(P, m, tile)) || (!tile.wild && findSwapIdx(m, tile) >= 0));
   for (const m of G.table) {
@@ -559,11 +569,13 @@ function hOpen(prefer, strict) {
     };
     if (prefer === 'cift') {
       let m = 'Çift açmak için en az ' + pl.needP + ' çift dizmelisin (şu an ' + pl.an.pairs.length + ').';
-      if (G.cfg.mode === 'katlamali' && G.maxPairs > 0) m = 'Katlamalı: ' + G.maxPairsBy + ' ' + G.maxPairs + ' çiftle açtı. En az ' + pl.needP + ' çift gerekli (şu an ' + pl.an.pairs.length + ').';
+      const tp = topOpen('cift', 0);
+      if (G.cfg.mode === 'katlamali' && tp.v > 0) m = 'Katlamalı: ' + tp.by + ' ' + tp.v + ' çiftle açtı. En az ' + pl.needP + ' çift gerekli (şu an ' + pl.an.pairs.length + ').';
       return fail(m + sideFail());
     }
     let m = 'El açmak için perlerin toplamı en az ' + pl.needS + ' olmalı (şu an ' + pl.an.points + ').';
-    if (G.cfg.mode === 'katlamali' && G.maxSeries > 0) m = 'Katlamalı: ' + G.maxSeriesBy + ' ' + G.maxSeries + ' puanla açtı. Elini açmak için en az ' + pl.needS + ' puan gerekli (şu an ' + pl.an.points + ').';
+    const ts = topOpen('seri', 0);
+    if (G.cfg.mode === 'katlamali' && ts.v > 0) m = 'Katlamalı: ' + ts.by + ' ' + ts.v + ' puanla açtı. Elini açmak için en az ' + pl.needS + ' puan gerekli (şu an ' + pl.an.points + ').';
     if (pl.an.points === 0) m += ' Önce ıstakada en az 3 taşlı per dizmelisin.';
     return fail(m + sideFail());
   }
@@ -915,17 +927,17 @@ function botTryOpen(P) {
   const plan = bestSeries(P.hand, side || undefined);
   const laidB = plan.melds.reduce((a, m) => a + m.items.length, 0);
   const finishOpen = G.cfg.mode === 'katlamali' && plan.value >= 101 && P.hand.length - laidB === 1;
-  if (plan.melds.length && (plan.value >= seriesNeed() || finishOpen) && (!side || plan.usesMust) && !plan.melds.some(m => m.items.some(x => x.t.fromPair))) {
+  if (plan.melds.length && (plan.value >= seriesNeed(P.i) || finishOpen) && (!side || plan.usesMust) && !plan.melds.some(m => m.items.some(x => x.t.fromPair))) {
     if (side) forceTileIn(plan, side);
     openSeries(P.i, plan.melds); return 'seri';
   }
   if (side) {
     const pw = pairsWith(P.hand, side);
-    if (pw && pw.length >= pairsNeed()) { openPairs(P.i, pw); return 'cift'; }
+    if (pw && pw.length >= pairsNeed(P.i)) { openPairs(P.i, pw); return 'cift'; }
     return null;
   }
   const pr = bestPairs(P.hand);
-  if (pr.pairs.length >= pairsNeed()) { openPairs(P.i, pr.pairs); return 'cift'; }
+  if (pr.pairs.length >= pairsNeed(P.i)) { openPairs(P.i, pr.pairs); return 'cift'; }
   return null;
 }
 // Eli açık bot, yandan aldığı taşı işleyemediyse yeni per / çift indirir

@@ -21,7 +21,7 @@ export const RULES = [
   "i": [
    "Seri: en az 3 taşlı perlerle (aynı renk ardışık ya da farklı renkte aynı sayı) en az 101 puan. 1 taşı yalnızca başta (1-2-3) kullanılır ve 1 puandır; 12-13-1 per olmaz.",
    "Çift: en az 5 çift. Çift açan hem çift hem seri perlere işleyebilir; ama bir turda bir perin her ucuna (sağ ve sol) en fazla 2 taş işleyebilir, okey çalabilir.",
-   "Katlamalı modda masadaki en yüksek açılışı geçmek gerekir (seri puanı ya da çift sayısı). Elini açtığın turda, taş atmadan sonradan indirdiğin per ve çiftler de açılışına eklenir ve limit buna göre yükselir. O turda okey ya da gösterge çaldıktan sonra indirdiklerin eklenmez.",
+   "Katlamalı modda masadaki en yüksek açılışı geçmek gerekir (seri puanı ya da çift sayısı). Eşli oyunda eşinin açılışı sayılmaz, yalnız rakiplerin açılışını geçmen yeterlidir. Elini açtığın turda, taş atmadan sonradan indirdiğin per ve çiftler de açılışına eklenir ve limit buna göre yükselir. O turda okey ya da gösterge çaldıktan sonra indirdiklerin eklenmez.",
    "Istakada yan yana (boşluksuz) duran taşlar bir per sayılır. Yeşil çizgi per, altın çizgi çift demektir."
   ]
  },
