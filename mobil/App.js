@@ -369,10 +369,10 @@ function MeldView({ u, m, ms, setRef, over }) {
     </View>
   );
 }
-function CenterBox({ u, label, children, drag }) {
+function CenterBox({ u, label, children, drag, cref }) {
   return (
     <DrawSource drag={drag}>
-      <View style={[styles.box, { borderRadius: 1.5 * u, paddingVertical: 0.8 * u }]}>
+      <View ref={cref} collapsable={false} style={[styles.box, { borderRadius: 1.5 * u, paddingVertical: 0.8 * u }]}>
         {children}
         <Text allowFontScaling={false} style={[styles.boxLbl, { fontSize: 1.6 * u, marginTop: 0.7 * u }]}>{label}</Text>
       </View>
@@ -599,7 +599,7 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
   const [social, setSocial] = useState(() => L.social());
   const [gcat, setGcat] = useState('kahve');
   const tmpRef = useRef({}); tmpRef.current = tmpGifts;
-  const rackRef = useRef(null), atRef = useRef(null), yanRef = useRef(null);
+  const rackRef = useRef(null), atRef = useRef(null), yanRef = useRef(null), deckRef = useRef(null);
   const [ghost, setGhost] = useState(null);                 // sürüklenen deste/yan taşı
   const ghostPos = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
   const meldRefs = useRef({});
@@ -716,6 +716,13 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
     const [at, yan] = await Promise.all([measure(atRef), measure(yanRef)]);
     if (inRect(grow(at), x, y)) { const r = GM.hDiscard(tile.id); if (r && r.ok) CLK.tOut = 0; feedback(r); return; }
     if (inRect(grow(yan), x, y)) { if (P.sideTile && P.sideTile.id === tile.id) feedback(GM.hReturnSide()); return; }
+    // biter taş destenin üstüne de bırakılabilir (eli bitirir)
+    const dk = await measure(deckRef);
+    if (inRect(grow(dk), x, y)) {
+      if (GM.handOf(P).length === 1) { const r = GM.hDiscard(tile.id); if (r && r.ok) CLK.tOut = 0; feedback(r); }
+      else feedback({ ok: false, msg: 'Desteye yalnız eli bitiren son taş bırakılır.' });
+      return;
+    }
     const ids = Object.keys(meldRefs.current);
     const rects = await Promise.all(ids.map(id => measure(meldRefs.current[id])));
     for (let k = 0; k < ids.length; k++) {
@@ -913,7 +920,7 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
           <CenterBox u={u} label="GÖSTERGE">
             <TileFace tile={g.gosterge} w={9 * u} h={11 * u} fs={6.4 * u} />
           </CenterBox>
-          <CenterBox u={u} label="DESTE" drag={deckDrag}>
+          <CenterBox u={u} label="DESTE" drag={deckDrag} cref={deckRef}>
             <TileBack w={9 * u} h={11 * u} fs={6.4 * u} count={g.deck.length} hot={canDraw} />
           </CenterBox>
         </View>
