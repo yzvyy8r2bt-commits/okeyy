@@ -13,6 +13,8 @@ on:
 jobs:
   update:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     defaults:
       run:
         working-directory: mobil
@@ -28,3 +30,17 @@ jobs:
       - run: npm install
       - run: npx expo install --fix || true
       - run: eas update --channel "${{ github.event.inputs.kanal }}" --message "${{ github.event.inputs.mesaj }}" --non-interactive
+      # güncellemenin yaklaşık indirme boyutu: oyun açılışta bunu okuyup oyuncuya gösterir
+      - name: Boyut dosyası
+        if: github.event.inputs.kanal == 'production'
+        run: |
+          sz() { f=$(ls dist/_expo/static/js/$1/*.hbc dist/_expo/static/js/$1/*.js 2>/dev/null | head -1); [ -n "$f" ] && gzip -9 -c "$f" | wc -c || echo 0; }
+          I=$(sz ios); A=$(sz android)
+          echo "ios=$I android=$A"
+          printf '{"ios":%s,"android":%s,"at":"%s"}\n' "$I" "$A" "$(date -u +%FT%TZ)" > ../guncelleme.json
+          cat ../guncelleme.json
+          cd ..
+          git config user.name "github-actions"; git config user.email "github-actions@users.noreply.github.com"
+          git add guncelleme.json
+          git commit -m "Güncelleme boyutu" || exit 0
+          git pull --rebase -q origin main && git push -q origin HEAD:main

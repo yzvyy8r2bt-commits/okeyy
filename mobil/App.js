@@ -8,7 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { FEEL, tick, bump, warn, err } from './src/feel';
 import { SOUND, sfx, setMusic, musicActive, musicInGame } from './src/sound';
 import { HOWTO, RULES, TIPS } from './src/content';
-import { checkUpdate, applyUpdate, fmtMB } from './src/updater';
+import { checkUpdate, downloadUpdate, fmtMB } from './src/updater';
 import * as L from './src/lobby';
 import LobbyScreen from './src/LobbyScreen';
 import LoginScreen from './src/LoginScreen';
@@ -1287,7 +1287,8 @@ function Root() {
   const [updBusy, setUpdBusy] = useState(false);
   const [updErr, setUpdErr] = useState(false);
   useEffect(() => { checkUpdate().then(r => setUpd(r || null)).catch(() => setUpd(null)); }, []);
-  const doUpdate = () => { setUpdBusy(true); setUpdErr(false); applyUpdate().catch(() => { setUpdBusy(false); setUpdErr(true); }); };
+  const [updDone, setUpdDone] = useState(false);   // indirildi: oyun kapatılıp açılana kadar içeri girilmez
+  const doUpdate = () => { setUpdBusy(true); setUpdErr(false); downloadUpdate().then(() => { setUpdBusy(false); setUpdDone(true); }).catch(() => { setUpdBusy(false); setUpdErr(true); }); };
   const [set, setSet] = useState(DEF_SET);
   const [screen, setScreen] = useState('login');
   const [table, setTable] = useState(null);
@@ -1325,8 +1326,13 @@ function Root() {
         <View style={{ marginTop: 2.4 * u, alignItems: 'center', paddingVertical: 1.8 * u, paddingHorizontal: 3 * u, borderRadius: 2 * u, backgroundColor: 'rgba(20,8,40,0.92)', borderWidth: 1, borderColor: C.amber }}>
           <Text allowFontScaling={false} style={{ color: C.amber, fontWeight: '900', fontSize: 3.2 * u }}>Yeni güncelleme var</Text>
           {upd.mb ? <Text allowFontScaling={false} style={{ color: '#efe6ff', fontSize: 2.6 * u, marginTop: 0.6 * u }}>Boyutu: yaklaşık {fmtMB(upd.mb)}</Text> : null}
-          {updBusy ? (
-            <Text allowFontScaling={false} style={{ color: '#efe6ff', fontWeight: '800', fontSize: 2.8 * u, marginTop: 1.6 * u }}>İndiriliyor, oyun yeniden açılacak…</Text>
+          {updDone ? (
+            <View style={{ alignItems: 'center', marginTop: 1.6 * u }}>
+              <Text allowFontScaling={false} style={{ color: '#7ef0b5', fontWeight: '900', fontSize: 3 * u }}>✓ Güncelleme indirildi</Text>
+              <Text allowFontScaling={false} style={{ color: '#efe6ff', fontWeight: '800', fontSize: 2.8 * u, marginTop: 0.8 * u, textAlign: 'center' }}>Yeni sürümü kullanmak için oyunu kapatıp tekrar açın.</Text>
+            </View>
+          ) : updBusy ? (
+            <Text allowFontScaling={false} style={{ color: '#efe6ff', fontWeight: '800', fontSize: 2.8 * u, marginTop: 1.6 * u }}>Güncelleme indiriliyor…</Text>
           ) : (
             <View style={{ flexDirection: 'row', gap: 2 * u, marginTop: 1.6 * u }}>
               <Pressable onPress={doUpdate} style={{ paddingVertical: 1.4 * u, paddingHorizontal: 4 * u, borderRadius: 1.6 * u, backgroundColor: C.amber }}>
