@@ -1,0 +1,15 @@
+name: "Deneme: guncelleme boyutu"
+on: workflow_dispatch
+jobs:
+  b:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          curl -s -D /tmp/h -o /tmp/m -H "expo-platform: ios" -H "expo-runtime-version: 1.0.0" -H "expo-channel-name: production" -H "accept: application/expo+json,application/json,multipart/mixed" https://u.expo.dev/ddf66a22-25ba-4d15-9298-f9c11ba7a27e
+          cat /tmp/h; head -c 3000 /tmp/m; echo
+          URL=$(grep -o '"launchAsset":{[^}]*' /tmp/m | grep -o '"url":"[^"]*' | cut -d'"' -f4)
+          echo "URL=$URL"
+          echo "--- HEAD"; curl -sI "$URL"
+          echo "--- RANGE"; curl -s -D - -o /dev/null -H "Range: bytes=0-0" "$URL"
+          echo "--- GET size"; curl -s -o /tmp/b "$URL"; ls -l /tmp/b
+          echo "--- GET br"; curl -s -H "accept-encoding: br, gzip" -D - -o /tmp/b2 "$URL" | head -20; ls -l /tmp/b2
