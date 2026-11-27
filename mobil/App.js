@@ -8,6 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { FEEL, tick, bump, warn, err } from './src/feel';
 import { SOUND, sfx, setMusic, musicActive, musicInGame } from './src/sound';
 import { HOWTO, RULES, TIPS } from './src/content';
+import { checkUpdate, applyUpdate, fmtMB } from './src/updater';
 import * as L from './src/lobby';
 import LobbyScreen from './src/LobbyScreen';
 import LoginScreen from './src/LoginScreen';
@@ -1282,6 +1283,11 @@ function Root() {
   const [splashDone, setSplashDone] = useState(false);
   const [tip] = useState(() => TIPS[Math.floor(Math.random() * TIPS.length)]);
   useEffect(() => { const t = setTimeout(() => setSplashDone(true), 2500); return () => clearTimeout(t); }, []);   // ipucu okunabilsin
+  const [upd, setUpd] = useState(undefined);   // undefined: bakılıyor, null: yok, {mb}: yeni güncelleme var
+  const [updBusy, setUpdBusy] = useState(false);
+  const [updErr, setUpdErr] = useState(false);
+  useEffect(() => { checkUpdate().then(r => setUpd(r || null)).catch(() => setUpd(null)); }, []);
+  const doUpdate = () => { setUpdBusy(true); setUpdErr(false); applyUpdate().catch(() => { setUpdBusy(false); setUpdErr(true); }); };
   const [set, setSet] = useState(DEF_SET);
   const [screen, setScreen] = useState('login');
   const [table, setTable] = useState(null);
@@ -1304,7 +1310,7 @@ function Root() {
   const saveSet = (st) => { setSet(st); FEEL.vibrate = st.vibrate !== false; SOUND.on = st.sound !== false; setMusic(st.music); AsyncStorage.setItem(SET_KEY, JSON.stringify(st)).catch(() => {}); };
   const start = (t, cfg) => { CLK.tOut = 0; CLK.cKey = null; setTable(t); GM.newGame(cfg); setScreen('game'); };
 
-  if (!ready || !splashDone) return (   // açılış: logo + ipucu (online sürümde bağlanma süresi burada geçer)
+  if (!ready || !splashDone || upd === undefined || upd) return (   // açılış: logo + ipucu (online sürümde bağlanma süresi burada geçer)
     <View style={[styles.root, { alignItems: 'center', justifyContent: 'center', paddingHorizontal: 20 * u }]}>
       <Text allowFontScaling={false} style={{ color: C.muted, fontWeight: '800', fontSize: 2.8 * u, letterSpacing: 0.8 * u }}>KAHVE USULÜ</Text>
       <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
@@ -1315,7 +1321,27 @@ function Root() {
         <Text allowFontScaling={false} style={{ color: C.amber, fontWeight: '900', fontSize: 2.6 * u, textAlign: 'center', marginBottom: 0.6 * u }}>💡 İPUCU</Text>
         <Text allowFontScaling={false} style={{ color: '#efe6ff', fontSize: 3 * u, lineHeight: 4.2 * u, textAlign: 'center' }}>{tip}</Text>
       </View>
-      <Text allowFontScaling={false} style={{ color: C.muted, fontSize: 2.4 * u, marginTop: 2.4 * u }}>Yükleniyor…</Text>
+      {upd ? (
+        <View style={{ marginTop: 2.4 * u, alignItems: 'center', paddingVertical: 1.8 * u, paddingHorizontal: 3 * u, borderRadius: 2 * u, backgroundColor: 'rgba(20,8,40,0.92)', borderWidth: 1, borderColor: C.amber }}>
+          <Text allowFontScaling={false} style={{ color: C.amber, fontWeight: '900', fontSize: 3.2 * u }}>Yeni güncelleme var</Text>
+          {upd.mb ? <Text allowFontScaling={false} style={{ color: '#efe6ff', fontSize: 2.6 * u, marginTop: 0.6 * u }}>Boyutu: yaklaşık {fmtMB(upd.mb)}</Text> : null}
+          {updBusy ? (
+            <Text allowFontScaling={false} style={{ color: '#efe6ff', fontWeight: '800', fontSize: 2.8 * u, marginTop: 1.6 * u }}>İndiriliyor, oyun yeniden açılacak…</Text>
+          ) : (
+            <View style={{ flexDirection: 'row', gap: 2 * u, marginTop: 1.6 * u }}>
+              <Pressable onPress={doUpdate} style={{ paddingVertical: 1.4 * u, paddingHorizontal: 4 * u, borderRadius: 1.6 * u, backgroundColor: C.amber }}>
+                <Text allowFontScaling={false} style={{ color: '#2d1800', fontWeight: '900', fontSize: 2.8 * u }}>Şimdi güncelle</Text>
+              </Pressable>
+              <Pressable onPress={() => setUpd(null)} style={{ paddingVertical: 1.4 * u, paddingHorizontal: 4 * u, borderRadius: 1.6 * u, borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)' }}>
+                <Text allowFontScaling={false} style={{ color: '#efe6ff', fontWeight: '800', fontSize: 2.8 * u }}>Sonra</Text>
+              </Pressable>
+            </View>
+          )}
+          {updErr ? <Text allowFontScaling={false} style={{ color: '#ffaaa2', fontSize: 2.4 * u, marginTop: 1 * u }}>İndirilemedi. İnternetini kontrol edip tekrar dene.</Text> : null}
+        </View>
+      ) : (
+        <Text allowFontScaling={false} style={{ color: C.muted, fontSize: 2.4 * u, marginTop: 2.4 * u }}>Yükleniyor…</Text>
+      )}
     </View>
   );
   if (screen === 'login') {
