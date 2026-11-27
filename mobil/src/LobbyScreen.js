@@ -2,7 +2,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, Pressable, StyleSheet, ScrollView, Modal, TextInput } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import { C, Btn, Toggle, Coin, NUM_FONT } from './ui';
+import { C, Btn, Toggle, Coin, NUM_FONT, Sheet } from './ui';
 import * as L from './lobby';
 import { FEATURES } from './config';
 
@@ -73,11 +73,11 @@ export function linkPen(pen, k, val) {
 }
 function Dlg({ u, visible, children, wide }) {
   return (
-    <Modal visible={visible} transparent animationType="fade" supportedOrientations={['landscape']}>
+    <Sheet visible={visible}>
       <View style={styles.modalBg}>
         <View style={[styles.modal, { width: wide ? '86%' : '62%', maxHeight: '94%', borderRadius: 2.4 * u, padding: 2.4 * u }]}>{children}</View>
       </View>
-    </Modal>
+    </Sheet>
   );
 }
 const H2 = ({ u, children }) => <Text allowFontScaling={false} style={{ color: C.amber, fontWeight: '900', fontSize: 4 * u, textAlign: 'center' }}>{children}</Text>;
@@ -340,7 +340,7 @@ export default function LobbyScreen({ u, ins, set, saveSet, onStart, openSetting
       </Dlg>
 
       {/* profil — web'deki düzen: kart, sekmeler (İstatistikler · Görevler · Seviye) */}
-      <Modal visible={prof} transparent animationType="fade" supportedOrientations={['landscape']}>
+      <Sheet visible={prof}>
         <View style={styles.modalBg}>
           <View style={[styles.modal, { width: '76%', maxHeight: '96%', borderRadius: 2.4 * u, padding: 2.4 * u }]}>
             <View style={{ flexDirection: 'row', gap: 2 * u }}>
@@ -459,7 +459,7 @@ export default function LobbyScreen({ u, ins, set, saveSet, onStart, openSetting
             </View>
           </View>
         </View>
-      </Modal>
+      </Sheet>
 
       {/* çıkış onayı */}
       <Dlg u={u} visible={logoutAsk}>
@@ -517,7 +517,7 @@ export default function LobbyScreen({ u, ins, set, saveSet, onStart, openSetting
       </Dlg>
 
       {/* deneme reklamı (mağaza sürümünde gerçek reklam gelecek) */}
-      <Modal visible={adPlay !== null} transparent animationType="fade" supportedOrientations={['landscape']}>
+      <Sheet visible={adPlay !== null}>
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.92)', alignItems: 'center', justifyContent: 'center' }}>
           <View style={[styles.modal, { width: '62%', borderRadius: 2.4 * u, padding: 2.4 * u, alignItems: 'center', gap: 1.4 * u }]}>
             <Text allowFontScaling={false} style={{ color: C.muted, fontSize: 1.8 * u }}>Deneme reklamı · mağaza sürümünde gerçek reklam gelecek</Text>
@@ -538,7 +538,7 @@ export default function LobbyScreen({ u, ins, set, saveSet, onStart, openSetting
             </View>
           </View>
         </View>
-      </Modal>
+      </Sheet>
 
       {/* isim değiştir */}
       <Dlg u={u} visible={rename !== null}>
@@ -592,7 +592,7 @@ export default function LobbyScreen({ u, ins, set, saveSet, onStart, openSetting
       </Dlg>
 
       {/* masa aç — web'deki düzen */}
-      <Modal visible={!!create} transparent animationType="fade" supportedOrientations={['landscape']}>
+      <Sheet visible={!!create}>
         <View style={styles.modalBg}>
           {create ? (
             <View style={[styles.modal, { width: '70%', maxHeight: '96%', borderRadius: 2.4 * u, paddingHorizontal: 3 * u, paddingVertical: 2.4 * u }]}>
@@ -643,7 +643,7 @@ export default function LobbyScreen({ u, ins, set, saveSet, onStart, openSetting
             </View>
           ) : null}
         </View>
-      </Modal>
+      </Sheet>
 
       {/* masaya oturdun: bekleme */}
       <Dlg u={u} visible={!!wait} wide>

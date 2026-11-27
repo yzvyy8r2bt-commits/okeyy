@@ -14,7 +14,7 @@ import LobbyScreen from './src/LobbyScreen';
 import LoginScreen from './src/LoginScreen';
 const LOGIN_KEY = 'okey101.login';
 import { GIFT_CATS, GiftIcon, curGift, giftBlock, placeGift, botLv, loadPerm } from './src/gifts';
-import { C, Btn, Toggle, Pick, cyc, Coin } from './src/ui';
+import { C, Btn, Toggle, Pick, cyc, Coin, Sheet } from './src/ui';
 import { GestureHandlerRootView, Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Rack, { rackGeom, slotAt } from './src/Rack';
@@ -426,7 +426,7 @@ function SettingsModal({ u, visible, set, saveSet, onClose, onRules, onHowto, on
   const putQ = (k, v) => saveSet({ ...set, qp: { ...q, [k]: v } });
   const tri = [undefined, true, false];   // fark etmez → olsun → olmasın
   return (
-    <Modal visible={visible} transparent animationType="fade" supportedOrientations={['landscape']}>
+    <Sheet visible={visible}>
       <View style={styles.modalBg}>
         <View style={[styles.modal, { width: '84%', maxHeight: '94%', borderRadius: 2.4 * u, padding: 2.4 * u }]}>
           <Text allowFontScaling={false} style={{ color: C.amber, fontFamily: NUM_FONT, fontWeight: '800', fontSize: 6 * u, letterSpacing: 0.3 * u, marginBottom: u }}>AYARLAR</Text>
@@ -469,12 +469,12 @@ function SettingsModal({ u, visible, set, saveSet, onClose, onRules, onHowto, on
           </View>
         </View>
       </View>
-    </Modal>
+    </Sheet>
   );
 }
 function RulesModal({ u, visible, onClose, howto }) {
   return (
-      <Modal visible={visible} transparent animationType="fade" supportedOrientations={['landscape']}>
+      <Sheet visible={visible}>
         <View style={styles.modalBg}>
           <View style={[styles.modal, { width: '86%', maxHeight: '92%', borderRadius: 2.4 * u, padding: 2.4 * u }]}>
             <Text allowFontScaling={false} style={[styles.modalT, { fontSize: 4.2 * u }]}>{howto ? 'Nasıl Oynanır?' : 'Kurallar'}</Text>
@@ -492,7 +492,7 @@ function RulesModal({ u, visible, onClose, howto }) {
             </View>
           </View>
         </View>
-      </Modal>
+      </Sheet>
   );
 }
 
@@ -1013,7 +1013,7 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
 
       {/* el sonu */}
       {chatOpen ? <ChatPanel u={u} ins={ins} msgs={chat} names={g.players.map((p, k) => k === 0 ? L.wallet().name : p.name)} onSend={sendChat} onClose={() => setChatOpen(false)} /> : null}
-      <Modal visible={!!handEnd} transparent animationType="fade" supportedOrientations={['landscape']}>
+      <Sheet visible={!!handEnd}>
         <View style={styles.modalBg}>
           {handEnd ? (
             <View style={[styles.modal, { width: '86%', maxHeight: '96%', borderRadius: 2.4 * u, paddingVertical: 2 * u, paddingHorizontal: 2.4 * u }]}>
@@ -1058,9 +1058,9 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
             </View>
           ) : null}
         </View>
-      </Modal>
+      </Sheet>
 
-      <Modal visible={!!settle} transparent animationType="fade" supportedOrientations={['landscape']}>
+      <Sheet visible={!!settle}>
         <View style={styles.modalBg}>
           {settle ? (() => {
             const order = [0, 1, 2, 3].sort((a, b) => g.totals[a] - g.totals[b]);
@@ -1107,10 +1107,10 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
             );
           })() : null}
         </View>
-      </Modal>
+      </Sheet>
 
       {/* oyuncu profili: masadaki oyuncunun adına/resmine dokununca */}
-      <Modal visible={infoFor !== null} transparent animationType="fade" supportedOrientations={['landscape']}>
+      <Sheet visible={infoFor !== null}>
         <Pressable style={styles.modalBg} onPress={() => setInfoFor(null)}>
           {infoFor !== null ? (() => {
             const i = infoFor, P = g.players[i], st = L.botStats(P.name), lv = botLv(P.name);
@@ -1146,9 +1146,9 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
             );
           })() : null}
         </Pressable>
-      </Modal>
+      </Sheet>
       {/* oyuncuyu bildir (şikayet) */}
-      <Modal visible={repFor !== null} transparent animationType="fade" supportedOrientations={['landscape']}>
+      <Sheet visible={repFor !== null}>
         <Pressable style={styles.modalBg} onPress={() => setRepFor(null)}>
           {repFor !== null ? (
             <Pressable onPress={() => {}} style={[styles.modal, { width: '70%', borderRadius: 2.4 * u, padding: 2.4 * u }]}>
@@ -1163,8 +1163,8 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
             </Pressable>
           ) : null}
         </Pressable>
-      </Modal>
-      <Modal visible={giftFor !== null} transparent animationType="fade" supportedOrientations={['landscape']}>
+      </Sheet>
+      <Sheet visible={giftFor !== null}>
         <View style={styles.modalBg}>
           {giftFor !== null ? (() => {
             const i = giftFor, P = g.players[i], cur = giftOf(i), cat = GIFT_CATS.find(c => c.id === gcat) || GIFT_CATS[0];
@@ -1216,12 +1216,12 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
             );
           })() : null}
         </View>
-      </Modal>
+      </Sheet>
 
       <SettingsModal u={u} visible={setOpen} set={set} saveSet={saveSet} onClose={() => setSetOpen(false)} onRules={() => { setSetOpen(false); setRulesOpen('rules'); }} onHowto={() => { setSetOpen(false); setRulesOpen('howto'); }}
         onLogout={() => { setSetOpen(false); AsyncStorage.removeItem(LOGIN_KEY).catch(() => {}); setScreen('login'); }} />
       <RulesModal u={u} visible={!!rulesOpen} howto={rulesOpen === 'howto'} onClose={() => { const h = rulesOpen === 'howto'; setRulesOpen(false); if (h) setSetOpen(true); }} />
-      <Modal visible={menuOpen} transparent animationType="fade" supportedOrientations={['landscape']}>
+      <Sheet visible={menuOpen}>
         <View style={styles.modalBg}>
           {table ? (
             <View style={[styles.modal, { borderRadius: 2.4 * u, padding: 3 * u }]}>
@@ -1242,11 +1242,11 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
             </View>
           ) : null}
         </View>
-      </Modal>
+      </Sheet>
 
       {/* yazboz */}
       {/* yazboz: eşli oyunda takım sütunları */}
-      <Modal visible={scoreOpen} transparent animationType="fade" supportedOrientations={['landscape']}>
+      <Sheet visible={scoreOpen}>
         <Pressable style={styles.modalBg} onPress={() => setScoreOpen(false)}>
           <View style={[styles.modal, { width: '86%', maxHeight: '96%', borderRadius: 2.4 * u, paddingVertical: 2.2 * u, paddingHorizontal: 3 * u }]}>
             <Text allowFontScaling={false} style={[styles.modalT, { fontSize: 4.2 * u }]}>Yazboz</Text>
@@ -1269,7 +1269,7 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
             </View>
           </View>
         </Pressable>
-      </Modal>
+      </Sheet>
     </View>
   );
 }

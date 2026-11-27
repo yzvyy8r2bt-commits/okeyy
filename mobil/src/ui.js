@@ -1,6 +1,6 @@
 // Ortak arayüz parçaları (masa ve lobi)
-import React from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, Pressable, StyleSheet, Animated } from 'react-native';
 import { NUM_FONT } from './Tile';
 export { NUM_FONT };
 
@@ -59,3 +59,12 @@ const styles = StyleSheet.create({
   mchipOn: { borderColor: 'rgba(255,187,51,0.7)', backgroundColor: 'rgba(255,187,51,0.12)' },
   box2: { borderWidth: 2, borderColor: 'rgba(255,255,255,0.35)', alignItems: 'center', justifyContent: 'center' },
 });
+
+// Pencere katmanı: iOS'un yerel Modal'ı yerine ekranın üstüne binen katman.
+// Yerel Modal'larda biri kapanırken diğeri açılırsa iOS ikincisini gösteremiyor ve oyun kilitleniyordu.
+export function Sheet({ visible, children }) {
+  const a = useRef(new Animated.Value(0)).current;
+  useEffect(() => { if (visible) { a.setValue(0); Animated.timing(a, { toValue: 1, duration: 160, useNativeDriver: true }).start(); } }, [visible]);
+  if (!visible) return null;
+  return <Animated.View style={[StyleSheet.absoluteFill, { zIndex: 500, elevation: 50, opacity: a }]}>{children}</Animated.View>;
+}
