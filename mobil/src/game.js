@@ -47,6 +47,7 @@ function startHand() {
   G.turn = starter; G.phase = 'discard'; G.turnNo = 1; G.clkTurn = 0;
   logEv(-1, 'Yeni el başladı. ' + G.players[starter].name + ' 22 taşla başlıyor.');
   H.handStart();
+  H.ev('start', { i: starter });
   H.render();
   if (G.players[G.turn].bot) continueFlow();
 }

@@ -648,6 +648,7 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
         if (name === 'penalty' && d && d.amt >= 101) giftReact('penalty', d.i); else if (name === 'finish' && d) giftReact('win', d.i);
         if (name === 'finish' && d && Math.random() < 0.6) { const o = [1, 2, 3].filter(k => k !== d.i); botSay(o[Math.floor(Math.random() * o.length)], d.i === 0 ? 'Tebrikler!' : 'Tebrikler ' + G().players[d.i].name, 1200); }
         if (name === 'left' && d) setBig({ t: d.i === 0 ? d.left + ' taşın kaldı!' : genName(G().players[d.i].name) + ' ' + d.left + ' taşı kaldı', short: true, k: Date.now() });
+        if (name === 'start' && d) setBig({ t: d.i === 0 ? 'Sıra sizde!' : 'Sıra ' + locName(G().players[d.i].name), short: true, k: Date.now() });
         if (name === 'gost' && d) setBig({ t: d.i === 0 ? 'Gösterge bende!' : 'Gösterge ' + locName(G().players[d.i].name), k: Date.now() });
         L.taskEv(name, d).forEach(m => toast(m, 'task'));   // görevler
       },
