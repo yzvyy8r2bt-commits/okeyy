@@ -24,3 +24,7 @@ jobs:
           eas build:view $ID --json > /tmp/v.json || true
           node -e "const b=require('/tmp/v.json');console.log('DURUM',b.status);console.log('HATA',JSON.stringify(b.error||null));console.log('ANAHTARLAR',Object.keys(b).join(','));(b.logFiles||[]).forEach(u=>console.log('LOG',u.slice(0,80)))"
           for u in $(node -e "(require('/tmp/v.json').logFiles||[]).forEach(u=>console.log(u))"); do curl -sL --compressed -D /tmp/h.txt "$u" -o /tmp/l.bin; grep -i "content-" /tmp/h.txt; file /tmp/l.bin; node -e "const z=require('zlib'),f=require('fs');const b=f.readFileSync('/tmp/l.bin');let t;for(const d of [x=>x.toString('utf8'),z.gunzipSync,z.brotliDecompressSync,z.inflateSync]){try{const r=d(b).toString('utf8');if(/[\\x20-\\x7e]{40}/.test(r.slice(0,400))){t=r;break}}catch(e){}}f.writeFileSync('/tmp/l.txt',t||'')"; wc -l /tmp/l.txt; node -e "const s=require('fs').readFileSync('/tmp/l.txt','utf8');const L=s.split('\n').map(l=>{try{const o=JSON.parse(l);return (o.phase||'')+' | '+(o.msg||'')}catch(e){return l}});const k=L.findIndex(x=>/CONFIGURE_XCODE/.test(x));const R=s.split('\\n');const out=k>=0?R.slice(k-15,k+6):R.slice(-40);out.forEach(x=>console.log('KAYIT',x.slice(0,1500)))"; done
+      - name: Android son paket
+        run: |
+          eas build:list --platform android --limit 2 --json --non-interactive > /tmp/a.json || true
+          node -e "require('/tmp/a.json').forEach(b=>console.log('ANDROID',b.buildProfile,b.status,b.appBuildVersion,JSON.stringify(b.error||null),(b.artifacts||{}).buildUrl||''))"
