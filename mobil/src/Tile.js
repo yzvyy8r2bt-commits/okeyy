@@ -3,7 +3,8 @@ import React from 'react';
 import { View, Text, StyleSheet, Platform } from 'react-native';
 
 export const TILE_COLORS = ['#d2232b', '#15151c', '#1b5ed8', '#e28900'];
-export const NUM_FONT = Platform.select({ ios: 'AvenirNextCondensed-Heavy', default: undefined });
+export const NUM_FONT = Platform.select({ ios: 'AvenirNextCondensed-Heavy', android: 'sans-serif-condensed', default: undefined });
+const AND = Platform.OS === 'android';
 // Avenir Next: üst boşluk ≈ 1.00 − 0.708 (rakam yüksekliği), alt boşluk ≈ 0.366 (inen kısım)
 const DIGIT_TOP = Platform.OS === 'ios' ? 0.29 : 0.24;
 const DIGIT_BOT = Platform.OS === 'ios' ? 0.366 : 0.24;
@@ -25,6 +26,8 @@ export default function TileFace({ tile, w, h, fs, mark, glow, gb, blank, hw }) 
   const lip = Math.max(1.5, h * 0.045);
   const r = Math.max(3, w * 0.12);
   const color = TILE_COLORS[tile.c] || '#15151c';
+  // Android'de iki haneli sayılar taşa sığsın diye biraz küçültülür
+  const nf = AND && tile.n >= 10 ? fs * 0.86 : fs;
   return (
     <View style={{ width: w, height: h }}>
       <View style={[styles.lip, { borderRadius: r, top: lip }]} />
@@ -33,7 +36,7 @@ export default function TileFace({ tile, w, h, fs, mark, glow, gb, blank, hw }) 
           <>
             {/* yazı tipinin doğal satır yüksekliği korunur; üst/alt boşluk eksi kenar boşluğuyla
                 kırpılır, böylece kutu sadece rakamın kendisi kadar olur ve tam ortalanır */}
-            <Text allowFontScaling={false} style={[styles.num, { fontSize: fs, marginTop: -fs * DIGIT_TOP, marginBottom: -fs * DIGIT_BOT, color }]}>{tile.n}</Text>
+            <Text allowFontScaling={false} numberOfLines={1} style={[styles.num, { fontSize: nf, marginTop: -nf * DIGIT_TOP, marginBottom: -nf * DIGIT_BOT, color }, AND && { letterSpacing: -nf * 0.06, width: w * 1.2, marginHorizontal: -w * 0.1 }]}>{tile.n}</Text>
             <View style={{
               width: fs * 0.3, height: fs * 0.3, borderRadius: fs, marginTop: fs * 0.12,
               backgroundColor: color, borderWidth: Math.max(1, fs * 0.06), borderColor: 'rgba(255,255,255,0.55)',
