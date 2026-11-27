@@ -228,6 +228,20 @@ function BigFlash({ u, msg }) {   // msg.short: 1 saniyede gelip gider
     </View>
   );
 }
+// geri sayımlı düğme: süre dolunca kendiliğinden basılır
+function AutoBtn({ u, label, sec, onPress }) {
+  const [left, setLeft] = useState(sec);
+  const done = useRef(false);
+  const press = () => { if (done.current) return; done.current = true; onPress(); };
+  useEffect(() => {
+    const id = setInterval(() => setLeft(l => {
+      if (l <= 1) { clearInterval(id); setTimeout(press, 0); return 0; }
+      return l - 1;
+    }), 1000);
+    return () => clearInterval(id);
+  }, []);
+  return <Btn u={u} pri label={label + ' (' + left + ')'} onPress={press} />;
+}
 function Chip({ u, kind, children }) {
   const bg = kind === 'ok' ? 'rgba(79,224,163,0.2)' : kind === 'gold' ? 'rgba(255,187,51,0.2)' : kind === 'bad' ? 'rgba(255,107,94,0.22)' : 'rgba(255,255,255,0.12)';
   const col = kind === 'ok' ? '#92f0c6' : kind === 'gold' ? C.amber : kind === 'bad' ? '#ffaaa2' : C.ink;
@@ -1044,7 +1058,7 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
                 const r = handEnd.rec.per[i];
                 return (
                   <View key={i} style={[styles.resRow, { paddingVertical: 0.7 * u }]}>
-                    <Text allowFontScaling={false} numberOfLines={1} adjustsFontSizeToFit style={[styles.resName, { fontSize: 4 * u, width: 22 * u }, i === handEnd.rec.winner && { color: C.amber }]}>{i === 0 ? L.wallet().name : p.name}</Text>
+                    <Text allowFontScaling={false} numberOfLines={1} adjustsFontSizeToFit style={[styles.resName, { fontSize: 4 * u, width: 30 * u, marginRight: 1.5 * u }, i === handEnd.rec.winner && { color: C.amber }]}>{i === 0 ? L.wallet().name : p.name}</Text>
                     <Text allowFontScaling={false} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.7} style={{ flex: 1, color: '#d9cdf2', fontSize: 4 * u, lineHeight: 4.6 * u }}>{numNotes(r.notes)}</Text>
                     <Text allowFontScaling={false} style={{ color: '#fff', width: 15 * u, textAlign: 'right', fontWeight: '700', fontSize: 4 * u }}>{r.total > 0 ? '+' + r.total : fmt(r.total)}</Text>
                     <Text allowFontScaling={false} style={{ color: C.amber, width: 15 * u, textAlign: 'right', fontWeight: '800', fontSize: 4 * u }}>{fmt(g.totals[i])}</Text>
@@ -1053,7 +1067,7 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
               })}
               <Text allowFontScaling={false} style={{ color: C.muted, fontSize: 3.4 * u, marginTop: 0.6 * u, textAlign: 'center' }}>El {g.hands.length} / {g.cfg.hands} · {g.cfg.team ? 'Toplamı az olan takım kazanır' : 'Az puan kazanır'}</Text>
               <View style={{ marginTop: 1.2 * u, alignItems: 'center' }}>
-                <Btn u={u} pri label={handEnd.last ? 'Sonucu Gör' : 'Sonraki El'} onPress={nextHand} />
+                {handEnd.last ? <AutoBtn u={u} label="Sonucu Gör" sec={5} onPress={nextHand} /> : <Btn u={u} pri label="Sonraki El" onPress={nextHand} />}
               </View>
             </View>
           ) : null}
