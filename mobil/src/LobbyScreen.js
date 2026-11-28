@@ -83,6 +83,32 @@ function Dlg({ u, visible, children, wide }) {
 const H2 = ({ u, children }) => <Text allowFontScaling={false} style={{ color: C.amber, fontWeight: '900', fontSize: 4 * u, textAlign: 'center' }}>{children}</Text>;
 const Sub = ({ u, children, style }) => <Text allowFontScaling={false} style={[{ color: C.muted, fontSize: 2.1 * u, textAlign: 'center', marginTop: 0.6 * u }, style]}>{children}</Text>;
 
+// sağlı sollu oklu seçici: ◀ değer ▶ (dokununca sırayla değişir)
+function ArrowPick({ u, label, opts, val, onPick, pen }) {
+  const i = Math.max(0, opts.findIndex(o => o[0] === val));
+  const go = d => onPick(opts[(i + d + opts.length) % opts.length][0]);
+  const v = opts[i][0];
+  const col = v === undefined || v === 'all' ? C.ink : pen ? (v ? '#7ef0b5' : '#ff9a9a') : C.amber;
+  const bg = v === undefined || v === 'all' ? 'rgba(0,0,0,0.4)' : pen ? (v ? 'rgba(40,140,90,0.35)' : 'rgba(140,40,40,0.32)') : 'rgba(245,166,35,0.18)';
+  const arrow = d => (
+    <Pressable onPress={() => go(d)} hitSlop={8} style={({ pressed }) => ({ width: 7 * u, height: 6.4 * u, borderRadius: 1.4 * u, alignItems: 'center', justifyContent: 'center', backgroundColor: pressed ? 'rgba(120,90,200,0.7)' : 'rgba(90,60,160,0.55)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)' })}>
+      <Text allowFontScaling={false} style={{ color: '#fff', fontWeight: '900', fontSize: 3.2 * u }}>{d < 0 ? '‹' : '›'}</Text>
+    </Pressable>
+  );
+  return (
+    <View style={{ width: '49%', marginBottom: 1.2 * u }}>
+      <Text allowFontScaling={false} style={{ color: C.muted, fontSize: 2.2 * u, fontWeight: '700', textAlign: 'center', marginBottom: 0.5 * u }}>{label}</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 0.8 * u }}>
+        {arrow(-1)}
+        <Pressable onPress={() => go(1)} style={{ flex: 1, height: 6.4 * u, borderRadius: 1.4 * u, alignItems: 'center', justifyContent: 'center', backgroundColor: bg, borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)' }}>
+          <Text allowFontScaling={false} style={{ color: col, fontWeight: '900', fontSize: 2.8 * u }}>{opts[i][1]}</Text>
+        </Pressable>
+        {arrow(1)}
+      </View>
+    </View>
+  );
+}
+
 export default function LobbyScreen({ u, ins, set, saveSet, onStart, openSettings, flash, onLogout }) {
   const [, setTick] = useState(0);
   const re = () => setTick(t => t + 1);
@@ -288,10 +314,6 @@ export default function LobbyScreen({ u, ins, set, saveSet, onStart, openSetting
           </View>
           <Btn u={u} sm label="▶" disabled={salon >= L.SALONS.length - 1} onPress={() => enterSalon(salon + 1)} />
         </View>
-        <View style={{ marginLeft: 'auto', flexDirection: 'row', gap: u }}>
-          <Btn u={u} pri={fCount > 0} label={fCount ? 'Masa Filtrele · ' + fCount : '⚙ Masa Filtrele'} onPress={() => setFOpen(true)} />
-          {fCount ? <Btn u={u} label="Temizle" onPress={() => setFilter(F0)} /> : null}
-        </View>
       </View>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', padding: 0.4 * u }}>
         {list.length ? list.map(tableCard) : <Text allowFontScaling={false} style={{ width: '100%', textAlign: 'center', color: 'rgba(190,240,232,0.5)', fontSize: 2.6 * u, marginTop: 6 * u }}>Bu filtrede boş yeri olan masa yok. Masa açabilirsin.</Text>}
@@ -300,6 +322,7 @@ export default function LobbyScreen({ u, ins, set, saveSet, onStart, openSetting
         <Btn u={u} label="Yenile" onPress={() => { L.genTables(salon); re(); }} />
         <Btn u={u} pri label="Masa Aç" onPress={openCreate} />
         <Btn u={u} pri label="Hemen Oyna" onPress={quick} style={{ minWidth: 34 * u }} />
+        <Btn u={u} pri={fCount > 0} label={fCount ? 'Masa Filtrele · ' + fCount : '⚙ Masa Filtrele'} onPress={() => setFOpen(true)} />
       </View>
     </>
   );
@@ -561,34 +584,21 @@ export default function LobbyScreen({ u, ins, set, saveSet, onStart, openSetting
         <H2 u={u}>Masa Filtrele</H2>
         <Sub u={u}>Sadece seçtiğin özelliklerdeki masalar listelenir.</Sub>
         <ScrollView style={{ marginTop: 1.4 * u }}>
-          <View style={{ flexDirection: 'row', gap: 2.4 * u }}>
-            <View style={{ flex: 1 }}>
-              <Text allowFontScaling={false} style={cLbl(u)}>BİÇİM</Text>
-              <SegFull u={u} opts={[['all', 'Fark etmez'], ['tek', 'Tek'], ['esli', 'Eşli']]} val={filter.team} onPick={v => setFilter({ ...filter, team: v })} />
-              <Text allowFontScaling={false} style={[cLbl(u), { marginTop: 1.2 * u }]}>OYUN</Text>
-              <SegFull u={u} opts={[['all', 'Fark etmez'], ['klasik', 'Klasik'], ['katlamali', 'Katlamalı']]} val={filter.mode} onPick={v => setFilter({ ...filter, mode: v })} />
-              <Text allowFontScaling={false} style={[cLbl(u), { marginTop: 1.2 * u }]}>EL SAYISI</Text>
-              <SegFull u={u} opts={[['all', 'Fark etmez']].concat(s.hands.map(h => [h, String(h)]))} val={filter.hands} onPick={v => setFilter({ ...filter, hands: v })} />
-              <Text allowFontScaling={false} style={[cLbl(u), { marginTop: 1.2 * u }]}>YARDIM</Text>
-              <SegFull u={u} opts={[['all', 'Fark etmez'], ['yardimli', 'Yardımlı'], ['yardimsiz', 'Yardımsız']]} val={filter.hard} onPick={v => setFilter({ ...filter, hard: v })} />
-            </View>
-            <View style={{ flex: 1.1 }}>
-              <Text allowFontScaling={false} style={cLbl(u)}>CEZALAR <Text style={{ fontSize: 1.7 * u }}>(dokun: fark etmez → olsun → olmasın)</Text></Text>
-              {[['rekor', 'Rekorlu'], ['okeyCal', 'Okey çalma cezası'], ['herTas', 'Her taş cezalı'], ['yanAc', 'Yandan açma cezalı'], ['gosterge', 'Gösterge']].map(([k, n]) => {
-                const v = filter.pen[k];
-                const next = v === undefined ? true : v ? false : undefined;
-                return (
-                  <Pressable key={k} onPress={() => setFilter({ ...filter, pen: { ...filter.pen, [k]: next, ...(k === 'herTas' && next === true ? { yanAc: true } : {}) } })}
-                    style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 7.2 * u, paddingHorizontal: 1.8 * u, marginBottom: 0.8 * u, borderRadius: 1.4 * u, borderWidth: 1,
-                      borderColor: v === undefined ? 'rgba(255,255,255,0.14)' : v ? 'rgba(126,240,181,0.6)' : 'rgba(255,120,120,0.5)',
-                      backgroundColor: v === undefined ? 'rgba(0,0,0,0.35)' : v ? 'rgba(40,140,90,0.25)' : 'rgba(140,40,40,0.22)' }}>
-                    <Text allowFontScaling={false} style={{ color: C.ink, fontWeight: '800', fontSize: 3 * u }}>{n}</Text>
-                    <Text allowFontScaling={false} style={{ fontWeight: '800', fontSize: 2.5 * u, color: v === undefined ? C.muted : v ? '#7ef0b5' : '#ff9a9a' }}>{v === undefined ? 'Fark etmez' : v ? '✓ Olsun' : '✕ Olmasın'}</Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-          </View>
+          {(() => {
+            const PO = [[undefined, 'Fark etmez'], [true, 'Açık'], [false, 'Kapalı']];
+            const items = [
+              ['Tek / Eşli', [['all', 'Fark etmez'], ['tek', 'Tek'], ['esli', 'Eşli']], filter.team, v => setFilter({ ...filter, team: v })],
+              ['Katlamalı / Klasik', [['all', 'Fark etmez'], ['katlamali', 'Katlamalı'], ['klasik', 'Klasik']], filter.mode, v => setFilter({ ...filter, mode: v })],
+              ['El sayısı', [['all', 'Fark etmez']].concat(s.hands.map(h => [h, h + ' El'])), filter.hands, v => setFilter({ ...filter, hands: v })],
+              ['Yardımlı / Yardımsız', [['all', 'Fark etmez'], ['yardimli', 'Yardımlı'], ['yardimsiz', 'Yardımsız']], filter.hard, v => setFilter({ ...filter, hard: v })],
+            ].concat([['rekor', 'Rekorlu'], ['okeyCal', 'Okey çalma cezası'], ['herTas', 'Her taş cezalı'], ['yanAc', 'Yandan açma cezalı'], ['gosterge', 'Gösterge']].map(([k, n]) =>
+              [n, PO, filter.pen[k], v => setFilter({ ...filter, pen: { ...filter.pen, [k]: v, ...(k === 'herTas' && v === true ? { yanAc: true } : {}) } }), true]));
+            return (
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
+                {items.map(([lbl, opts, val, set, pen]) => <ArrowPick key={lbl} u={u} label={lbl} opts={opts} val={val} onPick={set} pen={pen} />)}
+              </View>
+            );
+          })()}
         </ScrollView>
         <View style={{ flexDirection: 'row', gap: 1.4 * u, marginTop: 1.6 * u }}>
           <Btn u={u} pri label={'Masaları Göster (' + list.length + ')'} style={{ flex: 1.35 }} onPress={() => setFOpen(false)} />
