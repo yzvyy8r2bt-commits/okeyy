@@ -654,6 +654,8 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
 
   useEffect(() => {
     ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE).catch(() => {});
+    // ilk el masa ekranı açılmadan dağıtılıyor: 22 taş bizdeyse duyuruyu burada göster
+    { const g0 = G(); if (g0 && g0.starter === 0 && g0.turn === 0 && g0.players[0].slots && g0.players[0].slots.filter(Boolean).length === 22) setTimeout(() => setBig({ t: 'Fazla taş sizde', sub: 'Taş çekmeden taş atın.', short: true, hold: 2150, k: Date.now() }), 500); }
     Object.assign(GM.H, {
       render: rerender,
       toast: (m, k) => toast(m, k),
