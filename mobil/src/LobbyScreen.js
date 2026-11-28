@@ -249,7 +249,7 @@ export default function LobbyScreen({ u, ins, set, saveSet, onStart, openSetting
           <Text allowFontScaling={false} style={{ fontWeight: '800', fontSize: 1.9 * u, color: ok ? '#052b1e' : '#9fb3ae' }}>Otur</Text>
         </Pressable>;
     return (
-      <View key={t.id} style={{ width: '23.6%', height: 30 * u, marginBottom: 1.6 * u }}>
+      <View key={t.id} style={{ width: '49%', height: 30 * u, marginBottom: 1.6 * u }}>
         <View style={[styles.felt, { borderRadius: 15 * u, borderWidth: 0.9 * u }, !ok && { opacity: 0.6 }]}>
           {seat(2, { top: 0.8 * u, alignSelf: 'center' })}
           {seat(3, { left: 1.2 * u, top: '35%' })}
@@ -260,9 +260,14 @@ export default function LobbyScreen({ u, ins, set, saveSet, onStart, openSetting
               {L.MODE.offline ? <Text allowFontScaling={false} style={{ fontFamily: NUM_FONT, fontWeight: '800', fontSize: 2.6 * u, color: '#7ef0c8' }}>Çipsiz</Text>
                 : <><Coin s={2.6 * u} /><Text allowFontScaling={false} style={{ fontFamily: NUM_FONT, fontWeight: '800', fontSize: 2.8 * u, color: GOLD }}>{L.chipShort(t.bet)}</Text></>}
             </View>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 0.4 * u }}>
-              {L.tableTags(t).concat(t.pen.gosterge ? ['Gösterge'] : []).map(x => (
-                <Text key={x} allowFontScaling={false} style={{ fontSize: 1.45 * u, fontWeight: '700', color: C.ink, backgroundColor: 'rgba(255,255,255,0.12)', paddingHorizontal: 0.7 * u, paddingVertical: 0.2 * u, borderRadius: u, overflow: 'hidden' }}>{x}</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 0.5 * u, maxWidth: 52 * u }}>
+              {L.tableTags(t).map(x => (
+                <Text key={x} allowFontScaling={false} style={{ fontSize: 1.7 * u, fontWeight: '700', color: C.ink, backgroundColor: 'rgba(255,255,255,0.12)', paddingHorizontal: 0.8 * u, paddingVertical: 0.25 * u, borderRadius: u, overflow: 'hidden' }}>{x}</Text>
+              ))}
+            </View>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 0.5 * u, maxWidth: 52 * u }}>
+              {L.modeList(t.pen).filter(m => m[1]).map(([x]) => (
+                <Text key={x} allowFontScaling={false} style={{ fontSize: 1.6 * u, fontWeight: '800', color: '#ffd7a8', backgroundColor: 'rgba(214,90,40,0.28)', paddingHorizontal: 0.8 * u, paddingVertical: 0.25 * u, borderRadius: u, overflow: 'hidden' }}>{x}</Text>
               ))}
             </View>
           </View>
