@@ -527,7 +527,7 @@ function ModeStrip({ u, g }) {
 }
 function TableInfo({ u, g }) {
   const c = g.cfg;
-  const boxes = [[c.team ? 'EŞLİ' : 'TEK'], [c.hands + ' EL'], [c.hard ? 'YARDIMSIZ' : 'YARDIMLI', false, !c.hard], [c.mode === 'katlamali' ? 'KATLAMALI' : 'KLASİK', c.mode === 'katlamali']];
+  const boxes = [[c.team ? 'EŞLİ' : 'TEK'], ['EL ' + Math.min(g.hands.length + (g.phase === 'over' ? 0 : 1), c.hands) + '/' + c.hands], [c.hard ? 'YARDIMSIZ' : 'YARDIMLI', false, !c.hard], [c.mode === 'katlamali' ? 'KATLAMALI' : 'KLASİK', c.mode === 'katlamali']];
   const [h, setH] = useState(0);
   const gap = 0.5 * u, bh = h ? Math.max(1.6 * u, Math.min(3.4 * u, (h - gap * (boxes.length - 1)) / boxes.length)) : 3.4 * u;
   return (
@@ -905,7 +905,6 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
           <Text allowFontScaling={false} style={[styles.brandB, { fontSize: 6.4 * u }]}>101</Text>
           <Text allowFontScaling={false} style={[styles.brandS, { fontSize: 3.6 * u, letterSpacing: 0.7 * u, marginLeft: 0.8 * u }]}>OKEY</Text>
           <View style={{ marginLeft: 1.4 * u, alignSelf: 'center', gap: 0.5 * u, flexShrink: 0 }}>
-            <Text allowFontScaling={false} numberOfLines={1} style={[styles.brandSmall, { fontSize: 2.1 * u }]}>{modeLbl}</Text>
             {!L.MODE.offline ? <PtPill u={u} /> : null}
           </View>
         </View>

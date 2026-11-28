@@ -96,7 +96,7 @@ function ArrowPick({ u, label, opts, val, onPick, pen }) {
     </Pressable>
   );
   return (
-    <View style={{ width: '49%', marginBottom: 1.2 * u }}>
+    <View style={{ width: '100%', marginBottom: 1.2 * u }}>
       <Text allowFontScaling={false} style={{ color: C.muted, fontSize: 2.2 * u, fontWeight: '700', textAlign: 'center', marginBottom: 0.5 * u }}>{label}</Text>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 0.8 * u }}>
         {arrow(-1)}
@@ -594,8 +594,12 @@ export default function LobbyScreen({ u, ins, set, saveSet, onStart, openSetting
             ].concat([['rekor', 'Rekorlu'], ['okeyCal', 'Okey çalma cezası'], ['herTas', 'Her taş cezalı'], ['yanAc', 'Yandan açma cezalı'], ['gosterge', 'Gösterge']].map(([k, n]) =>
               [n, PO, filter.pen[k], v => setFilter({ ...filter, pen: { ...filter.pen, [k]: v, ...(k === 'herTas' && v === true ? { yanAc: true } : {}) } }), true]));
             return (
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
-                {items.map(([lbl, opts, val, set, pen]) => <ArrowPick key={lbl} u={u} label={lbl} opts={opts} val={val} onPick={set} pen={pen} />)}
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                {[items.slice(0, 4), items.slice(4)].map((col, ci) => (
+                  <View key={ci} style={{ width: '49%' }}>
+                    {col.map(([lbl, opts, val, set, pen]) => <ArrowPick key={lbl} u={u} label={lbl} opts={opts} val={val} onPick={set} pen={pen} />)}
+                  </View>
+                ))}
               </View>
             );
           })()}
