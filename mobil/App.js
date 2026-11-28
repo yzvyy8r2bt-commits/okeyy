@@ -1067,7 +1067,7 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
               })}
               <Text allowFontScaling={false} style={{ color: C.muted, fontSize: 3.4 * u, marginTop: 0.6 * u, textAlign: 'center' }}>El {g.hands.length} / {g.cfg.hands} · {g.cfg.team ? 'Toplamı az olan takım kazanır' : 'Az puan kazanır'}</Text>
               <View style={{ marginTop: 1.2 * u, alignItems: 'center' }}>
-                {handEnd.last ? <AutoBtn u={u} label="Sonucu Gör" sec={5} onPress={nextHand} /> : <Btn u={u} pri label="Sonraki El" onPress={nextHand} />}
+                <AutoBtn u={u} label={handEnd.last ? 'Sonucu Gör' : 'Sonraki El'} sec={5} onPress={nextHand} />
               </View>
             </View>
           ) : null}
