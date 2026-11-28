@@ -689,7 +689,8 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
   }, []);
 
   const W = Math.max(win.width, win.height), Hh = Math.min(win.width, win.height);
-  const u = Hh / 100;
+  // ekran oranı iPhone'dan dar olan telefonlarda (çoğu Android) her şey ekrana sığsın diye küçültülür
+  const u = Math.min(Hh / 100, (W - ins.left - ins.right) / 188);
   const pad = { t: u + ins.top, r: 1.6 * u + ins.right, b: 1.4 * u + ins.bottom * 0.3, l: 1.6 * u + ins.left };
   const rackW = W - pad.l - pad.r - 35 * u;
   const geom = useMemo(() => rackGeom(rackW, u), [rackW, u]);
@@ -1294,7 +1295,7 @@ function Game({ set, saveSet, table, onLeave, onAgain }) {
 function Root() {
   const ins = useSafeAreaInsets();
   const win = useWindowDimensions();
-  const u = Math.min(win.width, win.height) / 100;
+  const u = Math.min(Math.min(win.width, win.height) / 100, (Math.max(win.width, win.height) - ins.left - ins.right) / 188);
   const [ready, setReady] = useState(false);
   const [splashDone, setSplashDone] = useState(false);
   const [tip] = useState(() => TIPS[Math.floor(Math.random() * TIPS.length)]);

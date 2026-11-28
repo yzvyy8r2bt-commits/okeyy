@@ -36,7 +36,16 @@ export default function TileFace({ tile, w, h, fs, mark, glow, gb, blank, hw }) 
           <>
             {/* yazı tipinin doğal satır yüksekliği korunur; üst/alt boşluk eksi kenar boşluğuyla
                 kırpılır, böylece kutu sadece rakamın kendisi kadar olur ve tam ortalanır */}
-            <Text allowFontScaling={false} numberOfLines={1} style={[styles.num, { fontSize: nf, marginTop: -nf * DIGIT_TOP, marginBottom: -nf * DIGIT_BOT, color }, AND && { letterSpacing: -nf * 0.06, width: w * 1.2, marginHorizontal: -w * 0.1 }]}>{tile.n}</Text>
+            {AND && tile.n >= 10 ? (
+              // Android: iki haneli sayının her rakamı ayrı yazılır, yazı tipi geniş olsa da alt satıra kaymaz
+              <View style={{ flexDirection: 'row', justifyContent: 'center', width: w * 1.1, marginHorizontal: -w * 0.05 }}>
+                {String(tile.n).split('').map((d, k) => (
+                  <Text key={k} allowFontScaling={false} numberOfLines={1} style={[styles.num, { fontSize: nf, marginTop: -nf * DIGIT_TOP, marginBottom: -nf * DIGIT_BOT, color, marginHorizontal: -nf * 0.04 }]}>{d}</Text>
+                ))}
+              </View>
+            ) : (
+              <Text allowFontScaling={false} numberOfLines={1} style={[styles.num, { fontSize: nf, marginTop: -nf * DIGIT_TOP, marginBottom: -nf * DIGIT_BOT, color }]}>{tile.n}</Text>
+            )}
             <View style={{
               width: fs * 0.3, height: fs * 0.3, borderRadius: fs, marginTop: fs * 0.12,
               backgroundColor: color, borderWidth: Math.max(1, fs * 0.06), borderColor: 'rgba(255,255,255,0.55)',
